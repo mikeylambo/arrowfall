@@ -7,6 +7,7 @@ const hud = document.querySelector("#hud");
 const levelup = document.querySelector("#levelup");
 const results = document.querySelector("#results");
 const upgradeCards = document.querySelector("#upgrade-cards");
+const buildReadout=document.querySelector("#build-readout");
 const menuPanel = document.querySelector("#menu-panel");
 const menuPanelTitle = document.querySelector("#menu-panel-title");
 const menuPanelBody = document.querySelector("#menu-panel-body");
@@ -187,6 +188,7 @@ function checkEvolutions(){
 function openLevelUp(){
   state="levelup"; levelup.classList.remove("hidden");
   upgradeCards.innerHTML="";
+  buildReadout.innerHTML=["LEVEL "+world.level,"ARROWS ×"+(1+world.player.multi),"PIERCE "+world.player.pierce,"CRIT "+Math.round(world.player.critChance*100)+"%"].map(x=>"<span>"+x+"</span>").join("")+(world.evolutions.size?Array.from(world.evolutions).map(x=>"<span class=\"evo\">"+x.toUpperCase()+"</span>").join(""):"");
   const choices=[...upgrades].sort(()=>Math.random()-.5).slice(0,3);
   for(const u of choices){
     const el=document.createElement("button"); el.className="card";
