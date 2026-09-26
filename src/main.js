@@ -62,7 +62,7 @@ function start(){
     shake:0, flash:0, spawnClock:0, enemyId:0,
     player:{x:innerWidth/2,y:innerHeight/2,r:15,speed:235,aim:0,hp:100,fireRate:3.1,shotClock:0,draw:0,drawDamage:30,
        pierce:0,critChance:.05,range:620,bleed:false,windstep:false,multi:0,ember:false,frost:false,storm:false,venom:false,arrowSize:1,executioner:false,predator:false,chain:false,mark:false,phantom:false,heaven:false,chainCount:0,windTimer:0,dash:0,dashCooldown:0,dashX:0,dashY:0},
-    enemies:[], enemyArrows:[], particles:[], rings:[], trails:[], boss:null, bossSpawned:false
+    enemies:[], enemyArrows:[], particles:[], rings:[], trails:[], boss:null, bossSpawned:false, evolutions:new Set(), evolutionLog:[]
   };
   last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
 }
@@ -72,7 +72,7 @@ function applyArrowElement(e){
   if(p.mark && Math.random()<.18)e.marked=3;
   if(p.storm && Math.random()<.22){
     const targets=world.enemies.filter(t=>t!==e&&Math.hypot(t.x-e.x,t.y-e.y)<150).slice(0,2);
-    for(const t of targets){t.hp-=12;burst(t.x,t.y,7,1.4);}
+    for(const t of targets){t.hp-=12*(p.stormPower||1);burst(t.x,t.y,7,1.4);}
   }
 }
 function spawnEnemy(){
@@ -138,6 +138,16 @@ function gainXp(n){
   }
 }
 
+function checkEvolutions(){
+  const p=world.player;
+  const evo=(id,name,fn)=>{if(world.evolutions.has(id))return;world.evolutions.add(id);fn();world.evolutionLog.push(name);world.flash=.35;world.shake=12;burst(p.x,p.y,32,2.5);};
+  if(p.multi>=1 && p.fireRate>=3.5) evo("barrage","BARRAGE",()=>{p.multi+=2;p.fireRate*=1.18;});
+  if(p.pierce>=2 && p.range>=800 && p.drawDamage>=40) evo("worldpiercer","WORLDPIERCER",()=>{p.pierce=99;p.drawDamage*=1.35;p.range=1100;});
+  if(p.critChance>=.23 && p.range>=750) evo("deadshot","DEADSHOT",()=>{p.critChance=1;p.drawDamage*=1.2;});
+  if(p.ember && p.critChance>=.14) evo("hellfire","HELLFIRE",()=>{p.ember=true;p.critDamage=3.2;});
+  if(p.storm && p.multi>=1) evo("thunderstorm","THUNDERSTORM",()=>{p.storm=true;p.stormPower=2.5;});
+  if(p.phantom && p.windstep) evo("phantomhunt","PHANTOM HUNT",()=>{p.multi+=1;p.phantomPower=3;});
+}
 function openLevelUp(){
   state="levelup"; levelup.classList.remove("hidden");
   upgradeCards.innerHTML="";
@@ -145,7 +155,7 @@ function openLevelUp(){
   for(const u of choices){
     const el=document.createElement("button"); el.className="card";
     el.innerHTML=`<b>${u.name}</b><span>${u.desc}</span>`;
-    el.onclick=()=>{u.apply(world.player); levelup.classList.add("hidden"); state="playing";};
+    el.onclick=()=>{u.apply(world.player); levelup.classList.add("hidden"); checkEvolutions(); state="playing";};
     upgradeCards.appendChild(el);
   }
 }
@@ -357,3 +367,4 @@ addEventListener("keydown",e=>{keys.add(e.code);if(e.code==="Space"){e.preventDe
 addEventListener("keyup",e=>keys.delete(e.code));
 document.querySelector("#play-button").onclick=start;
 document.querySelector("#restart-button").onclick=start;
+setInterval(()=>{ if(world&&state==="playing"&&world.evolutionLog.length){ const name=world.evolutionLog.shift(); const old=titleScreen.querySelector(".evolution-toast"); if(old)old.remove(); const toast=document.createElement("div");toast.className="evolution-toast";toast.textContent="EVOLUTION • "+name;document.body.appendChild(toast);setTimeout(()=>toast.remove(),2200); }},120);
