@@ -64,7 +64,7 @@ function start(){
   keys.clear();
   state="playing";
   titleScreen.classList.remove("active"); titleScreen.classList.add("hidden");
-  results.classList.add("hidden"); levelup.classList.add("hidden"); hud.classList.remove("hidden");
+  results.classList.add("hidden"); levelup.classList.add("hidden"); hud.classList.remove("hidden"); bossHud.classList.add("hidden");
   world = {
     time:0, kills:0, arrows:[], arrowCount:0, crits:0, xp:0, level:1, nextXp:10, paused:false,
     shake:0, flash:0, spawnClock:0, enemyId:0,
