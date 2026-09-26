@@ -94,7 +94,8 @@ function fireArrow(){
   const perfect=charge>.88;
   const crit=perfect || Math.random()<p.critChance;
   const speed=perfect?920:720+charge*180;
-  const damage=p.drawDamage*(.72+charge*.65)*(crit?2.15:1);
+  const chainMult=p.chain?1+Math.min(p.chainCount,10)*.04:1;
+  const damage=p.drawDamage*(.72+charge*.65)*(crit?(p.critDamage||2.15):1)*chainMult;
   const shots=1+p.multi;
   for(let i=0;i<shots;i++){
     const spread=(i-(shots-1)/2)*.055;
@@ -123,6 +124,7 @@ function dash(){
   p.dashX=dx/len || Math.cos(p.aim); p.dashY=dy/len || Math.sin(p.aim);
   p.dash=.14; p.dashCooldown=1.15;
   burst(p.x,p.y,14,1.1);
+  if(p.phantom){ for(let i=0;i<2+(p.phantomPower?1:0);i++){ const aa=p.aim+(i-1)*.12; world.arrows.push({x:p.x,y:p.y,vx:Math.cos(aa)*820,vy:Math.sin(aa)*820,life:.72,damage:p.drawDamage*.65,pierce:p.pierce,hit:new Set(),crit:false,angle:aa,r:3*p.arrowSize,elemental:true,phantom:true}); } }
 }
 
 function burst(x,y,n,power=1){
