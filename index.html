@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07100d" />
+  <title>ARROWFALL — The Hunt Begins</title>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" aria-label="Arrowfall game canvas"></canvas>
+
+    <div id="title-screen" class="screen active">
+      <div class="title-backdrop"></div>
+      <div class="title-content">
+        <div class="eyebrow">A 20-MINUTE ARCHERY SURVIVOR</div>
+        <h1>ARROW<span>FALL</span></h1>
+        <p>The Hunt Begins</p>
+        <button id="play-button">PLAY HUNT</button>
+        <div class="controls-line">WASD MOVE &nbsp;•&nbsp; MOUSE AIM &nbsp;•&nbsp; HOLD / RELEASE FIRE &nbsp;•&nbsp; SPACE DASH</div>
+      </div>
+    </div>
+
+    <div id="hud" class="hud hidden">
+      <div class="hud-left">
+        <div class="brand">ARROWFALL</div>
+        <div class="objective">SURVIVE THE HUNT</div>
+      </div>
+      <div class="hud-center">
+        <div id="timer">00:00</div>
+        <div id="kill-count">0 HUNTED</div>
+      </div>
+      <div class="hud-right">
+        <div class="stat-label">DRAW</div>
+        <div id="draw-meter"><i></i></div>
+        <div id="shot-state">QUICK SHOT</div>
+      </div>
+      <div class="xp-wrap">
+        <div class="xp-label"><span>HUNTER LEVEL <b id="level">1</b></span><span id="xp-text">0 / 10</span></div>
+        <div class="xp-bar"><i id="xp-fill"></i></div>
+      </div>
+      <div id="dash-ready" class="dash-ready">DASH READY</div>
+      <div id="hint" class="hint">AIM. DRAW. RELEASE.</div>
+    </div>
+
+    <div id="levelup" class="overlay hidden">
+      <div class="panel">
+        <div class="eyebrow">HUNTER'S CHOICE</div>
+        <h2>SHAPE THE BOW</h2>
+        <div id="upgrade-cards" class="cards"></div>
+      </div>
+    </div>
+
+    <div id="results" class="overlay hidden">
+      <div class="panel results-panel">
+        <div class="eyebrow">THE HUNT ENDS</div>
+        <h2 id="result-title">HUNT COMPLETE</h2>
+        <div class="result-grid">
+          <div><b id="result-time">00:00</b><span>TIME</span></div>
+          <div><b id="result-kills">0</b><span>HUNTED</span></div>
+          <div><b id="result-crits">0</b><span>PERFECT DRAWS</span></div>
+          <div><b id="result-arrows">0</b><span>ARROWS FIRED</span></div>
+        </div>
+        <button id="restart-button">HUNT AGAIN</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
