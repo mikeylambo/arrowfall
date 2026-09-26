@@ -144,6 +144,7 @@ function update(dt){
   if(w.spawnClock<=0){spawnEnemy(); if(w.time>25&&Math.random()<.15) spawnEnemy(); w.spawnClock=targetRate;}
 
   for(const a of w.arrows){
+    a.r = a.r ?? 2;
     a.x+=a.vx*dt;a.y+=a.vy*dt;a.life-=dt;
     for(const e of w.enemies){
       if(a.hit.has(e.id)) continue;
@@ -197,6 +198,7 @@ function hudUpdate(){
 }
 
 function draw(){
+  if (!world || !world.player) return;
   const w=world,p=w.player;
   ctx.save();
   const sx=(Math.random()-.5)*w.shake,sy=(Math.random()-.5)*w.shake;ctx.translate(sx,sy);
@@ -242,10 +244,11 @@ function drawEnemy(e){
 }
 
 function loop(t){
+  if (!world || (state !== "playing" && state !== "levelup")) return;
   const dt=Math.min(.033,(t-last)/1000);last=t;
   if(state==="playing") update(dt);
   if(state==="playing"||state==="levelup") draw();
-  if(state!=="menu") raf=requestAnimationFrame(loop);
+  if(state==="playing"||state==="levelup") raf=requestAnimationFrame(loop);
 }
 function toWorldEvent(e){
   const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;
