@@ -7,6 +7,11 @@ const hud = document.querySelector("#hud");
 const levelup = document.querySelector("#levelup");
 const results = document.querySelector("#results");
 const upgradeCards = document.querySelector("#upgrade-cards");
+const menuPanel = document.querySelector("#menu-panel");
+const menuPanelTitle = document.querySelector("#menu-panel-title");
+const menuPanelBody = document.querySelector("#menu-panel-body");
+const pause = document.querySelector("#pause");
+const meta = JSON.parse(localStorage.getItem("arrowfall-meta") || '{"runs":0,"wins":0,"kills":0,"bestTime":0,"bestKills":0}');
 
 const TAU = Math.PI * 2;
 const keys = new Set();
@@ -52,6 +57,7 @@ function resize(){
 addEventListener("resize", resize); resize();
 
 function start(){
+  meta.runs++; saveMeta();
   mouse.down=false;
   keys.clear();
   state="playing";
@@ -325,7 +331,10 @@ function fireBossArrow(){
   }
 }
 
+function saveMeta(){localStorage.setItem("arrowfall-meta",JSON.stringify(meta));}
 function finish(win){
+  if(state==="results")return;
+  meta.kills+=world.kills;if(win)meta.wins++;meta.bestTime=Math.max(meta.bestTime,world.time);meta.bestKills=Math.max(meta.bestKills,world.kills);saveMeta();
   state="results"; results.classList.remove("hidden");
   document.querySelector("#result-title").textContent=win?"HUNT COMPLETE":"THE HUNTER FALLS";
   document.querySelector("#result-time").textContent=fmt(world.time);
@@ -422,4 +431,23 @@ addEventListener("keydown",e=>{keys.add(e.code);if(e.code==="Space"){e.preventDe
 addEventListener("keyup",e=>keys.delete(e.code));
 document.querySelector("#play-button").onclick=start;
 document.querySelector("#restart-button").onclick=start;
+document.querySelector("#resume-button").onclick=()=>{if(state==="paused"){state="playing";pause.classList.add("hidden");last=performance.now();raf=requestAnimationFrame(loop);}};
+document.querySelector("#quit-button").onclick=()=>{state="menu";pause.classList.add("hidden");hud.classList.add("hidden");results.classList.add("hidden");titleScreen.classList.remove("hidden");titleScreen.classList.add("active");};
+document.querySelector("#menu-panel-close").onclick=()=>menuPanel.classList.add("hidden");
+document.querySelectorAll(".menu-panel-btn").forEach(btn=>btn.onclick=()=>openMenuPanel(btn.dataset.panel));
+function openMenuPanel(kind){
+  menuPanel.classList.remove("hidden");
+  if(kind==="arsenal"){
+    menuPanelTitle.textContent="ARSENAL";
+    menuPanelBody.innerHTML='<div class="arsenal-grid">'+[["THE BOW","One weapon. Infinite mastery."],["QUICK SHOT","Fast release for pressure."],["DRAWN SHOT","Charge for power and reach."],["PERFECT DRAW","Release near full draw for a critical arrow."],["WINDSTEP","Fire, move, and reposition."],["PHANTOM STEP","Dash becomes another attack."]].map(x=>'<div class="arsenal-item"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>').join('')+'</div><div class="panel-copy">Every upgrade exists to make the archer more interesting. There are no filler weapons.</div>';
+  }else if(kind==="log"){
+    menuPanelTitle.textContent="HUNTER'S LOG";
+    const enemies=["Crawler","Wolf","Brute","Shieldbearer","Wisp","Hunter","Burrower","Mimic","Huntmaster"],evolutions=["Barrage","Worldpiercer","Deadshot","Hellfire","Thunderstorm","Phantom Hunt"];
+    menuPanelBody.innerHTML='<div class="panel-copy">FIELD NOTES</div><div class="log-list">'+enemies.map(x=>'<div class="log-row"><span>'+x+'</span><span>ENCOUNTERED</span></div>').join('')+'</div><div class="panel-copy">ARROW EVOLUTIONS</div><div class="log-list">'+evolutions.map(x=>'<div class="log-row"><span>'+x.toUpperCase()+'</span><span>ARROWCRAFT</span></div>').join('')+'</div>';
+  }else{
+    menuPanelTitle.textContent="HUNTER PROFILE";
+    menuPanelBody.innerHTML='<div class="result-grid"><div><b>'+meta.runs+'</b><span>HUNTS</span></div><div><b>'+meta.wins+'</b><span>VICTORIES</span></div><div><b>'+meta.bestKills+'</b><span>BEST HUNT</span></div><div><b>'+meta.kills+'</b><span>TOTAL HUNTED</span></div></div><div class="panel-copy">Your records are stored locally in this browser.</div>';
+  }
+}
+addEventListener("keydown",e=>{if(e.code==="Escape"||e.code==="KeyP"){if(state==="playing"){state="paused";pause.classList.remove("hidden");}else if(state==="paused"){state="playing";pause.classList.add("hidden");last=performance.now();raf=requestAnimationFrame(loop);}}});
 setInterval(()=>{ if(world&&state==="playing"&&world.evolutionLog.length){ const name=world.evolutionLog.shift(); const old=titleScreen.querySelector(".evolution-toast"); if(old)old.remove(); const toast=document.createElement("div");toast.className="evolution-toast";toast.textContent="EVOLUTION • "+name;document.body.appendChild(toast);setTimeout(()=>toast.remove(),2200); }},120);
