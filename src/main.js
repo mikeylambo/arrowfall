@@ -174,6 +174,14 @@ function update(dt){
     if(b.hitFlash)b.hitFlash-=dt;
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r+4){p.hp-=24*dt;w.flash=Math.max(w.flash,.18);}
   }
+  if(w.boss){
+    for(const a of w.arrows){
+      if(Math.hypot(a.x-w.boss.x,a.y-w.boss.y)<a.r+w.boss.r){
+        w.boss.hp-=a.damage; w.boss.hitFlash=.08; a.life=0;
+        burst(w.boss.x,w.boss.y,a.crit?8:4,a.crit?1.4:.7); w.shake=Math.max(w.shake,a.crit?5:2);
+      }
+    }
+  }
   for(const e of w.enemies){
     const a=Math.atan2(p.y-e.y,p.x-e.x);
     const sp=e.speed*(e.type==="wolf"?1.12:1);
