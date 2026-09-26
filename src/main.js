@@ -44,11 +44,11 @@ function start(){
   titleScreen.classList.remove("active"); titleScreen.classList.add("hidden");
   results.classList.add("hidden"); levelup.classList.add("hidden"); hud.classList.remove("hidden");
   world = {
-    time:0, kills:0, arrows:0, crits:0, xp:0, level:1, nextXp:10, paused:false,
+    time:0, kills:0, arrows:[], arrowCount:0, crits:0, xp:0, level:1, nextXp:10, paused:false,
     shake:0, flash:0, spawnClock:0, enemyId:0,
     player:{x:innerWidth/2,y:innerHeight/2,r:15,speed:235,aim:0,hp:100,fireRate:3.1,shotClock:0,draw:0,drawDamage:30,
       pierce:0,critChance:.05,range:620,bleed:false,windstep:false,dash:0,dashCooldown:0,dashX:0,dashY:0},
-    arrows:[], enemies:[], particles:[], rings:[], trails:[]
+    enemies:[], particles:[], rings:[], trails:[]
   };
   last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
 }
@@ -76,7 +76,7 @@ function fireArrow(){
   world.arrows.push({x:p.x+Math.cos(p.aim)*20,y:p.y+Math.sin(p.aim)*20,
     vx:Math.cos(p.aim)*speed,vy:Math.sin(p.aim)*speed,life:p.range/speed,
     damage,pierce:p.pierce,hit:new Set(),crit,angle:p.aim});
-  world.arrows++;
+  world.arrowCount++;
   if(crit){world.crits++; world.shake=Math.max(world.shake,4); burst(p.x+Math.cos(p.aim)*26,p.y+Math.sin(p.aim)*26,9,1.8);}
   if(p.windstep){p.dashX=Math.cos(p.aim);p.dashY=Math.sin(p.aim); p.windTimer=.25;}
   p.shotClock=1/p.fireRate;
@@ -183,7 +183,7 @@ function finish(win){
   document.querySelector("#result-time").textContent=fmt(world.time);
   document.querySelector("#result-kills").textContent=world.kills;
   document.querySelector("#result-crits").textContent=world.crits;
-  document.querySelector("#result-arrows").textContent=world.arrows;
+  document.querySelector("#result-arrows").textContent=world.arrowCount;
 }
 function hudUpdate(){
   const w=world,p=w.player;
