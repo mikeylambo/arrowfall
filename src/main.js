@@ -206,7 +206,22 @@ function update(dt){
   w.spawnClock-=dt;
   if(w.time>=1140 && !w.bossSpawned){ spawnBoss(); w.bossSpawned=true; }
   const targetRate=Math.max(.055,.52-w.time*.012);
-  if(w.spawnClock<=0){spawnEnemy(); if(w.time>25&&Math.random()<.15) spawnEnemy(); w.spawnClock=targetRate;}
+  if(w.spawnClock<=0){
+    const eliteChance=Math.min(.16,Math.max(0,(w.time-120)/900));
+    spawnEnemy(null,Math.random()<eliteChance);
+    if(w.time>35&&Math.random()<.12)spawnEnemy(null,Math.random()<.35);
+    if(w.time>150&&Math.random()<.055)spawnFormation(pick(["crescent","funnel","spear","ring","crossfire","pursuit"]));
+    w.spawnClock=targetRate;
+  }
+  if(Math.floor(w.time/60)!==Math.floor((w.time-dt)/60)&&w.time>180){
+    const event=pick(["migration","hunt","bloodmoon","quiet"]);w.event=event;w.eventTimer=event==="quiet"?18:12;
+    if(event==="migration")spawnFormation("pursuit");
+    if(event==="hunt")spawnEnemy("hunter",true);
+    if(event==="bloodmoon")w.bloodMoon=12;
+    if(event==="quiet")p.hp=Math.min(100,p.hp+25);
+  }
+  if(w.eventTimer)w.eventTimer=Math.max(0,w.eventTimer-dt);
+  if(w.bloodMoon)w.bloodMoon=Math.max(0,w.bloodMoon-dt);
 
   for(const a of w.arrows){
     a.r = a.r ?? 2;
@@ -217,6 +232,7 @@ function update(dt){
         a.hit.add(e.id);
         let mult=1;
         if(e.hp/e.maxHp<.2 && p.executioner) mult*=1.5;
+        if(e.armor) mult*=1-e.armor;
         if(e.marked) mult*=1.3;
         e.hp-=a.damage*mult;e.hitFlash=.08;
         if(p.ember)e.burn=1.2;
@@ -225,7 +241,7 @@ function update(dt){
         if(p.bleed)e.bleed=.9; applyArrowElement(e);
         burst(e.x,e.y,a.crit?8:4,a.crit?1.5:.7);
         w.shake=Math.max(w.shake,a.crit?5:2);
-        if(e.hp<=0){w.kills++;p.chainCount=p.chain?Math.min(20,p.chainCount+1):0;if(p.predator)p.speed=Math.min(380,p.speed+5);gainXp(e.type==="brute"?3:1); burst(e.x,e.y,12,1.4);}
+        if(e.hp<=0){w.kills++;p.chainCount=p.chain?Math.min(20,p.chainCount+1):0;if(p.predator)p.speed=Math.min(380,p.speed+5);gainXp(e.xp||1); burst(e.x,e.y,12,1.4);}
         else if(a.pierce<=0){a.life=0;} else a.pierce--;
       }
     }
@@ -256,9 +272,13 @@ function update(dt){
     const sp=e.speed*(e.type==="wolf"?1.12:1)*(e.slow?0.55:1);
     e.x+=Math.cos(a)*sp*dt;e.y+=Math.sin(a)*sp*dt;
     if(e.bleed){e.bleed-=dt;e.hp-=7*dt;}
+    if(e.regen)e.hp=Math.min(e.maxHp,e.hp+e.regen*dt);
     if(e.burn){e.burn-=dt;e.hp-=11*dt;}
     if(e.poison){e.poison-=dt;e.hp-=8*dt;}
     if(e.slow)e.slow=Math.max(0,e.slow-dt);
+    if(e.type==="hunter"&&e.shotClock<=0){const aa=Math.atan2(p.y-e.y,p.x-e.x);w.enemyArrows.push({x:e.x,y:e.y,vx:Math.cos(aa)*300,vy:Math.sin(aa)*300,life:3,r:5});e.shotClock=2.1;}
+    if(e.type==="burrower"&&Math.random()<dt*.22){e.x=p.x+(Math.random()-.5)*260;e.y=p.y+(Math.random()-.5)*260;}
+    e.shotClock-=dt;
     if(e.marked)e.marked=Math.max(0,e.marked-dt);
 
     if(e.hitFlash)e.hitFlash-=dt;
