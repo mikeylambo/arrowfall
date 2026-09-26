@@ -16,14 +16,26 @@ let dpr = 1, last = 0, raf = 0;
 let state = "menu";
 let world;
 let upgrades = [
-  { id:"quick", name:"QUICK NOCK", desc:"+16% fire rate. The bow recovers faster between shots.", apply:p=>p.fireRate*=1.16 },
-  { id:"draw", name:"DRAW STRENGTH", desc:"+25% damage while fully drawn. Rewards committed shots.", apply:p=>p.drawDamage*=1.25 },
-  { id:"fleet", name:"LIGHTFOOT", desc:"+12% movement speed. A hunter survives by repositioning.", apply:p=>p.speed*=1.12 },
-  { id:"pierce", name:"PIERCER", desc:"Arrows pass through one additional target.", apply:p=>p.pierce+=1 },
-  { id:"crit", name:"EAGLE EYE", desc:"+9% Perfect Draw chance on every release.", apply:p=>p.critChance+=.09 },
-  { id:"range", name:"LONGSHAFT", desc:"+22% arrow range and projectile lifetime.", apply:p=>p.range*=1.22 },
-  { id:"barbed", name:"BARBED ARROW", desc:"Hits cause a short bleed that deals damage over time.", apply:p=>p.bleed=true },
-  { id:"wind", name:"WINDSTEP", desc:"Firing grants a brief burst of movement speed.", apply:p=>p.windstep=true }
+  {id:"quick",name:"QUICK NOCK",desc:"+16% fire rate.",apply:p=>p.fireRate*=1.16},
+  {id:"draw",name:"DRAW STRENGTH",desc:"+25% fully-drawn damage.",apply:p=>p.drawDamage*=1.25},
+  {id:"fleet",name:"LIGHTFOOT",desc:"+12% movement speed.",apply:p=>p.speed*=1.12},
+  {id:"pierce",name:"PIERCER",desc:"+1 arrow penetration.",apply:p=>p.pierce+=1},
+  {id:"crit",name:"EAGLE EYE",desc:"+9% critical chance.",apply:p=>p.critChance+=.09},
+  {id:"range",name:"LONGSHAFT",desc:"+22% arrow range.",apply:p=>p.range*=1.22},
+  {id:"barbed",name:"BARBED ARROW",desc:"Arrows cause bleed.",apply:p=>p.bleed=true},
+  {id:"wind",name:"WINDSTEP",desc:"Firing boosts movement briefly.",apply:p=>p.windstep=true},
+  {id:"multi",name:"FLETCHER'S CRAFT",desc:"+1 arrow per shot.",apply:p=>p.multi+=1},
+  {id:"ember",name:"EMBER ARROW",desc:"Arrows ignite targets.",apply:p=>p.ember=true},
+  {id:"frost",name:"FROST ARROW",desc:"Arrows slow targets.",apply:p=>p.frost=true},
+  {id:"storm",name:"STORM ARROW",desc:"Hits can chain lightning.",apply:p=>p.storm=true},
+  {id:"venom",name:"VENOM ARROW",desc:"Hits poison targets.",apply:p=>p.venom=true},
+  {id:"broad",name:"BROADShaft",desc:"+40% arrow hitbox.",apply:p=>p.arrowSize*=1.4},
+  {id:"executioner",name:"EXECUTIONER",desc:"+50% damage to enemies below 20% health.",apply:p=>p.executioner=true},
+  {id:"predator",name:"PREDATOR",desc:"Kills briefly increase movement speed.",apply:p=>p.predator=true},
+  {id:"chain",name:"CHAIN KILL",desc:"Consecutive kills build damage.",apply:p=>p.chain=true},
+  {id:"mark",name:"HUNTER'S MARK",desc:"Marked enemies take +30% damage.",apply:p=>p.mark=true},
+  {id:"phantom",name:"PHANTOM STEP",desc:"Dash creates a spectral arrow.",apply:p=>p.phantom=true},
+  {id:"heaven",name:"HEAVEN'S CALL",desc:"Perfect Draws rain arrows.",apply:p=>p.heaven=true}
 ];
 
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
@@ -49,12 +61,20 @@ function start(){
     time:0, kills:0, arrows:[], arrowCount:0, crits:0, xp:0, level:1, nextXp:10, paused:false,
     shake:0, flash:0, spawnClock:0, enemyId:0,
     player:{x:innerWidth/2,y:innerHeight/2,r:15,speed:235,aim:0,hp:100,fireRate:3.1,shotClock:0,draw:0,drawDamage:30,
-      pierce:0,critChance:.05,range:620,bleed:false,windstep:false,dash:0,dashCooldown:0,dashX:0,dashY:0},
+       pierce:0,critChance:.05,range:620,bleed:false,windstep:false,multi:0,ember:false,frost:false,storm:false,venom:false,arrowSize:1,executioner:false,predator:false,chain:false,mark:false,phantom:false,heaven:false,chainCount:0,windTimer:0,dash:0,dashCooldown:0,dashX:0,dashY:0},
     enemies:[], enemyArrows:[], particles:[], rings:[], trails:[], boss:null, bossSpawned:false
   };
   last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
 }
 
+function applyArrowElement(e){
+  const p=world.player;
+  if(p.mark && Math.random()<.18)e.marked=3;
+  if(p.storm && Math.random()<.22){
+    const targets=world.enemies.filter(t=>t!==e&&Math.hypot(t.x-e.x,t.y-e.y)<150).slice(0,2);
+    for(const t of targets){t.hp-=12;burst(t.x,t.y,7,1.4);}
+  }
+}
 function spawnEnemy(){
   const angle=Math.random()*TAU;
   const radius=Math.max(innerWidth,innerHeight)*.62+Math.random()*220;
@@ -75,16 +95,25 @@ function fireArrow(){
   const crit=perfect || Math.random()<p.critChance;
   const speed=perfect?920:720+charge*180;
   const damage=p.drawDamage*(.72+charge*.65)*(crit?2.15:1);
-  world.arrows.push({x:p.x+Math.cos(p.aim)*20,y:p.y+Math.sin(p.aim)*20,
-    vx:Math.cos(p.aim)*speed,vy:Math.sin(p.aim)*speed,life:p.range/speed,
-    damage,pierce:p.pierce,hit:new Set(),crit,angle:p.aim});
+  const shots=1+p.multi;
+  for(let i=0;i<shots;i++){
+    const spread=(i-(shots-1)/2)*.055;
+    const aa=p.aim+spread;
+    world.arrows.push({x:p.x+Math.cos(aa)*20,y:p.y+Math.sin(aa)*20,
+    vx:Math.cos(aa)*speed,vy:Math.sin(aa)*speed,life:p.range/speed,
+    damage,pierce:p.pierce,hit:new Set(),crit,angle:aa,r:2*p.arrowSize,elemental:true});
+  }
   world.arrowCount++;
   if(crit){world.crits++; world.shake=Math.max(world.shake,4); burst(p.x+Math.cos(p.aim)*26,p.y+Math.sin(p.aim)*26,9,1.8);}
   if(p.windstep){p.dashX=Math.cos(p.aim);p.dashY=Math.sin(p.aim); p.windTimer=.25;}
   p.shotClock=1/p.fireRate;
+  if(perfect && p.heaven) rainArrows(p.x+Math.cos(p.aim)*260,p.y+Math.sin(p.aim)*260,4);
   p.draw=0;
 }
 
+function rainArrows(x,y,n=4){
+  for(let i=0;i<n;i++) setTimeout(()=>{if(!world||state!=="playing")return; const ox=x+(Math.random()-.5)*180,oy=y+(Math.random()-.5)*180; world.arrows.push({x:ox,y:oy-280,vx:0,vy:520,life:.65,damage:world.player.drawDamage*1.4,pierce:1,hit:new Set(),crit:true,angle:Math.PI/2,r:4}); burst(ox,oy,5,1.1);},i*70);
+}
 function dash(){
   const p=world.player;
   if(p.dashCooldown>0) return;
@@ -152,11 +181,18 @@ function update(dt){
     for(const e of w.enemies){
       if(a.hit.has(e.id)) continue;
       if(Math.hypot(a.x-e.x,a.y-e.y)<a.r+e.r+4){
-        a.hit.add(e.id);e.hp-=a.damage;e.hitFlash=.08;
-        if(p.bleed)e.bleed=.9;
+        a.hit.add(e.id);
+        let mult=1;
+        if(e.hp/e.maxHp<.2 && p.executioner) mult*=1.5;
+        if(e.marked) mult*=1.3;
+        e.hp-=a.damage*mult;e.hitFlash=.08;
+        if(p.ember)e.burn=1.2;
+        if(p.frost)e.slow=1.4;
+        if(p.venom)e.poison=2.2;
+        if(p.bleed)e.bleed=.9; applyArrowElement(e);
         burst(e.x,e.y,a.crit?8:4,a.crit?1.5:.7);
         w.shake=Math.max(w.shake,a.crit?5:2);
-        if(e.hp<=0){w.kills++;gainXp(e.type==="brute"?3:1); burst(e.x,e.y,12,1.4);}
+        if(e.hp<=0){w.kills++;p.chainCount=p.chain?Math.min(20,p.chainCount+1):0;if(p.predator)p.speed=Math.min(380,p.speed+5);gainXp(e.type==="brute"?3:1); burst(e.x,e.y,12,1.4);}
         else if(a.pierce<=0){a.life=0;} else a.pierce--;
       }
     }
@@ -184,9 +220,14 @@ function update(dt){
   }
   for(const e of w.enemies){
     const a=Math.atan2(p.y-e.y,p.x-e.x);
-    const sp=e.speed*(e.type==="wolf"?1.12:1);
+    const sp=e.speed*(e.type==="wolf"?1.12:1)*(e.slow?0.55:1);
     e.x+=Math.cos(a)*sp*dt;e.y+=Math.sin(a)*sp*dt;
     if(e.bleed){e.bleed-=dt;e.hp-=7*dt;}
+    if(e.burn){e.burn-=dt;e.hp-=11*dt;}
+    if(e.poison){e.poison-=dt;e.hp-=8*dt;}
+    if(e.slow)e.slow=Math.max(0,e.slow-dt);
+    if(e.marked)e.marked=Math.max(0,e.marked-dt);
+
     if(e.hitFlash)e.hitFlash-=dt;
     if(Math.hypot(e.x-p.x,e.y-p.y)<e.r+p.r){
       p.hp-=e.damage*dt; w.flash=Math.max(w.flash,.18);
@@ -279,7 +320,8 @@ function drawPlayer(p){
   ctx.restore();
 }
 function drawArrow(a){
-  ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.angle);ctx.strokeStyle=a.crit?"#fff1a8":"#d5ffe2";ctx.shadowBlur=a.crit?20:8;ctx.shadowColor=a.crit?"#fff1a8":"#7cff9d";ctx.lineWidth=a.crit?3:2;
+  const glow=a.crit?"#fff1a8":a.elemental?"#9de9ff":"#d5ffe2";
+  ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.angle);ctx.strokeStyle=glow;ctx.shadowBlur=a.crit?20:10;ctx.shadowColor=glow;ctx.lineWidth=a.crit?3:2;
   ctx.beginPath();ctx.moveTo(-13,0);ctx.lineTo(14,0);ctx.stroke();ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(8,-4);ctx.moveTo(14,0);ctx.lineTo(8,4);ctx.stroke();ctx.restore();
 }
 function drawEnemyArrow(b){
