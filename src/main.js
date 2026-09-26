@@ -255,14 +255,17 @@ function update(dt){
   if(w.boss){
     const b=w.boss, a=Math.atan2(p.y-b.y,p.x-b.x);
     b.x+=Math.cos(a)*b.speed*dt; b.y+=Math.sin(a)*b.speed*dt;
-    b.shotClock-=dt; if(b.shotClock<=0){fireBossArrow(); b.shotClock=Math.max(.48,1.2-w.time/1600);}
+    b.phase=b.hp>b.maxHp*.66?1:b.hp>b.maxHp*.33?2:3;
+    b.shotClock-=dt;
+    if(b.phase===3){b.charge+=dt;if(b.charge>.9){fireBossArrow();b.charge=0;b.shotClock=.72;}}
+    else if(b.shotClock<=0){fireBossArrow();b.shotClock=Math.max(.42,(b.phase===2?.82:1.2)-w.time/2200);}
     if(b.hitFlash)b.hitFlash-=dt;
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r+4){p.hp-=24*dt;w.flash=Math.max(w.flash,.18);}
   }
   if(w.boss){
     for(const a of w.arrows){
       if(Math.hypot(a.x-w.boss.x,a.y-w.boss.y)<a.r+w.boss.r){
-        w.boss.hp-=a.damage; w.boss.hitFlash=.08; a.life=0;
+        w.boss.hp-=a.damage*(w.boss.phase===3?1.2:1); w.boss.hitFlash=.08; a.life=0;
         burst(w.boss.x,w.boss.y,a.crit?8:4,a.crit?1.4:.7); w.shake=Math.max(w.shake,a.crit?5:2);
       }
     }
@@ -301,7 +304,7 @@ function spawnBoss(){
   const side=Math.floor(Math.random()*4), pad=120;
   const x=side===0?pad:side===1?innerWidth-pad:Math.random()*innerWidth;
   const y=side===2?pad:side===3?innerHeight-pad:Math.random()*innerHeight;
-  world.boss={type:"huntmaster",x,y,r:34,hp:1250,maxHp:1250,speed:58,shotClock:1.2,phase:1,hitFlash:0};
+  world.boss={type:"huntmaster",x,y,r:34,hp:1650,maxHp:1650,speed:58,shotClock:1.2,phase:1,hitFlash:0,charge:0};
   world.rings.push({x:innerWidth/2,y:innerHeight/2,r:40,life:1.8,max:1.8,boss:true});
 }
 
@@ -383,12 +386,13 @@ function drawEnemyArrow(b){
 }
 function drawBoss(b){
   ctx.save();ctx.translate(b.x,b.y);ctx.fillStyle=b.hitFlash?"#fff5f0":"#6d3e4d";ctx.shadowBlur=28;ctx.shadowColor="#ff725f";ctx.beginPath();ctx.arc(0,0,b.r,0,TAU);ctx.fill();ctx.shadowBlur=0;
-  ctx.strokeStyle="#ffd2c8";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,b.r+7,0,TAU);ctx.stroke();
+  ctx.strokeStyle=b.phase===3?"#fff0a0":"#ffd2c8";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,b.r+7,0,TAU);ctx.stroke();
   ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(-45,-52,90,5);ctx.fillStyle="#ff8578";ctx.fillRect(-45,-52,90*(b.hp/b.maxHp),5);ctx.restore();
 }
 function drawEnemy(e){
-  ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle=e.hitFlash?"#effff3":e.type==="brute"?"#5e8d65":e.type==="wolf"?"#719d7b":"#426b4c";
+  ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle=e.hitFlash?"#effff3":e.elite?"#b88b52":e.type==="brute"?"#5e8d65":e.type==="wolf"?"#719d7b":e.type==="shield"?"#6c7d88":e.type==="wisp"?"#8f8bd0":e.type==="hunter"?"#a06c66":e.type==="mimic"?"#9c6e9d":"#426b4c";
   ctx.shadowBlur=8;ctx.shadowColor="#3fff82";ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.shadowBlur=0;
+  if(e.elite){ctx.strokeStyle="#ffd37a";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r+4,0,TAU);ctx.stroke();}
   if(e.hp<e.maxHp){ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(-e.r,-e.r-7,e.r*2,2);ctx.fillStyle="#baffcf";ctx.fillRect(-e.r,-e.r-7,e.r*2*(e.hp/e.maxHp),2);}
   ctx.restore();
 }
