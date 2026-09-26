@@ -11,6 +11,7 @@ const menuPanel = document.querySelector("#menu-panel");
 const menuPanelTitle = document.querySelector("#menu-panel-title");
 const menuPanelBody = document.querySelector("#menu-panel-body");
 const pause = document.querySelector("#pause");
+const bossHud=document.querySelector("#boss-hud");
 const meta = JSON.parse(localStorage.getItem("arrowfall-meta") || '{"runs":0,"wins":0,"kills":0,"bestTime":0,"bestKills":0}');
 
 const TAU = Math.PI * 2;
@@ -352,6 +353,10 @@ function hudUpdate(){
   document.querySelector("#xp-text").textContent=`${Math.floor(w.xp)} / ${w.nextXp}`;
   document.querySelector("#xp-fill").style.width=(w.xp/w.nextXp*100)+"%";
   document.querySelector("#dash-ready").textContent=p.dashCooldown<=0?"DASH READY":`DASH ${p.dashCooldown.toFixed(1)}`;
+  document.querySelector("#health-fill").style.width=clamp(p.hp/100,0,1)*100+"%";
+  document.querySelector("#health-text").textContent=Math.max(0,Math.ceil(p.hp))+" HP";
+  document.querySelector("#event-banner").textContent=w.eventTimer?({"migration":"THE MIGRATION","hunt":"THE HUNT","bloodmoon":"BLOOD MOON","quiet":"QUIET GROVE"}[w.event]||""):"";
+  if(w.boss){bossHud.classList.remove("hidden");document.querySelector("#boss-fill").style.width=clamp(w.boss.hp/w.boss.maxHp,0,1)*100+"%";document.querySelector("#boss-phase").textContent="PHASE "+(["I","II","III"][w.boss.phase-1]||"I");}else bossHud.classList.add("hidden");
 }
 
 function draw(){
@@ -375,79 +380,13 @@ function draw(){
 
 function drawForest(){
   const cell=96;
-  ctx.globalAlpha=.25;ctx.strokeStyle="#4a7955";ctx.lineWidth=1;
-  for(let x=-cell;x<innerWidth+cell;x+=cell)for(let y=-cell;y<innerHeight+cell;y+=cell){
-    const n=(x*13+y*7)%29; if(n<10){ctx.beginPath();ctx.arc(x+30,y+42,18+(n%7),0,TAU);ctx.stroke();}
-  }
-  ctx.globalAlpha=.18;ctx.fillStyle="#3d704c";
-  for(let i=0;i<35;i++){const x=(i*173)%innerWidth,y=(i*97)%innerHeight,r=10+(i%5)*5;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();}
-  ctx.globalAlpha=1;
-}
-function drawPlayer(p){
-  const a=p.aim;
-  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);
-  ctx.fillStyle=p.dash>0?"#d9ffe5":"#a8efbe";ctx.shadowBlur=18;ctx.shadowColor="#67ff9b";
-  ctx.beginPath();ctx.arc(0,0,p.r,0,TAU);ctx.fill();ctx.shadowBlur=0;
-  ctx.strokeStyle="#e7fff0";ctx.lineWidth=3;ctx.beginPath();ctx.arc(4,0,17,-.95,.95);ctx.stroke();
-  ctx.strokeStyle="#79c98f";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(4,-16);ctx.lineTo(4,16);ctx.stroke();
-  ctx.restore();
-}
-function drawArrow(a){
-  const glow=a.crit?"#fff1a8":a.elemental?"#9de9ff":"#d5ffe2";
-  ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.angle);ctx.strokeStyle=glow;ctx.shadowBlur=a.crit?20:10;ctx.shadowColor=glow;ctx.lineWidth=a.crit?3:2;
-  ctx.beginPath();ctx.moveTo(-13,0);ctx.lineTo(14,0);ctx.stroke();ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(8,-4);ctx.moveTo(14,0);ctx.lineTo(8,4);ctx.stroke();ctx.restore();
-}
-function drawEnemyArrow(b){
-  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));ctx.strokeStyle="#ffb0a8";ctx.shadowBlur=14;ctx.shadowColor="#ff6d62";ctx.lineWidth=3;
-  ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(10,0);ctx.stroke();ctx.restore();
-}
-function drawBoss(b){
-  ctx.save();ctx.translate(b.x,b.y);ctx.fillStyle=b.hitFlash?"#fff5f0":"#6d3e4d";ctx.shadowBlur=28;ctx.shadowColor="#ff725f";ctx.beginPath();ctx.arc(0,0,b.r,0,TAU);ctx.fill();ctx.shadowBlur=0;
-  ctx.strokeStyle=b.phase===3?"#fff0a0":"#ffd2c8";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,b.r+7,0,TAU);ctx.stroke();
-  ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(-45,-52,90,5);ctx.fillStyle="#ff8578";ctx.fillRect(-45,-52,90*(b.hp/b.maxHp),5);ctx.restore();
-}
-function drawEnemy(e){
-  ctx.save();ctx.translate(e.x,e.y);ctx.globalAlpha=e.spawnGrace>0?clamp(1-e.spawnGrace/.45,0,1):1;ctx.fillStyle=e.hitFlash?"#effff3":e.elite?"#b88b52":e.type==="brute"?"#5e8d65":e.type==="wolf"?"#719d7b":e.type==="shield"?"#6c7d88":e.type==="wisp"?"#8f8bd0":e.type==="hunter"?"#a06c66":e.type==="mimic"?"#9c6e9d":"#426b4c";
-  ctx.shadowBlur=8;ctx.shadowColor="#3fff82";ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.shadowBlur=0;
-  if(e.elite){ctx.strokeStyle="#ffd37a";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r+4,0,TAU);ctx.stroke();}
-  if(e.hp<e.maxHp){ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(-e.r,-e.r-7,e.r*2,2);ctx.fillStyle="#baffcf";ctx.fillRect(-e.r,-e.r-7,e.r*2*(e.hp/e.maxHp),2);}
-  ctx.globalAlpha=1;ctx.restore();
+  ctx.globalAlpha=.16;ctx.strokeStyle="#4a7955";ctx.lineWidth=1;
+  for(let x=-cell;x<innerWidth+cell;x+=cell)for(let y=-cell;y<innerHeight+cell;y+=cell){const n=(x*13+y*7)%29;if(n<10){ctx.beginPath();ctx.arc(x+30,y+42,18+(n%7),0,TAU);ctx.stroke();}}
+  ctx.globalAlpha=.14;ctx.fillStyle="#3d704c";
+  for(let i=0;i<42;i++){const x=(i*173)%innerWidth,y=(i*97)%innerHeight,r=10+(i%5)*5;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();}
+  ctx.globalAlpha=.22;ctx.strokeStyle="#79a884";ctx.lineWidth=3;
+  const landmarks=[[innerWidth*.18,innerHeight*.24,"SHRINE"],[innerWidth*.78,innerHeight*.25,"TOWER"],[innerWidth*.20,innerHeight*.76,"CAMP"],[innerWidth*.80,innerHeight*.75,"GROVE"],[innerWidth*.50,innerHeight*.50,"CLEARING"]];
+  for(const [x,y,label] of landmarks){ctx.beginPath();ctx.arc(x,y,label==="CLEARING"?70:42,0,TAU);ctx.stroke();if(label!=="CLEARING"){ctx.beginPath();ctx.moveTo(x-18,y);ctx.lineTo(x+18,y);ctx.moveTo(x,y-18);ctx.lineTo(x,y+18);ctx.stroke();}ctx.font="700 8px Inter, sans-serif";ctx.textAlign="center";ctx.fillStyle="rgba(180,235,194,.28)";ctx.fillText(label,x,y+58);}
+  ctx.globalAlpha=.08;ctx.fillStyle="#b7f3c7";ctx.beginPath();ctx.arc(innerWidth*.5,innerHeight*.5,Math.min(innerWidth,innerHeight)*.43,0,TAU);ctx.fill();ctx.globalAlpha=1;
 }
 
-function loop(t){
-  if (!world || (state !== "playing" && state !== "levelup")) return;
-  const dt=Math.min(.033,(t-last)/1000);last=t;
-  if(state==="playing") update(dt);
-  if(state==="playing"||state==="levelup") draw();
-  if(state==="playing"||state==="levelup") raf=requestAnimationFrame(loop);
-}
-function toWorldEvent(e){
-  const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;
-}
-addEventListener("mousemove",toWorldEvent);
-addEventListener("mousedown",e=>{if(e.button===0)mouse.down=true;});
-addEventListener("mouseup",e=>{if(e.button===0)mouse.down=false;});
-addEventListener("keydown",e=>{keys.add(e.code);if(e.code==="Space"){e.preventDefault();if(state==="playing")dash();}});
-addEventListener("keyup",e=>keys.delete(e.code));
-document.querySelector("#play-button").onclick=start;
-document.querySelector("#restart-button").onclick=start;
-document.querySelector("#resume-button").onclick=()=>{if(state==="paused"){state="playing";pause.classList.add("hidden");last=performance.now();raf=requestAnimationFrame(loop);}};
-document.querySelector("#quit-button").onclick=()=>{state="menu";pause.classList.add("hidden");hud.classList.add("hidden");results.classList.add("hidden");titleScreen.classList.remove("hidden");titleScreen.classList.add("active");};
-document.querySelector("#menu-panel-close").onclick=()=>menuPanel.classList.add("hidden");
-document.querySelectorAll(".menu-panel-btn").forEach(btn=>btn.onclick=()=>openMenuPanel(btn.dataset.panel));
-function openMenuPanel(kind){
-  menuPanel.classList.remove("hidden");
-  if(kind==="arsenal"){
-    menuPanelTitle.textContent="ARSENAL";
-    menuPanelBody.innerHTML='<div class="arsenal-grid">'+[["THE BOW","One weapon. Infinite mastery."],["QUICK SHOT","Fast release for pressure."],["DRAWN SHOT","Charge for power and reach."],["PERFECT DRAW","Release near full draw for a critical arrow."],["WINDSTEP","Fire, move, and reposition."],["PHANTOM STEP","Dash becomes another attack."]].map(x=>'<div class="arsenal-item"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>').join('')+'</div><div class="panel-copy">Every upgrade exists to make the archer more interesting. There are no filler weapons.</div>';
-  }else if(kind==="log"){
-    menuPanelTitle.textContent="HUNTER'S LOG";
-    const enemies=["Crawler","Wolf","Brute","Shieldbearer","Wisp","Hunter","Burrower","Mimic","Huntmaster"],evolutions=["Barrage","Worldpiercer","Deadshot","Hellfire","Thunderstorm","Phantom Hunt"];
-    menuPanelBody.innerHTML='<div class="panel-copy">FIELD NOTES</div><div class="log-list">'+enemies.map(x=>'<div class="log-row"><span>'+x+'</span><span>ENCOUNTERED</span></div>').join('')+'</div><div class="panel-copy">ARROW EVOLUTIONS</div><div class="log-list">'+evolutions.map(x=>'<div class="log-row"><span>'+x.toUpperCase()+'</span><span>ARROWCRAFT</span></div>').join('')+'</div>';
-  }else{
-    menuPanelTitle.textContent="HUNTER PROFILE";
-    menuPanelBody.innerHTML='<div class="result-grid"><div><b>'+meta.runs+'</b><span>HUNTS</span></div><div><b>'+meta.wins+'</b><span>VICTORIES</span></div><div><b>'+meta.bestKills+'</b><span>BEST HUNT</span></div><div><b>'+meta.kills+'</b><span>TOTAL HUNTED</span></div></div><div class="panel-copy">Your records are stored locally in this browser.</div>';
-  }
-}
-addEventListener("keydown",e=>{if(e.code==="Escape"||e.code==="KeyP"){if(state==="playing"){state="paused";pause.classList.remove("hidden");}else if(state==="paused"){state="playing";pause.classList.add("hidden");last=performance.now();raf=requestAnimationFrame(loop);}}});
-setInterval(()=>{ if(world&&state==="playing"&&world.evolutionLog.length){ const name=world.evolutionLog.shift(); const old=titleScreen.querySelector(".evolution-toast"); if(old)old.remove(); const toast=document.createElement("div");toast.className="evolution-toast";toast.textContent="EVOLUTION • "+name;document.body.appendChild(toast);setTimeout(()=>toast.remove(),2200); }},120);
