@@ -16,10 +16,12 @@
         <div class="eyebrow">A 20-MINUTE ARCHERY SURVIVOR</div>
         <h1>ARROW<span>FALL</span></h1>
         <p>The Hunt Begins</p>
-        <button id="play-button">PLAY HUNT</button>
+        <div class="menu-buttons"><button id="play-button">PLAY HUNT</button><button class="secondary menu-panel-btn" data-panel="arsenal">ARSENAL</button><button class="secondary menu-panel-btn" data-panel="log">HUNTER'S LOG</button><button class="secondary menu-panel-btn" data-panel="options">OPTIONS</button></div>
         <div class="controls-line">WASD MOVE &nbsp;•&nbsp; MOUSE AIM &nbsp;•&nbsp; HOLD / RELEASE FIRE &nbsp;•&nbsp; SPACE DASH</div>
       </div>
     </div>
+
+      <div id="menu-panel" class="menu-panel hidden"><div class="panel"><div class="eyebrow" id="menu-panel-eyebrow">ARROWFALL</div><h2 id="menu-panel-title">ARSENAL</h2><div id="menu-panel-body"></div><button id="menu-panel-close">BACK</button></div></div></div><div id="pause" class="overlay hidden"><div class="panel pause-panel"><div class="eyebrow">THE HUNT PAUSED</div><h2>TAKE YOUR SHOT</h2><button id="resume-button">RESUME HUNT</button><button id="quit-button" class="secondary">RETURN TO CAMP</button></div></div>
 
     <div id="hud" class="hud hidden">
       <div class="hud-left">
