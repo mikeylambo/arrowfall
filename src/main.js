@@ -75,18 +75,39 @@ function applyArrowElement(e){
     for(const t of targets){t.hp-=12*(p.stormPower||1);burst(t.x,t.y,7,1.4);}
   }
 }
-function spawnEnemy(){
-  const angle=Math.random()*TAU;
-  const radius=Math.max(innerWidth,innerHeight)*.62+Math.random()*220;
-  const x=world.player.x+Math.cos(angle)*radius, y=world.player.y+Math.sin(angle)*radius;
-  const roll=Math.random();
-  const enemy = roll<.14
-    ? {type:"wolf",r:10,hp:30,maxHp:30,speed:115,damage:10}
-    : roll<.22
-    ? {type:"brute",r:17,hp:90,maxHp:90,speed:45,damage:18}
-    : {type:"crawler",r:11,hp:24,maxHp:24,speed:62,damage:8};
-  enemy.x=x; enemy.y=y; enemy.id=world.enemyId++;
-  world.enemies.push(enemy);
+function spawnEnemy(kind=null,elite=false){
+  const angle=Math.random()*TAU, radius=Math.max(innerWidth,innerHeight)*.62+Math.random()*220;
+  const x=world.player.x+Math.cos(angle)*radius,y=world.player.y+Math.sin(angle)*radius;
+  const type=kind||pick(["crawler","wolf","brute","shield","wisp","hunter","burrower","mimic"]);
+  const base={
+    crawler:[11,24,62,8,1],wolf:[10,30,115,10,1],brute:[17,90,45,18,3],
+    shield:[14,58,52,13,2],wisp:[9,28,76,12,2],hunter:[12,42,48,7,3],
+    burrower:[12,48,70,15,2],mimic:[13,54,58,16,3]
+  }[type];
+  const e={type,r:base[0],hp:base[1],maxHp:base[1],speed:base[2],damage:base[3],xp:base[4],x,y,id:world.enemyId++,elite:false,eliteType:null,hitFlash:0,bleed:0,burn:0,poison:0,slow:0,marked:0,shotClock:1+Math.random()};
+  if(elite){
+    const mod=pick(["frenzied","armored","regenerating","vampiric","explosive","swift"]);
+    e.elite=true;e.eliteType=mod;e.hp*=1.65;e.maxHp=e.hp;
+    if(mod==="frenzied"||mod==="swift")e.speed*=1.45;
+    if(mod==="armored")e.armor=.28;
+    if(mod==="regenerating")e.regen=8;
+    if(mod==="vampiric")e.lifeSteal=.06;
+    if(mod==="explosive")e.explosive=true;
+  }
+  world.enemies.push(e);
+}
+function spawnFormation(kind){
+  const n=kind==="ring"?10:kind==="crossfire"?8:7;
+  for(let i=0;i<n;i++){
+    spawnEnemy(pick(["crawler","wolf","shield","wisp"]));
+    const e=world.enemies[world.enemies.length-1],cx=world.player.x,cy=world.player.y;
+    if(kind==="ring"){const a=i/n*TAU;e.x=cx+Math.cos(a)*360;e.y=cy+Math.sin(a)*360;}
+    if(kind==="crescent"){const a=-1.25+i/(n-1)*2.5;e.x=cx+Math.cos(a)*430;e.y=cy+Math.sin(a)*430;}
+    if(kind==="funnel"){e.x=cx+(i-(n-1)/2)*70;e.y=cy-480-Math.abs(i-(n-1)/2)*20;}
+    if(kind==="spear"){e.x=cx+(i-(n-1)/2)*45;e.y=cy-500-i*18;}
+    if(kind==="crossfire"){e.x=i%2?cx+520:cx-520;e.y=cy+(i-Math.floor(n/2))*75;}
+    if(kind==="pursuit"){e.x=cx+(Math.random()-.5)*700;e.y=cy+(Math.random()-.5)*700;}
+  }
 }
 
 function fireArrow(){
