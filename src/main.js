@@ -76,15 +76,21 @@ function applyArrowElement(e){
   }
 }
 function spawnEnemy(kind=null,elite=false){
-  const angle=Math.random()*TAU, radius=Math.max(innerWidth,innerHeight)*.62+Math.random()*220;
-  const x=world.player.x+Math.cos(angle)*radius,y=world.player.y+Math.sin(angle)*radius;
+  const angle=Math.random()*TAU;
+  const halfW=innerWidth/2+55,halfH=innerHeight/2+55;
+  const edge=Math.random()*4;
+  let x,y;
+  if(edge<1){x=Math.random()*innerWidth;y=-45;}else if(edge<2){x=innerWidth+45;y=Math.random()*innerHeight;}else if(edge<3){x=Math.random()*innerWidth;y=innerHeight+45;}else{x=-45;y=Math.random()*innerHeight;}
+  const dx=x-world.player.x,dy=y-world.player.y;
+  const scale=Math.max(1,Math.hypot(dx,dy)/Math.hypot(halfW,halfH));
+  x=world.player.x+dx/scale;y=world.player.y+dy/scale;
   const type=kind||pick(["crawler","wolf","brute","shield","wisp","hunter","burrower","mimic"]);
   const base={
     crawler:[11,24,62,8,1],wolf:[10,30,115,10,1],brute:[17,90,45,18,3],
     shield:[14,58,52,13,2],wisp:[9,28,76,12,2],hunter:[12,42,48,7,3],
     burrower:[12,48,70,15,2],mimic:[13,54,58,16,3]
   }[type];
-  const e={type,r:base[0],hp:base[1],maxHp:base[1],speed:base[2],damage:base[3],xp:base[4],x,y,id:world.enemyId++,elite:false,eliteType:null,hitFlash:0,bleed:0,burn:0,poison:0,slow:0,marked:0,shotClock:1+Math.random()};
+  const e={type,r:base[0],hp:base[1],maxHp:base[1],speed:base[2],damage:base[3],xp:base[4],x,y,id:world.enemyId++,elite:false,eliteType:null,hitFlash:0,bleed:0,burn:0,poison:0,slow:0,marked:0,shotClock:1+Math.random(),spawnGrace:.45,spawnX:x,spawnY:y};
   if(elite){
     const mod=pick(["frenzied","armored","regenerating","vampiric","explosive","swift"]);
     e.elite=true;e.eliteType=mod;e.hp*=1.65;e.maxHp=e.hp;
@@ -205,11 +211,12 @@ function update(dt){
   if(!mouse.down && p.draw>0){ fireArrow(); }
   w.spawnClock-=dt;
   if(w.time>=1140 && !w.bossSpawned){ spawnBoss(); w.bossSpawned=true; }
-  const targetRate=Math.max(.055,.52-w.time*.012);
+  const targetRate=Math.max(.075,1.65-w.time*.075);
   if(w.spawnClock<=0){
-    const eliteChance=Math.min(.16,Math.max(0,(w.time-120)/900));
-    spawnEnemy(null,Math.random()<eliteChance);
-    if(w.time>35&&Math.random()<.12)spawnEnemy(null,Math.random()<.35);
+    const maxActive=Math.floor(12+Math.min(168,w.time*0.15));
+    const eliteChance=Math.min(.16,Math.max(0,(w.time-150)/900));
+    if(w.enemies.length<maxActive) spawnEnemy(null,Math.random()<eliteChance);
+    if(w.time>90&&w.enemies.length<maxActive&&Math.random()<.08)spawnEnemy(null,Math.random()<.25);
     if(w.time>150&&Math.random()<.055)spawnFormation(pick(["crescent","funnel","spear","ring","crossfire","pursuit"]));
     w.spawnClock=targetRate;
   }
@@ -274,6 +281,7 @@ function update(dt){
     const a=Math.atan2(p.y-e.y,p.x-e.x);
     const sp=e.speed*(e.type==="wolf"?1.12:1)*(e.slow?0.55:1);
     e.x+=Math.cos(a)*sp*dt;e.y+=Math.sin(a)*sp*dt;
+    if(e.spawnGrace>0){e.spawnGrace-=dt; e.x=e.spawnX; e.y=e.spawnY; continue;}
     if(e.bleed){e.bleed-=dt;e.hp-=7*dt;}
     if(e.regen)e.hp=Math.min(e.maxHp,e.hp+e.regen*dt);
     if(e.burn){e.burn-=dt;e.hp-=11*dt;}
@@ -390,11 +398,11 @@ function drawBoss(b){
   ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(-45,-52,90,5);ctx.fillStyle="#ff8578";ctx.fillRect(-45,-52,90*(b.hp/b.maxHp),5);ctx.restore();
 }
 function drawEnemy(e){
-  ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle=e.hitFlash?"#effff3":e.elite?"#b88b52":e.type==="brute"?"#5e8d65":e.type==="wolf"?"#719d7b":e.type==="shield"?"#6c7d88":e.type==="wisp"?"#8f8bd0":e.type==="hunter"?"#a06c66":e.type==="mimic"?"#9c6e9d":"#426b4c";
+  ctx.save();ctx.translate(e.x,e.y);ctx.globalAlpha=e.spawnGrace>0?clamp(1-e.spawnGrace/.45,0,1):1;ctx.fillStyle=e.hitFlash?"#effff3":e.elite?"#b88b52":e.type==="brute"?"#5e8d65":e.type==="wolf"?"#719d7b":e.type==="shield"?"#6c7d88":e.type==="wisp"?"#8f8bd0":e.type==="hunter"?"#a06c66":e.type==="mimic"?"#9c6e9d":"#426b4c";
   ctx.shadowBlur=8;ctx.shadowColor="#3fff82";ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.shadowBlur=0;
   if(e.elite){ctx.strokeStyle="#ffd37a";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r+4,0,TAU);ctx.stroke();}
   if(e.hp<e.maxHp){ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(-e.r,-e.r-7,e.r*2,2);ctx.fillStyle="#baffcf";ctx.fillRect(-e.r,-e.r-7,e.r*2*(e.hp/e.maxHp),2);}
-  ctx.restore();
+  ctx.globalAlpha=1;ctx.restore();
 }
 
 function loop(t){
