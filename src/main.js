@@ -392,3 +392,122 @@ function drawForest(){
   ctx.globalAlpha=.08;ctx.fillStyle="#b7f3c7";ctx.beginPath();ctx.arc(innerWidth*.5,innerHeight*.5,Math.min(innerWidth,innerHeight)*.43,0,TAU);ctx.fill();ctx.globalAlpha=1;
 }
 
+
+
+function drawPlayer(p){
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  ctx.rotate(p.aim);
+  const moving = keys.has("KeyW")||keys.has("KeyA")||keys.has("KeyS")||keys.has("KeyD");
+  ctx.shadowBlur=18; ctx.shadowColor="#9dffbd";
+  ctx.fillStyle="#d9f5df";
+  ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#183323";
+  ctx.beginPath(); ctx.arc(-3,-3,7,0,TAU); ctx.fill();
+  ctx.strokeStyle="#baffcf"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(4,-10); ctx.lineTo(4,10); ctx.stroke();
+  ctx.strokeStyle="#f1f7e9"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(5,-13); ctx.quadraticCurveTo(18,0,5,13); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6,-12); ctx.lineTo(27,0); ctx.lineTo(6,12); ctx.stroke();
+  if(moving){ctx.globalAlpha=.25;ctx.fillStyle="#9dffbd";ctx.beginPath();ctx.arc(-16,0,7,0,TAU);ctx.fill();}
+  ctx.restore();
+}
+
+function drawArrow(a){
+  ctx.save();
+  ctx.translate(a.x,a.y); ctx.rotate(a.angle ?? Math.atan2(a.vy,a.vx));
+  const glow=a.crit?"#fff2a8":a.phantom?"#c7a8ff":world.player.ember?"#ff9a5c":world.player.storm?"#9ddcff":"#d9f5df";
+  ctx.shadowBlur=a.crit?20:10;ctx.shadowColor=glow;
+  ctx.strokeStyle=glow;ctx.lineWidth=a.r>3?3:2;
+  ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(13,0);ctx.stroke();
+  ctx.fillStyle=glow;ctx.beginPath();ctx.moveTo(13,0);ctx.lineTo(6,-4);ctx.lineTo(6,4);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+function drawEnemy(e){
+  ctx.save(); ctx.translate(e.x,e.y);
+  ctx.globalAlpha=e.spawnGrace>0?clamp(1-e.spawnGrace/.45,0,1):1;
+  ctx.shadowBlur=e.elite?14:5;ctx.shadowColor=e.elite?"#ffb36b":"#6f9b78";
+  const colors={crawler:"#718d73",wolf:"#91a77d",brute:"#9b765b",shield:"#7896a0",wisp:"#9bb8cf",hunter:"#c7a76b",burrower:"#8c705f",mimic:"#b08a68"};
+  ctx.fillStyle=colors[e.type]||"#829b86";
+  ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();
+  if(e.type==="shield"){ctx.fillStyle="#273c35";ctx.fillRect(-e.r,-e.r*.8,e.r*1.4,e.r*1.6);}
+  if(e.type==="wisp"){ctx.globalAlpha*=.8;ctx.strokeStyle="#d2efff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r+5,0,TAU);ctx.stroke();}
+  if(e.type==="hunter"){ctx.strokeStyle="#f0d18a";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(8,0);ctx.stroke();}
+  if(e.elite){ctx.globalAlpha=1;ctx.strokeStyle="#ffb36b";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r+4,0,TAU);ctx.stroke();}
+  if(e.hitFlash){ctx.globalAlpha=1;ctx.fillStyle="#ffffff";ctx.beginPath();ctx.arc(0,0,e.r+2,0,TAU);ctx.fill();}
+  ctx.restore();
+  if(e.hp<e.maxHp){ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(e.x-e.r,e.y-e.r-8,e.r*2,3);ctx.fillStyle="#baffcf";ctx.fillRect(e.x-e.r,e.y-e.r-8,e.r*2*clamp(e.hp/e.maxHp,0,1),3);}
+}
+
+function drawEnemyArrow(b){
+  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));
+  ctx.shadowBlur=12;ctx.shadowColor="#ff7f73";ctx.strokeStyle="#ffb0a7";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(10,0);ctx.stroke();ctx.restore();
+}
+
+function drawBoss(b){
+  ctx.save();ctx.translate(b.x,b.y);
+  ctx.shadowBlur=30;ctx.shadowColor="#ff806f";
+  ctx.fillStyle=b.hitFlash?"#fff":"#3a1d1d";ctx.strokeStyle="#ff9a8f";ctx.lineWidth=4;
+  ctx.beginPath();ctx.arc(0,0,b.r,0,TAU);ctx.fill();ctx.stroke();
+  ctx.shadowBlur=0;ctx.strokeStyle="#ffd2a8";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(-16,-18);ctx.lineTo(18,18);ctx.moveTo(-18,18);ctx.lineTo(16,-18);ctx.stroke();
+  if(b.phase===3){ctx.globalAlpha=.35+.25*Math.sin(performance.now()/80);ctx.strokeStyle="#ff6f62";ctx.lineWidth=6;ctx.beginPath();ctx.arc(0,0,b.r+10,0,TAU);ctx.stroke();}
+  ctx.restore();
+}
+
+function loop(now){
+  if(!world || !["playing","levelup"].includes(state)) return;
+  const dt=Math.min(.033,(now-last)/1000||0); last=now;
+  if(state==="playing") update(dt);
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+
+function togglePause(){
+  if(state==="playing"){state="paused";pause.classList.remove("hidden");}
+  else if(state==="paused"){state="playing";pause.classList.add("hidden");last=performance.now();raf=requestAnimationFrame(loop);}
+}
+
+document.querySelector("#play-button").addEventListener("click",start);
+document.querySelector("#restart-button").addEventListener("click",start);
+document.querySelector("#resume-button").addEventListener("click",()=>{if(state==="paused")togglePause();});
+document.querySelector("#quit-button").addEventListener("click",()=>{
+  if(world){state="menu";pause.classList.add("hidden");hud.classList.add("hidden");bossHud.classList.add("hidden");results.classList.add("hidden");}
+  titleScreen.classList.remove("hidden");titleScreen.classList.add("active");
+});
+document.querySelector("#menu-panel-close").addEventListener("click",()=>{
+  menuPanel.classList.add("hidden");
+});
+document.querySelectorAll(".menu-panel-btn").forEach(btn=>btn.addEventListener("click",()=>{
+  const panel=btn.dataset.panel;
+  menuPanelTitle.textContent=panel==="arsenal"?"ARSENAL":panel==="log"?"HUNTER'S LOG":"OPTIONS";
+  if(panel==="arsenal") menuPanelBody.innerHTML="<div class='log-grid'><div><b>THE BOW</b><span>Quick, drawn, and perfect releases.</span></div><div><b>WINDSTEP</b><span>Fire to move with the wind.</span></div><div><b>PHANTOM STEP</b><span>Dash to send spectral arrows.</span></div><div><b>PERFECT DRAW</b><span>Release inside the bright window for a critical shot.</span></div></div>";
+  else if(panel==="log") menuPanelBody.innerHTML="<div class='log-grid'>"+["CRAWLER","WOLF","BRUTE","SHIELDBEARER","WISP","HUNTER","BURROWER","MIMIC","THE HUNTMASTER","BARRAGE","WORLDPIERCER","DEADSHOT","HELLFIRE","THUNDERSTORM","PHANTOM HUNT"].map(x=>"<div><b>"+x+"</b><span>ENCOUNTERED</span></div>").join("")+"</div>";
+  else menuPanelBody.innerHTML="<div class='log-grid'><div><b>CONTROLS</b><span>WASD move • Mouse aim • Hold/release fire • Space dash • P / Esc pause.</span></div><div><b>HIGH CONTRAST</b><span><button id='contrast-toggle' class='secondary'>TOGGLE</button></span></div><div><b>PROFILE</b><span>"+meta.runs+" hunts • "+meta.wins+" victories • "+meta.kills+" total hunted</span></div></div>";
+  menuPanel.classList.remove("hidden");
+  const contrast=document.querySelector("#contrast-toggle");
+  if(contrast) contrast.onclick=()=>{document.body.classList.toggle("high-contrast");localStorage.setItem("arrowfall-contrast",document.body.classList.contains("high-contrast")?"1":"0");};
+}));
+if(localStorage.getItem("arrowfall-contrast")==="1")document.body.classList.add("high-contrast");
+
+addEventListener("mousemove",e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+addEventListener("mousedown",e=>{if(e.button===0 && state==="playing")mouse.down=true;});
+addEventListener("mouseup",e=>{if(e.button===0){mouse.down=false;if(state==="playing"&&world?.player?.draw>0)fireArrow();}});
+addEventListener("keydown",e=>{
+  if(["INPUT","TEXTAREA"].includes(document.activeElement?.tagName))return;
+  if(e.code==="Escape"||e.code==="KeyP"){e.preventDefault();if(state==="playing"||state==="paused")togglePause();return;}
+  if(e.code==="Space"){e.preventDefault();if(state==="playing")dash();return;}
+  keys.add(e.code);
+});
+addEventListener("keyup",e=>keys.delete(e.code));
+
+window.addEventListener("error",e=>{
+  console.error("Arrowfall runtime error:",e.error||e.message);
+  if(state==="playing"||state==="levelup"){
+    state="paused"; pause.classList.remove("hidden");
+    document.querySelector("#hint").textContent="A runtime error was caught. Reload to reset the hunt.";
+  }
+});
