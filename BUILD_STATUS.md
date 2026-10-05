@@ -8,7 +8,8 @@
 - Game live browser suite covers actual shooting, pause/resume, upgrade selection, results/retry, Camp, Range and reload; Deadeye painting/release; four boss spawn/phase/death checks; a combined evolved build. Screenshots are included in `evidence/` in the review bundle.
 
 - Gameplay browser tests: 4 passed. Stress gate: FAILED, 350 enemies, simulation p99 18.4 ms against 16.7 ms. This failure is retained in the evidence.
-- Production builds omit the development control API.
+- Production smoke passes: title and start flow, no browser errors, no development API even with `?dev=1`. Pixi vendor isolation avoids a production import/startup deadlock.
+- Clean `npm ci` from the packaged sibling shell archive passes.
 
 ## Acceptance still pending
 
