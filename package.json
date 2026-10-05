@@ -1,14 +1,36 @@
 {
   "name": "arrowfall",
-  "version": "0.1.0",
   "private": true,
+  "version": "2.0.0-dev",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run e2e",
+    "verify": "npm run check",
+    "certify:web": "npm run verify && slu-certify web",
+    "certify:mobile": "npm run verify && slu-certify mobile",
+    "certify:controller": "npm run verify && slu-certify controller",
+    "certify:release": "npm run verify && slu-certify release",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run tests/unit",
+    "e2e": "playwright test",
+    "preview": "vite preview --host 0.0.0.0",
+    "prebuild": "node tools/sync-art.mjs",
+    "predev": "node tools/sync-art.mjs"
+  },
+  "dependencies": {
+    "@slu/web-shell": "file:../slu-web-shell-1.1.0.tgz",
+    "pixi.js": "^8.14.0"
   },
   "devDependencies": {
-    "vite": "^7.1.7"
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4",
+    "@playwright/test": "^1.55.0",
+    "eslint": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "prettier": "^3.0.0"
   }
 }
