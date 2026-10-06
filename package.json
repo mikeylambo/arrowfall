@@ -22,19 +22,22 @@
     "format": "prettier --write src tests",
     "format:check": "prettier --check src tests",
     "bench": "vite-node tools/bench-sim.ts",
-    "evidence": "node tools/capture-evidence.mjs"
+    "evidence": "node tools/capture-evidence.mjs",
+    "sprites": "node tools/render-sprites/run.mjs"
   },
   "dependencies": {
     "@slu/web-shell": "github:mikeylambo/Web-Game-Shell-v1.02#d5bdb4ae2ac09109088a5f0e524badd60996ee3b",
     "pixi.js": "^8.14.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "vite": "^7.0.0",
-    "vitest": "^3.2.4",
     "@playwright/test": "^1.55.0",
+    "@types/three": "^0.180.0",
     "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "three": "^0.180.0",
+    "typescript": "^5.8.3",
     "typescript-eslint": "^8.0.0",
-    "prettier": "^3.0.0"
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
   }
 }

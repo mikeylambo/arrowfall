@@ -1,0 +1,20 @@
+{
+  "page": 2048,
+  "characters": [
+    {
+      "id": "hunter-test",
+      "test": true,
+      "cell": 192,
+      "modelHeight": 1.5,
+      "heightPx": 144,
+      "pivot": [0.5, 0.78],
+      "directions": [0, 1, 2, 6, 7],
+      "ink": "#1b2233",
+      "rim": "#ffffff",
+      "clips": [
+        { "name": "idle", "clip": "idle", "frames": 8, "loop": true },
+        { "name": "run", "clip": "run", "frames": 8, "loop": true }
+      ]
+    }
+  ]
+}
