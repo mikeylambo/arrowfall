@@ -132,7 +132,7 @@ function saveOptions() {
   document
     .querySelectorAll<HTMLElement>('.slu-panel')
     .forEach((el) => (el.style.zoom = String(options.uiScale)));
-  if (game) game.autoLoose = options.autoLoose;
+  if (game) game.assistLoose = options.autoLoose;
   document.documentElement.style.fontSize = 16 * options.uiScale + 'px';
 }
 function begin(next: string) {
@@ -145,7 +145,7 @@ function begin(next: string) {
       ? stableHashString(new Date().toISOString().slice(0, 10))
       : Math.floor(Math.random() * 4294967296));
   game = new Hunt(seed, profile, selected, phase, next === 'range');
-  game.autoLoose = options.autoLoose;
+  game.assistLoose = options.autoLoose;
   if (next === 'camp') {
     game.scene = 'camp';
     game.freezeSpawns = true;

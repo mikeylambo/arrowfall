@@ -4,6 +4,7 @@ import { classifyDraw, drawProfile, drawDamage } from '../../src/sim/bow';
 import { Hunt } from '../../src/sim/game';
 import { freshProfile, loadProfile, saveProfile } from '../../src/sim/profile';
 import { EVOLUTIONS } from '../../src/data/evolutions';
+import { T } from '../../src/data/tuning';
 import { EntityPool, SpatialHash } from '@slu/web-shell';
 import { Pool } from '../../src/sim/pool';
 import { Grid } from '../../src/sim/grid';
@@ -42,18 +43,40 @@ it('dodge cancels a committed draw and travels 140 px', () => {
   expect(g.player.invuln).toBeGreaterThan(0);
   expect(g.player.x - x).toBeCloseTo(140, 1);
 });
-it('perfect shot gains focus; hold auto-looses without claiming perfection', () => {
+it('perfect shot gains focus; overdraw holds until release unless autoLoose', () => {
   const g = new Hunt(1, freshProfile());
   g.freezeSpawns = true;
   for (let i = 0; i < 37; i++) g.step(1 / 60, { ...input, draw: true });
   g.step(1 / 60, input);
   expect(g.perfects).toBe(1);
   expect(g.player.focus).toBe(12);
-  const h = new Hunt(1, freshProfile());
-  h.freezeSpawns = true;
-  for (let i = 0; i < 120; i++) h.step(1 / 60, { ...input, draw: true });
-  expect(h.shots).toBeGreaterThan(0);
-  expect(h.perfects).toBe(0);
+  const hold = new Hunt(1, freshProfile());
+  hold.freezeSpawns = true;
+  for (let i = 0; i < 240; i++) hold.step(1 / 60, { ...input, draw: true });
+  expect(hold.shots).toBe(0);
+  expect(hold.player.draw).toBeGreaterThan(3.9);
+  hold.step(1 / 60, input);
+  expect(hold.shots).toBe(1);
+  expect(hold.perfects).toBe(0);
+  const flag = T.autoLoose;
+  T.autoLoose = true;
+  try {
+    const h = new Hunt(1, freshProfile());
+    h.freezeSpawns = true;
+    for (let i = 0; i < 120; i++) h.step(1 / 60, { ...input, draw: true });
+    expect(h.shots).toBeGreaterThan(0);
+    expect(h.perfects).toBe(0);
+  } finally {
+    T.autoLoose = flag;
+  }
+});
+it('assist loose fires at full draw as a perfect shot', () => {
+  const g = new Hunt(1, freshProfile());
+  g.freezeSpawns = true;
+  g.assistLoose = true;
+  for (let i = 0; i < 60 && g.shots === 0; i++) g.step(1 / 60, { ...input, draw: true });
+  expect(g.shots).toBe(1);
+  expect(g.perfects).toBe(1);
 });
 it('evolutions are offered and only selected evolutions apply', () => {
   const g = new Hunt(2, freshProfile());

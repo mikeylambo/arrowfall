@@ -46,6 +46,8 @@ export const T = {
   hitstopElite: 0.06,
   /** Peak screen shake amplitude (px). */
   maxShake: 6,
+  /** Overdraw auto-release. false: the draw holds at overdraw until the player lets go. */
+  autoLoose: false as boolean,
 };
 export const xpNeeded = (level: number) => 5 + 4 * Math.pow(level, 1.35);
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
