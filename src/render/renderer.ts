@@ -32,6 +32,9 @@ import { PALETTE, JUICE, SHEETS, tint } from '../data/art';
 function attackProgress(e: Enemy, telegraph: number): number | null {
   if (e.kind === 3) return e.state === 1 ? 1 - Math.max(0, e.clock) / telegraph : null;
   if (e.kind === 7) return e.state === 1 ? 1 - Math.max(0, e.clock) / 0.6 : null;
+  // Barrow Worm: rears up through its 0.8 s red ring, stays up while it strikes.
+  if (e.kind === 6)
+    return e.state === 1 ? 1 - Math.max(0, e.clock) / 0.8 : e.state === 2 ? 1 : null;
   return e.state === 3 ? 1 - Math.max(0, e.clock) / 0.6 : null;
 }
 /** Palette as Pixi tints. */
@@ -83,6 +86,7 @@ export class View {
   hunterSheet: Sheet | null = null;
   /** Enemy sheets by sheet id (normal and '-elite'). */
   enemySheets: Record<string, Sheet> = {};
+  bossSheets: Record<string, Sheet> = {};
   readonly footShadow = new Sprite();
   weakPoint = new Sprite();
   raven = new Sprite();
@@ -165,6 +169,11 @@ export class View {
           const sheet = await loadSheet(sheetId);
           if (sheet) this.enemySheets[sheetId] = sheet;
         }
+    if (override !== 'off')
+      for (const [boss, id] of Object.entries(SHEETS.bosses)) {
+        const sheet = await loadSheet(id);
+        if (sheet) this.bossSheets[boss] = sheet;
+      }
     this.raven.texture = this.art.raven;
     this.raven.anchor.set(0.5);
     this.raven.scale.set(0.45);
@@ -280,7 +289,25 @@ export class View {
       s.visible = e.active;
       if (!e.active) continue;
       s.position.set(e.x, e.y);
-      if (e.boss >= 0) {
+      const bossSheet = e.boss >= 0 ? this.bossSheets[BOSSES[e.boss].id] : undefined;
+      if (bossSheet) {
+        // Boss on a 3/4 sheet: its draw follows the telegraph, sized to the boss art height.
+        const art = BOSSES[e.boss].art,
+          drawing = e.boss === 3 && e.state === 1 && bossSheet.has('attack'),
+          frame = drawing
+            ? bossSheet.frame(
+                'attack',
+                e.angle,
+                0,
+                1 - Math.max(0, e.clock) / (e.phase === 1 ? 0.8 : 1.2),
+              )
+            : bossSheet.frame('move', e.angle, g.realTime),
+          k = art.size / (bossSheet.manifest.heightPx ?? art.size);
+        s.texture = frame.texture;
+        s.anchor.set(bossSheet.manifest.pivot[0], bossSheet.manifest.pivot[1]);
+        s.rotation = 0;
+        s.scale.set(frame.mirror ? -k : k, k);
+      } else if (e.boss >= 0) {
         const art = BOSSES[e.boss].art;
         s.texture = this.art['boss.' + BOSSES[e.boss].id];
         s.anchor.set(0.5);
@@ -329,15 +356,19 @@ export class View {
     this.weakPoint.visible = !!boss;
     if (boss) {
       const art = BOSSES[boss.boss].art,
+        sheet = this.bossSheets[BOSSES[boss.boss].id],
         k = art.size / (BOSS_HALF * 2),
         rot = art.faces ? boss.angle : 0,
         wx = art.weak.x * BOSS_HALF * k,
         wy = art.weak.y * BOSS_HALF * k,
         pulse = 0.5 + 0.5 * Math.sin(g.realTime * 5);
-      this.weakPoint.position.set(
-        boss.x + wx * Math.cos(rot) - wy * Math.sin(rot),
-        boss.y + wx * Math.sin(rot) + wy * Math.cos(rot),
-      );
+      // Sheet bosses wear their weak point (the crown) on top of the head.
+      if (sheet) this.weakPoint.position.set(boss.x, boss.y - art.size * 0.97);
+      else
+        this.weakPoint.position.set(
+          boss.x + wx * Math.cos(rot) - wy * Math.sin(rot),
+          boss.y + wx * Math.sin(rot) + wy * Math.cos(rot),
+        );
       this.weakPoint.scale.set(((art.weak.r * BOSS_HALF * k) / 40) * (1.1 + 0.35 * pulse));
       this.weakPoint.alpha = 0.35 + 0.45 * (1 - pulse);
     }

@@ -8,6 +8,7 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { PROCEDURAL } from './procedural';
 
 export interface ClipJob {
   /** Clip name in the manifest, e.g. 'idle'. */
@@ -66,6 +67,10 @@ export interface SpriteJob {
   clips: ClipJob[];
   /** Built-in mannequin instead of a GLB, for pipeline tests. */
   test?: boolean;
+  /** Code-built character (render-sprites/procedural.ts) instead of a GLB. */
+  procedural?: string;
+  /** Antler crown on the head bone (boss weak point), in the given colour. */
+  crown?: { color: string; size: number };
   bow?: BowJob;
   eyes?: EyesJob;
   /** Albedo multiplier (elite variants render brighter). */
@@ -216,6 +221,16 @@ function makeProps(job: SpriteJob, root: THREE.Object3D, rim: THREE.Color) {
     return m;
   });
   if (job.bow) group.add(limb, string, arrow);
+  // Antler crown: tines fanning up and out from the head (weak point glow is flat, unlit).
+  const crownMat = new THREE.MeshBasicMaterial({ color: job.crown?.color ?? '#ffe7a8' });
+  const tines = job.crown
+    ? Array.from({ length: 7 }, (_, i) => {
+        const m = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 6), crownMat);
+        m.userData.i = i;
+        group.add(m);
+        return m;
+      })
+    : [];
   if (job.eyes) group.add(...eyes);
   const tube = (points: THREE.Vector3[], radius: number) =>
     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 24, radius, 6, false);
@@ -273,6 +288,28 @@ function makeProps(job: SpriteJob, root: THREE.Object3D, rim: THREE.Color) {
           arrow.position.copy(mid);
           arrow.scale.set(1, nock.distanceTo(tip), 1);
           arrow.quaternion.setFromUnitVectors(UP, v3().subVectors(tip, nock).normalize());
+        }
+      }
+      if (job.crown) {
+        const head = bone('Head').getWorldPosition(v3()),
+          face = bone('headfront').getWorldPosition(v3()),
+          fwd = v3().subVectors(face, head).setY(0).normalize(),
+          side = v3().crossVectors(UP, fwd).normalize(),
+          size = job.crown.size * height,
+          top = head.clone().addScaledVector(UP, size * 1.1);
+        for (const m of tines) {
+          const i = m.userData.i as number,
+            a = ((i - 3) / 3) * 1.1,
+            len = size * (i % 2 ? 0.8 : 1.15);
+          const dir = v3()
+            .copy(UP)
+            .multiplyScalar(Math.cos(a))
+            .addScaledVector(side, Math.sin(a))
+            .addScaledVector(fwd, -0.15)
+            .normalize();
+          m.position.copy(top).addScaledVector(dir, len * 0.5);
+          m.scale.set(size * 0.12, len, size * 0.12);
+          m.quaternion.setFromUnitVectors(UP, dir);
         }
       }
       if (job.eyes) {
@@ -342,9 +379,13 @@ export async function renderJob(job: SpriteJob) {
   const rim = new THREE.Color(job.rim);
   const loaded = new Map<string, { root: THREE.Object3D; clips: THREE.AnimationClip[] }>();
   const sourceFor = async (url?: string) => {
-    const key = job.test ? 'test' : url!;
+    const key = job.procedural ?? (job.test ? 'test' : url!);
     if (!loaded.has(key)) {
-      const src = job.test ? mannequin() : await load(url!);
+      const src = job.procedural
+        ? PROCEDURAL[job.procedural]()
+        : job.test
+          ? mannequin()
+          : await load(url!);
       src.root.traverse((o) => {
         const mesh = o as THREE.Mesh;
         if (mesh.isMesh)
@@ -418,8 +459,13 @@ export async function renderJob(job: SpriteJob) {
         ? (src.clips.find((c) => c.name === clipJob.clip) ?? src.clips[0])
         : (src.clips[clipJob.clip ?? 0] ?? src.clips[0]);
     const action = clip ? mixer.clipAction(clip) : null;
+    // One-shot clips must not wrap: sampling exactly at the end would show frame 0.
+    if (action && !clipJob.loop) {
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
+    }
     action?.play();
-    const props = job.bow || job.eyes ? makeProps(job, src.root, rim) : null;
+    const props = job.bow || job.eyes || job.crown ? makeProps(job, src.root, rim) : null;
     if (props) scene.add(props.group);
     // Root motion: the hips' horizontal offset at the window start is held for the whole clip.
     const hips = clipJob.inPlace ? src.root.getObjectByName('Hips') : null;
@@ -468,6 +514,7 @@ export async function renderJob(job: SpriteJob) {
     manifest: {
       id: job.id,
       cell: job.cell,
+      heightPx: job.heightPx,
       pivot: job.pivot,
       directions: job.directions,
       fps: 12,

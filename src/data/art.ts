@@ -176,8 +176,21 @@ export const DIEGETIC = {
 };
 
 /** Rendered 3/4 sprite sheets (public/art/sprites/<id>) per character. Missing sheets fall back to baked art. */
-export const SHEETS: { hunter: string; enemies: Record<string, string> } = {
+export const SHEETS: {
+  hunter: string;
+  enemies: Record<string, string>;
+  bosses: Record<string, string>;
+} = {
   hunter: 'hunter',
   /** Enemy id -> sheet id; elites use '<sheet>-elite'. */
-  enemies: { husk: 'husk', poacher: 'poacher', knight: 'knight', changeling: 'changeling' },
+  enemies: {
+    husk: 'husk',
+    poacher: 'poacher',
+    knight: 'knight',
+    changeling: 'changeling',
+    wisp: 'wisp',
+    worm: 'worm',
+  },
+  /** Boss id -> sheet id. Huntmaster reuses the Poacher model (see art-source/sprites.json). */
+  bosses: { huntmaster: 'huntmaster' },
 };

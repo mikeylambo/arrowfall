@@ -4,6 +4,8 @@ import { Assets, Rectangle, Texture, type TextureSource } from 'pixi.js';
 export interface SheetManifest {
   id: string;
   cell: number;
+  /** Rendered figure height inside the cell (px). */
+  heightPx?: number;
   pivot: [number, number];
   /** Unique rendered directions; 0 = screen-right, stepping 45 degrees clockwise. */
   directions: number[];

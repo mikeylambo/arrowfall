@@ -385,6 +385,144 @@
           }
         }
       }
+    },
+    {
+      "id": "wisp",
+      "procedural": "wisp",
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "cell": 128,
+      "modelHeight": 0.9,
+      "heightPx": 84,
+      "pivot": [
+        0.5,
+        0.82
+      ],
+      "clips": [
+        {
+          "name": "move",
+          "frames": 12,
+          "loop": true
+        }
+      ],
+      "source": {
+        "note": "Code-built: tools/render-sprites/procedural.ts"
+      }
+    },
+    {
+      "id": "worm",
+      "procedural": "worm",
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "cell": 192,
+      "modelHeight": 0.43,
+      "heightPx": 30,
+      "pivot": [
+        0.5,
+        0.75
+      ],
+      "clips": [
+        {
+          "name": "move",
+          "frames": 12,
+          "loop": true
+        },
+        {
+          "name": "attack",
+          "clip": "attack",
+          "frames": 6,
+          "loop": false
+        }
+      ],
+      "source": {
+        "note": "Code-built: tools/render-sprites/procedural.ts"
+      }
+    },
+    {
+      "id": "huntmaster",
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#2a0508",
+      "rim": "#ff6670",
+      "albedo": [
+        0.85,
+        0.45,
+        0.42
+      ],
+      "cell": 256,
+      "modelHeight": 1.0,
+      "heightPx": 200,
+      "pivot": [
+        0.5,
+        0.86
+      ],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_212141_poacher_01a11317/poacher-walking.glb",
+          "frames": 8,
+          "loop": true,
+          "inPlace": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_212141_poacher_01a11317/poacher-attack.glb",
+          "frames": 4,
+          "loop": false,
+          "start": 0,
+          "end": 0.3,
+          "inPlace": true,
+          "drawing": true
+        }
+      ],
+      "bow": {
+        "hand": "LeftHand",
+        "stringHand": "RightHand",
+        "size": 0.38,
+        "wood": "#4a0e14",
+        "trim": "#ffe7a8",
+        "arrow": "#ffe7a8"
+      },
+      "crown": {
+        "color": "#ffe7a8",
+        "size": 0.16
+      },
+      "source": {
+        "note": "Reuses the Poacher model and animations (no Meshy credits); crown and bow are procedural props."
+      }
     }
   ]
 }
