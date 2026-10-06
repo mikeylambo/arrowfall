@@ -21,7 +21,7 @@ import { bakeArt, BOSS_HALF } from './art';
 import type { Hunt } from '../sim/game';
 import { ENEMIES } from '../data/enemies';
 import { STATIONS } from '../data/world';
-import { PALETTE, JUICE, tint } from '../data/art';
+import { PALETTE, JUICE, SHEETS, tint } from '../data/art';
 
 /** Palette as Pixi tints. */
 const C = {
@@ -142,8 +142,9 @@ export class View {
       this.hunter,
       this.diegetic.over,
     );
-    const sheetId = new URLSearchParams(location.search).get('sprites');
-    if (sheetId) this.hunterSheet = await loadSheet(sheetId);
+    // ?sprites=off shows the baked stand-in; ?sprites=<id> previews another sheet.
+    const override = new URLSearchParams(location.search).get('sprites');
+    if (override !== 'off') this.hunterSheet = await loadSheet(override ?? SHEETS.hunter);
     this.diegetic.sheetBow = !!this.hunterSheet;
     this.raven.texture = this.art.raven;
     this.raven.anchor.set(0.5);

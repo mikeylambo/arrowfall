@@ -174,3 +174,8 @@ export const DIEGETIC = {
   moteFar: 78,
   moteNear: 20,
 };
+
+/** Rendered 3/4 sprite sheets (public/art/sprites/<id>) per character. Missing sheets fall back to baked art. */
+export const SHEETS = {
+  hunter: 'hunter',
+};
