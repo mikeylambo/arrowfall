@@ -21,6 +21,8 @@ export class Diegetic {
   private readonly motes: Sprite[] = [];
   private readonly pip = new Graphics();
   reducedMotion = false;
+  /** A rendered sprite sheet draws its own bow; the overlay string and nocked arrow step aside. */
+  sheetBow = false;
   constructor(art: Record<string, Texture>) {
     this.halo = new Sprite(art.bloom);
     this.halo.anchor.set(0.5);
@@ -67,7 +69,7 @@ export class Diegetic {
     local(DIEGETIC.tipX, DIEGETIC.tipY, B);
     const s = this.string;
     s.clear();
-    if (g.scene !== 'camp') {
+    if (g.scene !== 'camp' && !this.sheetBow) {
       const glow = perfect ? VIOLET : SILVER,
         glowAlpha = perfect ? 0.85 : over ? 0.12 : 0.1 + progress * 0.35;
       s.moveTo(A[0], A[1])
@@ -84,7 +86,7 @@ export class Diegetic {
         });
     }
     // Nocked arrow rides the string while drawing.
-    this.nocked.visible = p.draw > 0;
+    this.nocked.visible = p.draw > 0 && !this.sheetBow;
     if (this.nocked.visible) {
       local(pull + 26, tremble, N);
       this.nocked.position.set(N[0], N[1]);

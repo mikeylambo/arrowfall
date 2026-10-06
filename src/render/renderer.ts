@@ -10,6 +10,7 @@ import {
 } from 'pixi.js';
 import { Vfx } from './vfx';
 import { Diegetic } from './diegetic';
+import { loadSheet, type Sheet } from './sheets';
 import { Atmosphere } from './ground';
 
 import { UNIT } from './silhouettes';
@@ -67,6 +68,9 @@ export class View {
   particleSprites: Sprite[] = [];
   coverSprites: Sprite[] = [];
   hunter = new Sprite();
+  /** 3/4 sprite sheet for the hunter, when one is rendered (dev preview: ?sprites=<sheet id>). */
+  hunterSheet: Sheet | null = null;
+  readonly footShadow = new Sprite();
   weakPoint = new Sprite();
   raven = new Sprite();
   ghostSprites: Sprite[] = [];
@@ -127,7 +131,20 @@ export class View {
     this.cutout.anchor.set(0.5);
     this.cutout.tint = tint(PALETTE.background);
     this.cutout.alpha = 0.75;
-    this.hero.addChild(this.cutout, this.diegetic.under, this.hunter, this.diegetic.over);
+    this.footShadow.texture = this.art.bloom;
+    this.footShadow.anchor.set(0.5);
+    this.footShadow.tint = tint(PALETTE.background);
+    this.footShadow.visible = false;
+    this.hero.addChild(
+      this.cutout,
+      this.footShadow,
+      this.diegetic.under,
+      this.hunter,
+      this.diegetic.over,
+    );
+    const sheetId = new URLSearchParams(location.search).get('sprites');
+    if (sheetId) this.hunterSheet = await loadSheet(sheetId);
+    this.diegetic.sheetBow = !!this.hunterSheet;
     this.raven.texture = this.art.raven;
     this.raven.anchor.set(0.5);
     this.raven.scale.set(0.45);
@@ -358,7 +375,27 @@ export class View {
     this.hunter.position.set(p.x, p.y);
     this.cutout.position.set(p.x, p.y);
     this.cutout.scale.set(g.crowd > 40 ? 0.95 : 0.7);
-    this.hunter.rotation = p.aim;
+    if (this.hunterSheet) {
+      // 3/4 sprite: pick the clip from state, the direction from aim; feet sit on the entity.
+      const sheet = this.hunterSheet,
+        clip =
+          p.dodge > 0 && sheet.has('dodge')
+            ? 'dodge'
+            : p.draw > 0 && sheet.has('draw')
+              ? 'draw'
+              : g.moving && sheet.has('run')
+                ? 'run'
+                : 'idle',
+        frame = sheet.frame(clip, p.aim, clip === 'draw' ? p.draw : g.realTime);
+      this.hunter.texture = frame.texture;
+      this.hunter.anchor.set(sheet.manifest.pivot[0], sheet.manifest.pivot[1]);
+      this.hunter.scale.set(frame.mirror ? -0.5 : 0.5, 0.5);
+      this.hunter.rotation = 0;
+      this.footShadow.visible = true;
+      this.footShadow.position.set(p.x + 4, p.y + 3);
+      this.footShadow.scale.set(0.36, 0.14);
+      this.footShadow.alpha = 0.7;
+    } else this.hunter.rotation = p.aim;
     this.hunter.alpha = p.invuln > 0 ? 0.55 + 0.45 * Math.sin(g.realTime * 30) : 1;
     for (let i = 0; i < 3; i++) {
       const q = g.ghosts.items[i],
