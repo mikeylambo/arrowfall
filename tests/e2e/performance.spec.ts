@@ -10,14 +10,13 @@ test('350-enemy / 600-arrow stress scene stays inside the simulation budget', as
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/?dev=1');
   await page.waitForFunction(() => (window as any).__ARROWFALL__);
-  await page.evaluate(() => {
+  const filled = await page.evaluate(() => {
     const api = (window as any).__ARROWFALL__;
     api.startRun();
     api.stress();
+    return { enemies: api.state.enemies, arrows: api.state.arrows };
   });
-  await expect
-    .poll(() => page.evaluate(() => (window as any).__ARROWFALL__.state.enemies))
-    .toBeGreaterThanOrEqual(340);
+  expect(filled).toEqual({ enemies: 350, arrows: 600 });
   await page.waitForTimeout(1500);
   await page.screenshot({ path: 'test-results/stress.png' });
   const metrics = await page.evaluate((frames) => {
