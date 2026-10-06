@@ -1,6 +1,8 @@
-import { EntityPool, SpatialHash, DeterministicRng } from '@slu/web-shell';
+import { DeterministicRng } from '@slu/web-shell';
+import { Pool } from './pool';
+import { Grid } from './grid';
 import { BOWS, type Bow } from '../data/bows';
-import { T, clamp, distance, xpNeeded } from '../data/tuning';
+import { T, clamp, distance, xpNeeded, len } from '../data/tuning';
 import { UPGRADES } from '../data/upgrades';
 import { EVOLUTIONS } from '../data/evolutions';
 import { TOOLS } from '../data/tools';
@@ -23,13 +25,15 @@ import type {
   Ghost,
   SimEvent,
 } from './types';
+const isActive = (item: { active: boolean }) => item.active;
+const near: Enemy[] = [];
 export class Hunt {
   readonly rng: DeterministicRng;
   readonly cardRng: DeterministicRng;
   readonly directorRng: DeterministicRng;
   readonly world: ReturnType<typeof makeWorld>;
   readonly bow: Bow;
-  readonly enemies = new EntityPool<Enemy>(500, () => ({
+  readonly enemies = new Pool<Enemy>(500, () => ({
     active: false,
     x: 0,
     y: 0,
@@ -64,7 +68,7 @@ export class Hunt {
     deadmark: false,
     dummy: false,
   }));
-  readonly arrows = new EntityPool<Arrow>(1400, () => ({
+  readonly arrows = new Pool<Arrow>(1400, () => ({
     active: false,
     x: 0,
     y: 0,
@@ -82,7 +86,7 @@ export class Hunt {
     hit: new Uint32Array(500),
     hitCount: 0,
   }));
-  readonly particles = new EntityPool<Particle>(2000, () => ({
+  readonly particles = new Pool<Particle>(2000, () => ({
     active: false,
     x: 0,
     y: 0,
@@ -93,14 +97,14 @@ export class Hunt {
     size: 0,
     color: 0,
   }));
-  readonly pickups = new EntityPool<Pickup>(1600, () => ({
+  readonly pickups = new Pool<Pickup>(1600, () => ({
     active: false,
     x: 0,
     y: 0,
     value: 0,
     kind: 0,
   }));
-  readonly threats = new EntityPool<Threat>(300, () => ({
+  readonly threats = new Pool<Threat>(300, () => ({
     active: false,
     x: 0,
     y: 0,
@@ -115,13 +119,18 @@ export class Hunt {
     vy: 0,
     owner: -1,
   }));
-  readonly ghosts = new EntityPool<Ghost>(3, () => ({ active: false, x: 0, y: 0, life: 0 }));
-  readonly hash = new SpatialHash<Enemy>(96);
+  readonly ghosts = new Pool<Ghost>(3, () => ({ active: false, x: 0, y: 0, life: 0 }));
+  /** Active enemies, re-indexed once per step. */
+  readonly hash = new Grid<Enemy>(T.worldWidth, T.worldHeight, 96, 500);
   readonly ranks: Record<string, number> = {};
   readonly evolutions = new Set<string>();
   readonly banished = new Set<string>();
   readonly player: Player;
+  /** Consumers drain this and truncate it (`events.length = 0`); event objects are recycled. */
   readonly events: SimEvent[] = [];
+  private readonly eventPool: SimEvent[] = [];
+  /** Active enemy count, refreshed at the start of each step. */
+  crowd = 0;
   readonly timeline: string[] = [];
   readonly damageSources: Record<string, number> = {};
   challenge = '';
@@ -241,11 +250,27 @@ export class Hunt {
         );
     }
   }
+  /** Rebuild the enemy spatial index and crowd count from the live pool. */
+  reindex() {
+    this.hash.rebuild(this.enemies.items, isActive);
+    let crowd = 0;
+    for (const e of this.enemies.items) if (e.active) crowd++;
+    this.crowd = crowd;
+  }
   rank(id: string) {
     return this.ranks[id] || 0;
   }
   emit(id: string, x = this.player.x, y = this.player.y, value = 0) {
-    this.events.push({ id, x, y, value });
+    const i = this.events.length;
+    if (i >= 4096) return;
+    let event = this.eventPool[i];
+    if (event) {
+      event.id = id;
+      event.x = x;
+      event.y = y;
+      event.value = value;
+    } else event = this.eventPool[i] = { id, x, y, value };
+    this.events.push(event);
   }
   announce(text: string) {
     this.banner = text;
@@ -254,22 +279,20 @@ export class Hunt {
     this.emit('world.event');
   }
   burst(x: number, y: number, n = 12, color = 0) {
-    const density = this.enemies.count > 150 ? 0.55 : 1;
+    const density = this.crowd > 150 ? 0.55 : 1;
     for (let i = 0; i < n * density; i++) {
       const q = this.particles.acquire();
       if (!q) break;
       const angle = this.rng.next() * Math.PI * 2,
         speed = 30 + this.rng.next() * 150;
-      Object.assign(q, {
-        x,
-        y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 0.25 + this.rng.next() * 0.5,
-        max: 0.75,
-        size: 1 + this.rng.next() * 3,
-        color,
-      });
+      q.x = x;
+      q.y = y;
+      q.vx = Math.cos(angle) * speed;
+      q.vy = Math.sin(angle) * speed;
+      q.life = 0.25 + this.rng.next() * 0.5;
+      q.max = 0.75;
+      q.size = 1 + this.rng.next() * 3;
+      q.color = color;
     }
   }
   spawn(kind: number, x?: number, y?: number, dummy = false, elite = -1): Enemy | undefined {
@@ -277,45 +300,43 @@ export class Hunt {
     if (!e) return;
     const d = ENEMIES[kind];
     const angle = this.directorRng.next() * Math.PI * 2;
-    const radius = Math.hypot(this.viewport.width, this.viewport.height) * 0.6 + 150;
+    const radius = len(this.viewport.width, this.viewport.height) * 0.6 + 150;
     const ex = x ?? this.player.x + Math.cos(angle) * radius,
       ey = y ?? this.player.y + Math.sin(angle) * radius;
     const scale = 1 + (0.12 * this.time) / 60,
       mult = this.phase >= 1 ? 1.25 : 1;
-    Object.assign(e, {
-      x: clamp(ex, 80, T.worldWidth - 80),
-      y: clamp(ey, 80, T.worldHeight - 80),
-      id: this.enemyId++,
-      kind,
-      hp: d.hp * scale * mult * (elite >= 0 ? 2.5 : 1),
-      maxHp: d.hp * scale * mult * (elite >= 0 ? 2.5 : 1),
-      r: d.radius,
-      speed: d.speed * (this.phase === 3 ? 1.15 : 1) * (elite === 0 ? 1.45 : 1),
-      damage: d.damage * (1 + (0.05 * this.time) / 60),
-      xp: d.xp * (elite >= 0 ? 10 : 1),
-      elite,
-      boss: -1,
-      phase: 1,
-      angle,
-      clock: 1 + this.directorRng.next(),
-      state: 0,
-      tx: 0,
-      ty: 0,
-      flash: 0,
-      age: 0,
-      fade: 0,
-      burn: 0,
-      bleed: 0,
-      poison: 0,
-      slow: 0,
-      freeze: 0,
-      root: 0,
-      mark: false,
-      lastHit: 0,
-      statusClock: 0,
-      deadmark: false,
-      dummy,
-    });
+    e.x = clamp(ex, 80, T.worldWidth - 80);
+    e.y = clamp(ey, 80, T.worldHeight - 80);
+    e.id = this.enemyId++;
+    e.kind = kind;
+    e.hp = d.hp * scale * mult * (elite >= 0 ? 2.5 : 1);
+    e.maxHp = d.hp * scale * mult * (elite >= 0 ? 2.5 : 1);
+    e.r = d.radius;
+    e.speed = d.speed * (this.phase === 3 ? 1.15 : 1) * (elite === 0 ? 1.45 : 1);
+    e.damage = d.damage * (1 + (0.05 * this.time) / 60);
+    e.xp = d.xp * (elite >= 0 ? 10 : 1);
+    e.elite = elite;
+    e.boss = -1;
+    e.phase = 1;
+    e.angle = angle;
+    e.clock = 1 + this.directorRng.next();
+    e.state = 0;
+    e.tx = 0;
+    e.ty = 0;
+    e.flash = 0;
+    e.age = 0;
+    e.fade = 0;
+    e.burn = 0;
+    e.bleed = 0;
+    e.poison = 0;
+    e.slow = 0;
+    e.freeze = 0;
+    e.root = 0;
+    e.mark = false;
+    e.lastHit = 0;
+    e.statusClock = 0;
+    e.deadmark = false;
+    e.dummy = dummy;
     if (!this.profile.seen.includes(d.id)) this.profile.seen.push(d.id);
     return e;
   }
@@ -324,15 +345,13 @@ export class Hunt {
     const e = this.spawn(0, this.player.x + 500, this.player.y);
     if (!e) return;
     const b = BOSSES[index];
-    Object.assign(e, {
-      boss: index,
-      hp: b.hp * (this.phase >= 1 ? 1.25 : 1),
-      maxHp: b.hp * (this.phase >= 1 ? 1.25 : 1),
-      r: b.radius,
-      speed: 75,
-      damage: 25,
-      clock: 2,
-    });
+    e.boss = index;
+    e.hp = b.hp * (this.phase >= 1 ? 1.25 : 1);
+    e.maxHp = b.hp * (this.phase >= 1 ? 1.25 : 1);
+    e.r = b.radius;
+    e.speed = 75;
+    e.damage = 25;
+    e.clock = 2;
     this.boss = e;
     this.bossMask |= 1 << index;
     this.announce(b.name);
@@ -357,7 +376,7 @@ export class Hunt {
   }
   formation(id = Math.floor(this.rng.next() * 6)) {
     const angle = this.rng.next() * Math.PI * 2,
-      radius = Math.hypot(this.viewport.width, this.viewport.height) * 0.65 + 300,
+      radius = len(this.viewport.width, this.viewport.height) * 0.65 + 300,
       n = id === 3 ? 12 : 9;
     for (let i = 0; i < n; i++) {
       let a = angle,
@@ -424,7 +443,7 @@ export class Hunt {
       (this.slowMotion ? 0.25 : 1);
     const p = this.player;
     if (this.scene === 'hunt' || this.scene === 'range') this.time += dt;
-    this.moving = Math.hypot(input.mx, input.my) > 0.1;
+    this.moving = len(input.mx, input.my) > 0.1;
     this.enemyDeadeye = Math.max(0, this.enemyDeadeye - realDt);
     this.bannerTime = Math.max(0, this.bannerTime - realDt);
     this.shake = Math.max(0, this.shake - realDt * 20);
@@ -444,7 +463,7 @@ export class Hunt {
       this.rank('swift-bow'),
     );
     if (dodgeRequest && p.cooldown <= 0) {
-      const l = Math.hypot(input.mx, input.my);
+      const l = len(input.mx, input.my);
       p.dx = l ? input.mx / l : Math.cos(p.aim);
       p.dy = l ? input.my / l : Math.sin(p.aim);
       p.dodge = T.dodgeTime;
@@ -460,12 +479,11 @@ export class Hunt {
           loose(this, true, p.aim + Math.PI + (i - 2) * 0.22, 'phantom', 0.6, false);
       if (this.rank('phantom-step')) {
         const ghost = this.ghosts.acquire();
-        if (ghost)
-          Object.assign(ghost, {
-            x: p.x,
-            y: p.y,
-            life: this.evolutions.has('phantom-hunt') ? 4 : 0.7,
-          });
+        if (ghost) {
+          ghost.x = p.x;
+          ghost.y = p.y;
+          ghost.life = this.evolutions.has('phantom-hunt') ? 4 : 0.7;
+        }
       }
     }
     if (p.dodge > 0) {
@@ -474,7 +492,7 @@ export class Hunt {
       p.y += ((p.dy * T.dodgeDistance) / T.dodgeTime) * dodgeDt;
       p.dodge -= dt;
     } else {
-      const l = Math.hypot(input.mx, input.my) || 1;
+      const l = len(input.mx, input.my) || 1;
       const drawMove = p.draw > 0 ? this.bow.mobility : 1;
       let speed =
         T.speed *
@@ -504,7 +522,7 @@ export class Hunt {
       const arena = 1050,
         dx = p.x - this.eventX,
         dy = p.y - this.eventY,
-        d = Math.hypot(dx, dy);
+        d = len(dx, dy);
       if (d > arena) {
         p.x = this.eventX + (dx / d) * arena;
         p.y = this.eventY + (dy / d) * arena;
@@ -546,7 +564,9 @@ export class Hunt {
     }
     if (this.deadeye > 0) {
       this.deadeye -= realDt;
-      this.hash.query(input.ax, input.ay, 60, (e) => {
+      const n = this.hash.query(input.ax, input.ay, 60, near);
+      for (let i = 0; i < n; i++) {
+        const e = near[i];
         if (
           e.active &&
           !e.deadmark &&
@@ -557,7 +577,7 @@ export class Hunt {
           this.focusMarks++;
           this.emit('deadeye.mark', e.x, e.y, this.focusMarks);
         }
-      });
+      }
       if (this.deadeye <= 0) this.releaseDeadeye();
     }
     const cell = Math.floor(p.y / 100) * 150 + Math.floor(p.x / 100);
@@ -565,8 +585,7 @@ export class Hunt {
       this.world.flow.rebuild(p.x, p.y);
       this.lastCell = cell;
     }
-    this.hash.clear();
-    for (const e of this.enemies.items) if (e.active) this.hash.insert(e);
+    this.reindex();
     updateEnemies(this, dt);
     updateArrows(this, dt);
     updateThreats(this, dt);
@@ -683,10 +702,7 @@ export class Hunt {
     }
     if (this.eventTimer > 0) {
       this.eventTimer -= dt;
-      if (
-        this.event === 2 &&
-        Math.hypot(this.player.x - this.eventX, this.player.y - this.eventY) < 85
-      ) {
+      if (this.event === 2 && len(this.player.x - this.eventX, this.player.y - this.eventY) < 85) {
         this.groveRest += dt;
         if (this.groveRest >= 3) {
           this.player.hp = Math.min(this.player.maxHp, this.player.hp + 40);
@@ -716,10 +732,20 @@ export class Hunt {
     this.burst(e.x, e.y, e.boss >= 0 ? 80 : 12, e.elite >= 0 ? 2 : 1);
     this.emit('enemy.kill.' + ENEMIES[e.kind].id, e.x, e.y);
     const drop = this.pickups.acquire();
-    if (drop) Object.assign(drop, { x: e.x, y: e.y, value: e.xp, kind: e.elite >= 0 ? 1 : 0 });
+    if (drop) {
+      drop.x = e.x;
+      drop.y = e.y;
+      drop.value = e.xp;
+      drop.kind = e.elite >= 0 ? 1 : 0;
+    }
     if (this.rng.next() < 0.025) {
       const berry = this.pickups.acquire();
-      if (berry) Object.assign(berry, { x: e.x + 12, y: e.y, value: 20, kind: 2 });
+      if (berry) {
+        berry.x = e.x + 12;
+        berry.y = e.y;
+        berry.value = 20;
+        berry.kind = 2;
+      }
     }
     if (this.kills % 10 === 0) this.earned++;
     if (e.elite >= 0) {
@@ -758,11 +784,13 @@ export class Hunt {
       r = 90 * (1 + 0.2 * (this.profile.boons.Magnet || 0));
     for (const q of this.pickups.items)
       if (q.active) {
-        const d = distance(q, p);
-        if (d < r) {
+        const dx = q.x - p.x,
+          dy = q.y - p.y,
+          d2 = dx * dx + dy * dy;
+        if (d2 < r * r) {
           q.x += (p.x - q.x) * dt * 10;
           q.y += (p.y - q.y) * dt * 10;
-          if (d < 20) {
+          if (d2 < 400) {
             q.active = false;
             if (q.kind === 2) {
               p.hp = Math.min(p.maxHp, p.hp + q.value);
@@ -804,20 +832,18 @@ export class Hunt {
       this.snareClock = 5 - 0.5 * (snare - 1);
       const t = this.threats.acquire();
       if (t) {
-        Object.assign(t, {
-          kind: 5,
-          x: p.x,
-          y: p.y,
-          r: 35,
-          clock: 0,
-          duration: 25,
-          damage: 20,
-          owner: -1,
-          vx: 0,
-          vy: 0,
-          length: 0,
-          angle: 0,
-        });
+        t.kind = 5;
+        t.x = p.x;
+        t.y = p.y;
+        t.r = 35;
+        t.clock = 0;
+        t.duration = 25;
+        t.damage = 20;
+        t.owner = -1;
+        t.vx = 0;
+        t.vy = 0;
+        t.length = 0;
+        t.angle = 0;
         this.snareHeld++;
         this.emit('tool.snare.place');
       }
@@ -825,12 +851,52 @@ export class Hunt {
     const lantern = this.rank('lantern');
     if (lantern) {
       const r = 140 + 20 * (lantern - 1);
-      this.hash.query(p.x, p.y, r, (e) => {
+      const n = this.hash.query(p.x, p.y, r, near);
+      for (let i = 0; i < n; i++) {
+        const e = near[i];
         if (e.active && distance(e, p) < r) {
           e.fade = 0;
           damageEnemy(this, e, (6 + 3 * (lantern - 1)) * dt, undefined, 'lantern');
         }
-      });
+      }
+    }
+  }
+  /** Perf gate scene: tops the field up to `enemies` crowd members and `arrows` live arrows. */
+  stressFill(enemies = 350, arrows = 600) {
+    const p = this.player;
+    this.freezeSpawns = true;
+    this.god = true;
+    let alive = 0,
+      flying = 0;
+    for (const e of this.enemies.items) if (e.active) alive++;
+    for (const a of this.arrows.items) if (a.active) flying++;
+    for (let i = alive; i < enemies; i++) {
+      const slot = (this.enemyId * 7) % enemies;
+      this.spawn(
+        slot % 8,
+        p.x + ((slot % 25) - 12) * 42,
+        p.y + (Math.floor(slot / 25) - 7) * 45 + (slot % 2) * 12,
+      );
+    }
+    for (let i = flying; i < arrows; i++) {
+      const a = this.arrows.acquire();
+      if (!a) break;
+      const angle = (i * 2.399963) % (Math.PI * 2),
+        speed = T.arrowSpeed;
+      a.x = p.x + Math.cos(angle) * 24;
+      a.y = p.y + Math.sin(angle) * 24;
+      a.vx = Math.cos(angle) * speed;
+      a.vy = Math.sin(angle) * speed;
+      a.life = T.arrowRange / speed;
+      a.damage = 4;
+      a.pierce = 3;
+      a.perfect = false;
+      a.full = true;
+      a.crit = false;
+      a.r = 3;
+      a.source = 'bow';
+      a.travel = 0;
+      a.hitCount = 0;
     }
   }
   releaseDeadeye() {

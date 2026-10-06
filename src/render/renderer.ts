@@ -15,6 +15,8 @@ export class View {
   readonly threatLayer = new Container();
   readonly overlay = new Graphics();
   readonly worldLines = new Graphics();
+  /** Static world marks (landmarks), tessellated once per attach. */
+  readonly landmarks = new Graphics();
   readonly threatGraphics = new Graphics();
   numbers = false;
   numberSlots: { text: Text; life: number }[] = [];
@@ -39,12 +41,14 @@ export class View {
   fps = 60;
   last = 0;
   frames: number[] = [];
+  /** Smoothed per-frame CPU cost (ms): simulation, scene build, and GPU submit. */
+  timing = { sim: 0, scene: 0, submit: 0 };
   async init(canvas: HTMLCanvasElement) {
     await this.app.init({
       canvas,
       resizeTo: window,
       background: '#070b15',
-      antialias: true,
+      antialias: false,
       resolution: Math.min(devicePixelRatio, 2),
       autoDensity: true,
       preference: 'webgl',
@@ -56,6 +60,7 @@ export class View {
     this.root.addChild(
       this.floor,
       this.cover,
+      this.landmarks,
       this.worldLines,
       this.effects,
       this.arrows,
@@ -117,7 +122,23 @@ export class View {
       s.scale.set(o.kind ? o.r / 24 : o.r / 22);
       this.coverSprites.push(s);
     }
-    this.floor.clear().rect(0, 0, 15000, 8500).fill('#080e1b');
+    this.floor.clear();
+    this.landmarks.clear();
+    for (const l of g.world.landmarks) {
+      this.landmarks.circle(l.x, l.y, l.name === 'Moonwell Clearing' ? 260 : 130).stroke({
+        color: 0x6685a5,
+        alpha: 0.14,
+        width: 2,
+      });
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3;
+        this.landmarks
+          .moveTo(l.x + Math.cos(a) * 120, l.y + Math.sin(a) * 120)
+          .lineTo(l.x + Math.cos(a) * 145, l.y + Math.sin(a) * 145)
+          .stroke({ color: 0x879bbb, alpha: 0.2, width: 2 });
+      }
+    }
+
     // Baked sparse leaf and moonlight textures preserve a dark combat surface.
     const ctx = document.createElement('canvas');
     ctx.width = ctx.height = 512;
@@ -155,6 +176,7 @@ export class View {
     };
   }
   render(g: Hunt, realDt: number) {
+    const sceneStart = performance.now();
     this.width = innerWidth;
     this.height = innerHeight;
     const p = g.player;
@@ -279,7 +301,10 @@ export class View {
       }
     this.lines(g);
     this.reticle(g);
+    const submitStart = performance.now();
+    this.timing.scene += (submitStart - sceneStart - this.timing.scene) * 0.1;
     this.app.render();
+    this.timing.submit += (performance.now() - submitStart - this.timing.submit) * 0.1;
   }
   lines(g: Hunt) {
     const p = g.player,
@@ -291,19 +316,6 @@ export class View {
     if (this.showBands && !this.camp) {
       w.circle(p.x, p.y, g.bow.near).stroke({ color: 0x98c7e6, alpha: 0.06, width: 1 });
       w.circle(p.x, p.y, g.bow.far).stroke({ color: 0x98c7e6, alpha: 0.11, width: 1 });
-    }
-    for (const l of g.world.landmarks) {
-      w.circle(l.x, l.y, l.name === 'Moonwell Clearing' ? 260 : 130).stroke({
-        color: 0x6685a5,
-        alpha: 0.14,
-        width: 2,
-      });
-      for (let i = 0; i < 6; i++) {
-        const a = (i * Math.PI) / 3;
-        w.moveTo(l.x + Math.cos(a) * 120, l.y + Math.sin(a) * 120)
-          .lineTo(l.x + Math.cos(a) * 145, l.y + Math.sin(a) * 145)
-          .stroke({ color: 0x879bbb, alpha: 0.2, width: 2 });
-      }
     }
     if (this.camp) {
       for (const s of STATIONS) {

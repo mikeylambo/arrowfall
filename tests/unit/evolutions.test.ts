@@ -14,8 +14,7 @@ function fixture(id: string) {
   e.hp = e.maxHp = 10000;
   const t = g.spawn(0, 7930, 4260)!;
   t.hp = t.maxHp = 10000;
-  g.hash.insert(e);
-  g.hash.insert(t);
+  g.reindex();
   loose(g, true, 0);
   return { g, e, t, a: g.arrows.items.find((a) => a.active)! };
 }

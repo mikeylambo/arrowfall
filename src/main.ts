@@ -574,6 +574,7 @@ function snapshot() {
       : null,
     outcome: game?.outcome || '',
     fps: view.fps,
+    timing: { ...view.timing },
     seed: game?.seed,
     damage: game ? { ...game.damageSources } : {},
   };
@@ -629,19 +630,7 @@ if (devMode) {
     killBoss: () => {
       if (game?.boss) game.kill(game.boss);
     },
-    stress: () => {
-      if (game) {
-        game.enemies.clear();
-        game.freezeSpawns = true;
-        game.god = true;
-        for (let i = 0; i < 350; i++)
-          game.spawn(
-            i % 8,
-            game.player.x + ((i % 25) - 12) * 42,
-            game.player.y + (Math.floor(i / 25) - 7) * 45,
-          );
-      }
-    },
+    stress: () => game?.stressFill(),
     event: (i: number) => game?.startEvent(i),
     formation: (i: number) => game?.formation(i),
     profile: () => structuredClone(profile),
@@ -762,6 +751,7 @@ function tick(now: number) {
         g.player.y = Math.max(100, Math.min(760, g.player.y));
       } else {
         accumulator += dt;
+        const simStart = performance.now();
         let steps = 0;
         while (accumulator >= 1 / 60 && steps++ < 6) {
           g.viewport.width = view.width / view.zoom;
@@ -772,6 +762,7 @@ function tick(now: number) {
           accumulator -= 1 / 60;
           if (g.offers.length) break;
         }
+        view.timing.sim += (performance.now() - simStart - view.timing.sim) * 0.1;
         if (g.offers.length) levelUp();
         if (g.outcome) endRun();
         if (pauseDeferred && g.deadeye <= 0) {

@@ -2,9 +2,13 @@ import type { Hunt } from './game';
 import type { Enemy } from './types';
 import { ENEMIES } from '../data/enemies';
 import { BOSSES } from '../data/bosses';
-import { distance } from '../data/tuning';
-import { blockedMove } from './world';
+import { distance, len } from '../data/tuning';
+import { blockedMove, type Cover } from './world';
 import { damageEnemy } from './combat';
+const harvestTargets: Enemy[] = [];
+const threatCover: Cover[] = [];
+const snareTargets: Enemy[] = [];
+const snareArea: Enemy[] = [];
 function telegraph(
   g: Hunt,
   e: Enemy,
@@ -15,41 +19,39 @@ function telegraph(
   angle = e.angle,
 ) {
   const t = g.threats.acquire();
-  if (t)
-    Object.assign(t, {
-      x: e.x,
-      y: e.y,
-      kind,
-      r,
-      length,
-      angle,
-      clock: 0,
-      duration,
-      damage: e.damage,
-      vx: 0,
-      vy: 0,
-      owner: e.id,
-    });
+  if (t) {
+    t.x = e.x;
+    t.y = e.y;
+    t.kind = kind;
+    t.r = r;
+    t.length = length;
+    t.angle = angle;
+    t.clock = 0;
+    t.duration = duration;
+    t.damage = e.damage;
+    t.vx = 0;
+    t.vy = 0;
+    t.owner = e.id;
+  }
   g.emit('enemy.telegraph', e.x, e.y);
   return t;
 }
 function projectile(g: Hunt, e: Enemy, angle: number, speed = 380) {
   const t = g.threats.acquire();
-  if (t)
-    Object.assign(t, {
-      x: e.x,
-      y: e.y,
-      kind: 3,
-      r: 7,
-      length: 0,
-      angle,
-      clock: 0,
-      duration: 5,
-      damage: e.damage,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      owner: e.id,
-    });
+  if (t) {
+    t.x = e.x;
+    t.y = e.y;
+    t.kind = 3;
+    t.r = 7;
+    t.length = 0;
+    t.angle = angle;
+    t.clock = 0;
+    t.duration = 5;
+    t.damage = e.damage;
+    t.vx = Math.cos(angle) * speed;
+    t.vy = Math.sin(angle) * speed;
+    t.owner = e.id;
+  }
   g.emit('enemy.loose', e.x, e.y);
 }
 export function updateEnemies(g: Hunt, dt: number) {
@@ -78,19 +80,21 @@ export function updateEnemies(g: Hunt, dt: number) {
       if (g.evolutions.has('red-harvest') && e.bleed > 0 && e.statusClock <= 0) {
         e.statusClock = 1;
         let n = 0;
-        g.hash.query(e.x, e.y, 180, (t) => {
+        const found = g.hash.query(e.x, e.y, 180, harvestTargets);
+        for (let i = 0; i < found; i++) {
+          const t = harvestTargets[i];
           if (t !== e && t.active && n++ < 2) {
             damageEnemy(g, t, 12, undefined, 'red-harvest', true);
             g.burst(t.x, t.y, 7, 1);
           }
-        });
+        }
       }
       if (e.elite === 2 && g.time - e.lastHit > 2)
         e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.04 * dt);
       if (e.boss >= 0 || (e.dummy && e.kind !== 3) || e.freeze > 0 || e.root > 0) continue;
       const dx = p.x - e.x,
         dy = p.y - e.y,
-        d = Math.hypot(dx, dy),
+        d = len(dx, dy),
         aim = Math.atan2(dy, dx),
         def = ENEMIES[e.kind];
       let speed = e.speed * (e.slow > 0 ? 0.7 : 1),
@@ -207,7 +211,7 @@ export function updateEnemies(g: Hunt, dt: number) {
         }
       }
       if (move) {
-        if (e.state === 2 && [1, 4].includes(e.kind)) {
+        if (e.state === 2 && (e.kind === 1 || e.kind === 4)) {
           e.x += Math.cos(e.angle) * speed * dt;
           e.y += Math.sin(e.angle) * speed * dt;
         } else {
@@ -217,7 +221,7 @@ export function updateEnemies(g: Hunt, dt: number) {
             g.world.flow.costs[Math.floor(e.y / 100) * 150 + Math.floor(e.x / 100)] > 2000;
           let vx = direct ? dx : g.path.x,
             vy = direct ? dy : g.path.y;
-          const length = Math.hypot(vx, vy) || 1;
+          const length = len(vx, vy) || 1;
           vx /= length;
           vy /= length;
           e.x += vx * speed * dt;
@@ -226,7 +230,7 @@ export function updateEnemies(g: Hunt, dt: number) {
         blockedMove(e, e.r * 0.7, g.world.hash);
       }
       if (d < e.r + 16 && e.kind !== 6 && e.fade === 0) {
-        if (e.state !== 3 && ![1, 4, 7].includes(e.kind)) {
+        if (e.state !== 3 && e.kind !== 1 && e.kind !== 4 && e.kind !== 7) {
           e.state = 3;
           e.clock = 0.6;
           telegraph(g, e, 2, 0.6, e.r + 22);
@@ -250,23 +254,26 @@ export function updateThreats(g: Hunt, dt: number) {
           g.hurt(t.damage);
           t.active = false;
         }
-        g.world.hash.query(t.x, t.y, 50, (o) => {
-          if (distance(t, o) < o.r) t.active = false;
-        });
+        const found = g.world.hash.query(t.x, t.y, 50, threatCover);
+        for (let i = 0; i < found; i++)
+          if (distance(t, threatCover[i]) < threatCover[i].r) t.active = false;
       }
       if (t.kind === 5) {
         let triggered = false;
-        g.hash.query(t.x, t.y, 45, (e) => {
+        const found = g.hash.query(t.x, t.y, 45, snareTargets);
+        for (let i = 0; i < found; i++) {
+          const e = snareTargets[i];
           if (e.active && distance(e, t) < 45) {
             e.root = 2;
             damageEnemy(g, e, t.damage, undefined, 'thornsnare');
             triggered = true;
-            if (g.rank('thornsnare') === 5)
-              g.hash.query(t.x, t.y, 90, (n) => {
-                if (distance(n, t) < 90) n.root = 2;
-              });
+            if (g.rank('thornsnare') === 5) {
+              const caught = g.hash.query(t.x, t.y, 90, snareArea);
+              for (let k = 0; k < caught; k++)
+                if (distance(snareArea[k], t) < 90) snareArea[k].root = 2;
+            }
           }
-        });
+        }
         if (triggered) {
           g.snareHeld--;
           g.emit('tool.snare.trigger', t.x, t.y);
@@ -307,7 +314,7 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
   const p = g.player,
     dx = p.x - e.x,
     dy = p.y - e.y,
-    d = Math.hypot(dx, dy),
+    d = len(dx, dy),
     aim = Math.atan2(dy, dx);
   const before = e.phase;
   e.phase = e.hp / e.maxHp > 0.66 ? 1 : e.hp / e.maxHp > 0.33 ? 2 : 3;

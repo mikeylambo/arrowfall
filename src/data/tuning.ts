@@ -49,5 +49,7 @@ export const T = {
 };
 export const xpNeeded = (level: number) => 5 + 4 * Math.pow(level, 1.35);
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+/** Vector length. Math.sqrt rather than Math.hypot: hypot boxes its result in V8 hot loops. */
+export const len = (x: number, y: number) => Math.sqrt(x * x + y * y);
 export const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-  Math.hypot(a.x - b.x, a.y - b.y);
+  len(a.x - b.x, a.y - b.y);

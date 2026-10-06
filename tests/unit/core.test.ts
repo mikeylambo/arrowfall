@@ -5,6 +5,8 @@ import { Hunt } from '../../src/sim/game';
 import { freshProfile, loadProfile, saveProfile } from '../../src/sim/profile';
 import { EVOLUTIONS } from '../../src/data/evolutions';
 import { EntityPool, SpatialHash } from '@slu/web-shell';
+import { Pool } from '../../src/sim/pool';
+import { Grid } from '../../src/sim/grid';
 const input = { mx: 0, my: 0, ax: 7900, ay: 4250, draw: false, dodge: false, deadeye: false };
 describe('exact bow windows', () => {
   for (const b of BOWS)
@@ -92,6 +94,23 @@ it('pool reuses slots and hash finds local targets', () => {
   let found = 0;
   hash.query(0, 0, 2, () => found++);
   expect(found).toBe(1);
+});
+it('game pool resumes after the last slot and grid queries need no callbacks', () => {
+  const pool = new Pool(3, () => ({ active: false, x: 0, y: 0 }));
+  const a = pool.acquire()!,
+    b = pool.acquire()!;
+  a.active = false;
+  expect(pool.acquire()).not.toBe(a);
+  expect(pool.acquire()).toBe(a);
+  expect(pool.acquire()).toBeUndefined();
+  b.x = 205;
+  b.y = 95;
+  const grid = new Grid<{ active: boolean; x: number; y: number }>(1000, 1000, 50, 3);
+  grid.rebuild(pool.items, (item) => item.x > 100);
+  const out: { x: number; y: number }[] = [];
+  expect(grid.query(200, 100, 10, out)).toBe(1);
+  expect(out[0]).toBe(b);
+  expect(grid.query(-500, -500, 10, out)).toBe(0);
 });
 it('director spawns outside the visible rectangle', () => {
   const g = new Hunt(3, freshProfile());

@@ -1,6 +1,7 @@
 import type { Hunt } from './game';
-import type { Enemy, Arrow } from './types';
-import { T, distance } from '../data/tuning';
+import type { Enemy, Arrow, Threat } from './types';
+import type { Cover } from './world';
+import { T, distance, len } from '../data/tuning';
 import { drawProfile, drawDamage } from './bow';
 export function loose(
   g: Hunt,
@@ -65,22 +66,20 @@ export function loose(
         ? Math.sin(g.time * 30) * Math.min(0.18, (p.draw - profile.full - profile.window) * 0.5)
         : 0;
     a += sway;
-    Object.assign(arrow, {
-      x,
-      y,
-      vx: Math.cos(a) * speed,
-      vy: Math.sin(a) * speed,
-      life: (T.arrowRange * (1 + 0.2 * g.rank('longshaft'))) / speed,
-      damage,
-      pierce: g.rank('piercer') + (perfect ? 1 : 0) + (g.bow.id === 'nightreach' ? 1 : 0),
-      perfect,
-      full,
-      crit,
-      r: 3 * (1 + 0.25 * g.rank('broadshaft')),
-      source: origin,
-      travel: 0,
-      hitCount: 0,
-    });
+    arrow.x = x;
+    arrow.y = y;
+    arrow.vx = Math.cos(a) * speed;
+    arrow.vy = Math.sin(a) * speed;
+    arrow.life = (T.arrowRange * (1 + 0.2 * g.rank('longshaft'))) / speed;
+    arrow.damage = damage;
+    arrow.pierce = g.rank('piercer') + (perfect ? 1 : 0) + (g.bow.id === 'nightreach' ? 1 : 0);
+    arrow.perfect = perfect;
+    arrow.full = full;
+    arrow.crit = crit;
+    arrow.r = 3 * (1 + 0.25 * g.rank('broadshaft'));
+    arrow.source = origin;
+    arrow.travel = 0;
+    arrow.hitCount = 0;
     if (
       (g.evolutions.has('worldpiercer') && full) ||
       (g.rank('last-arrow') && g.shots % 10 === 0)
@@ -112,103 +111,116 @@ export function loose(
     }
   }
 }
+const arrowCover: Cover[] = [];
+const arrowTargets: Enemy[] = [];
+const walls: Threat[] = [];
 export function updateArrows(g: Hunt, dt: number) {
-  for (const a of g.arrows.items)
-    if (a.active) {
-      a.life -= dt;
-      if (a.life <= 0) {
-        a.active = false;
-        continue;
-      }
-      if (g.bow.id === 'moonbow' && a.source !== 'rain') {
-        const angle = Math.atan2(g.aim.y - a.y, g.aim.x - a.x),
-          speed = Math.hypot(a.vx, a.vy);
-        a.vx += (Math.cos(angle) * speed - a.vx) * dt * 1.5;
-        a.vy += (Math.sin(angle) * speed - a.vy) * dt * 1.5;
-      }
-      const ox = a.x,
-        oy = a.y;
-      a.x += a.vx * dt;
-      a.y += a.vy * dt;
-      a.travel += Math.hypot(a.vx, a.vy) * dt;
-      if (!(g.evolutions.has('worldpiercer') && a.full))
-        g.world.hash.query(a.x, a.y, 55, (o) => {
-          if (distance(a, o) < o.r) a.active = false;
-        });
-      for (const wall of g.threats.items)
-        if (wall.active && wall.kind === 4 && !(g.evolutions.has('worldpiercer') && a.full)) {
-          const dx = a.x - wall.x,
-            dy = a.y - wall.y,
-            along = dx * Math.cos(wall.angle) + dy * Math.sin(wall.angle),
-            across = Math.abs(-dx * Math.sin(wall.angle) + dy * Math.cos(wall.angle));
-          if (along > 0 && along < wall.length && across < wall.r) a.active = false;
-        }
-      if (!a.active) continue;
-      const step = Math.hypot(a.x - ox, a.y - oy);
-      g.hash.query(a.x, a.y, step + 65, (e) => {
-        if (!a.active || !e.active || e.fade > 0 || e.freeze < 0) return;
-        for (let i = 0; i < a.hitCount; i++) if (a.hit[i] === e.id) return;
-        const dx = a.x - ox,
-          dy = a.y - oy,
-          t = Math.max(
-            0,
-            Math.min(1, ((e.x - ox) * dx + (e.y - oy) * dy) / (dx * dx + dy * dy || 1)),
-          );
-        if (Math.hypot(e.x - (ox + t * dx), e.y - (oy + t * dy)) > e.r + a.r) return;
-        if (e.kind === 5 && g.bow.id !== 'oathbreaker' && a.pierce === 0 && a.source !== 'rain') {
-          const incoming = Math.atan2(-a.vy, -a.vx),
-            diff = Math.atan2(Math.sin(incoming - e.angle), Math.cos(incoming - e.angle));
-          if (Math.abs(diff) < Math.PI / 3) {
-            a.active = false;
-            g.emit('enemy.hit.armor', e.x, e.y);
-            return;
-          }
-        }
-        a.hit[a.hitCount++] = e.id;
-        const d = distance(e, g.player),
-          widen = 0.15 * g.rank('far-sight');
-        const near = g.bow.near * (1 - widen),
-          far = g.bow.far * (1 + widen);
-        let multiplier =
-          d < 180 ? 0.8 : d >= near && d <= far ? 1.15 + 0.1 * g.rank('far-sight') : 1;
-        if (g.bow.id === 'nightreach') multiplier *= 1 + (0.2 * a.travel) / 300;
-        if (g.evolutions.has('worldpiercer') && a.full) multiplier *= 1 + 0.1 * (a.hitCount - 1);
-        if (e.boss === 0 && a.perfect) {
-          const front = Math.atan2(g.player.y - e.y, g.player.x - e.x);
-          if (
-            Math.abs(Math.atan2(Math.sin(front - e.angle), Math.cos(front - e.angle))) <
-            Math.PI / 3
-          )
-            multiplier *= 1.5;
-        }
-        if (e.boss === 1 && a.source !== 'rain' && Math.abs(e.y - a.y) > 15) multiplier *= 0.25;
-        if (e.boss === 2 && e.state === 4) {
-          e.state = 0;
-          g.burst(e.x, e.y, 20);
-        }
-        if (g.scene === 'range') {
-          if (d >= near && d <= far && g.moving) g.rangeSweet++;
-          if (a.source === 'deadeye') g.rangeDeadeye++;
-          if (e.kind === 3 && e.state === 1) {
-            g.rangeInterrupt++;
-            e.state = 0;
-            e.clock = 2;
-          }
-        }
-        damageEnemy(g, e, a.damage * multiplier, a, a.source);
-        if (a.full) {
-          g.player.focus = Math.min(100, g.player.focus + 3 * (1 + 0.25 * g.rank('moonwell')));
-        }
-        if (g.bow.id === 'moonbow') g.player.focus = Math.min(100, g.player.focus + 1);
-        if (g.bow.id === 'oathbreaker') {
-          e.x += Math.cos(Math.atan2(a.vy, a.vx)) * 25;
-          e.y += Math.sin(Math.atan2(a.vy, a.vx)) * 25;
-          if (a.perfect) e.root = 0.6;
-        }
-        a.pierce--;
-        if (a.pierce < 0) a.active = false;
-      });
+  let wallCount = 0;
+  for (const t of g.threats.items) if (t.active && t.kind === 4) walls[wallCount++] = t;
+  const worldpiercer = g.evolutions.has('worldpiercer'),
+    moonbow = g.bow.id === 'moonbow',
+    widen = 0.15 * g.rank('far-sight'),
+    near = g.bow.near * (1 - widen),
+    far = g.bow.far * (1 + widen),
+    sweetBonus = 1.15 + 0.1 * g.rank('far-sight'),
+    focusPerHit = 3 * (1 + 0.25 * g.rank('moonwell'));
+  for (const a of g.arrows.items) {
+    if (!a.active) continue;
+    a.life -= dt;
+    if (a.life <= 0) {
+      a.active = false;
+      continue;
     }
+    if (moonbow && a.source !== 'rain') {
+      const angle = Math.atan2(g.aim.y - a.y, g.aim.x - a.x),
+        speed = len(a.vx, a.vy);
+      a.vx += (Math.cos(angle) * speed - a.vx) * dt * 1.5;
+      a.vy += (Math.sin(angle) * speed - a.vy) * dt * 1.5;
+    }
+    const ox = a.x,
+      oy = a.y;
+    a.x += a.vx * dt;
+    a.y += a.vy * dt;
+    a.travel += len(a.vx, a.vy) * dt;
+    if (!(worldpiercer && a.full)) {
+      const n = g.world.hash.query(a.x, a.y, 55, arrowCover);
+      for (let i = 0; i < n; i++)
+        if (distance(a, arrowCover[i]) < arrowCover[i].r) a.active = false;
+      for (let w = 0; w < wallCount; w++) {
+        const wall = walls[w],
+          dx = a.x - wall.x,
+          dy = a.y - wall.y,
+          along = dx * Math.cos(wall.angle) + dy * Math.sin(wall.angle),
+          across = Math.abs(-dx * Math.sin(wall.angle) + dy * Math.cos(wall.angle));
+        if (along > 0 && along < wall.length && across < wall.r) a.active = false;
+      }
+    }
+    if (!a.active) continue;
+    const dx = a.x - ox,
+      dy = a.y - oy,
+      segment = dx * dx + dy * dy || 1,
+      step = Math.sqrt(dx * dx + dy * dy);
+    const n = g.hash.query(a.x, a.y, step + 65, arrowTargets);
+    for (let k = 0; k < n && a.active; k++) {
+      const e = arrowTargets[k];
+      if (!e.active || e.fade > 0 || e.freeze < 0) continue;
+      let seen = false;
+      for (let i = 0; i < a.hitCount; i++)
+        if (a.hit[i] === e.id) {
+          seen = true;
+          break;
+        }
+      if (seen) continue;
+      const t = Math.max(0, Math.min(1, ((e.x - ox) * dx + (e.y - oy) * dy) / segment));
+      if (len(e.x - (ox + t * dx), e.y - (oy + t * dy)) > e.r + a.r) continue;
+      if (e.kind === 5 && g.bow.id !== 'oathbreaker' && a.pierce === 0 && a.source !== 'rain') {
+        const incoming = Math.atan2(-a.vy, -a.vx),
+          diff = Math.atan2(Math.sin(incoming - e.angle), Math.cos(incoming - e.angle));
+        if (Math.abs(diff) < Math.PI / 3) {
+          a.active = false;
+          g.emit('enemy.hit.armor', e.x, e.y);
+          continue;
+        }
+      }
+      a.hit[a.hitCount++] = e.id;
+      const d = distance(e, g.player);
+      let multiplier = d < 180 ? 0.8 : d >= near && d <= far ? sweetBonus : 1;
+      if (g.bow.id === 'nightreach') multiplier *= 1 + (0.2 * a.travel) / 300;
+      if (worldpiercer && a.full) multiplier *= 1 + 0.1 * (a.hitCount - 1);
+      if (e.boss === 0 && a.perfect) {
+        const front = Math.atan2(g.player.y - e.y, g.player.x - e.x);
+        if (
+          Math.abs(Math.atan2(Math.sin(front - e.angle), Math.cos(front - e.angle))) <
+          Math.PI / 3
+        )
+          multiplier *= 1.5;
+      }
+      if (e.boss === 1 && a.source !== 'rain' && Math.abs(e.y - a.y) > 15) multiplier *= 0.25;
+      if (e.boss === 2 && e.state === 4) {
+        e.state = 0;
+        g.burst(e.x, e.y, 20);
+      }
+      if (g.scene === 'range') {
+        if (d >= near && d <= far && g.moving) g.rangeSweet++;
+        if (a.source === 'deadeye') g.rangeDeadeye++;
+        if (e.kind === 3 && e.state === 1) {
+          g.rangeInterrupt++;
+          e.state = 0;
+          e.clock = 2;
+        }
+      }
+      damageEnemy(g, e, a.damage * multiplier, a, a.source);
+      if (a.full) g.player.focus = Math.min(100, g.player.focus + focusPerHit);
+      if (g.bow.id === 'moonbow') g.player.focus = Math.min(100, g.player.focus + 1);
+      if (g.bow.id === 'oathbreaker') {
+        e.x += Math.cos(Math.atan2(a.vy, a.vx)) * 25;
+        e.y += Math.sin(Math.atan2(a.vy, a.vx)) * 25;
+        if (a.perfect) e.root = 0.6;
+      }
+      a.pierce--;
+      if (a.pierce < 0) a.active = false;
+    }
+  }
 }
 export function damageEnemy(
   g: Hunt,
@@ -225,7 +237,11 @@ export function damageEnemy(
   if (e.mark) damage *= 1.3;
   if (e.bleed > 0 && g.rank('blood-trail')) damage *= 1.25;
   if (e.hp / e.maxHp < 0.2 && g.rank('executioner')) damage *= 1.5;
-  if (g.rank('rupture') && [e.bleed, e.burn, e.poison, e.slow].filter((n) => n > 0).length >= 2)
+  if (
+    g.rank('rupture') &&
+    (e.bleed > 0 ? 1 : 0) + (e.burn > 0 ? 1 : 0) + (e.poison > 0 ? 1 : 0) + (e.slow > 0 ? 1 : 0) >=
+      2
+  )
     damage *= 1.4;
   e.hp -= damage;
   e.lastHit = g.time;
@@ -241,8 +257,13 @@ export function damageEnemy(
     if (a.crit) g.emit('number.crit', e.x, e.y, damage);
     g.burst(e.x, e.y, 4);
     g.emit(
-      'enemy.hit.' +
-        (e.kind === 5 ? 'armor' : e.kind === 2 ? 'spectral' : e.kind === 4 ? 'bone' : 'flesh'),
+      e.kind === 5
+        ? 'enemy.hit.armor'
+        : e.kind === 2
+          ? 'enemy.hit.spectral'
+          : e.kind === 4
+            ? 'enemy.hit.bone'
+            : 'enemy.hit.flesh',
       e.x,
       e.y,
       damage,
@@ -262,13 +283,19 @@ export function damageEnemy(
     } else g.kill(e);
   }
 }
+const areaTargets: Enemy[] = [];
 function area(g: Hunt, e: Enemy, r: number, damage: number, source: string) {
-  g.hash.query(e.x, e.y, r, (t) => {
+  const n = g.hash.query(e.x, e.y, r, areaTargets);
+  for (let i = 0; i < n; i++) {
+    const t = areaTargets[i];
     if (t !== e && t.active && distance(t, e) < r)
       damageEnemy(g, t, damage, undefined, source, true);
-  });
+  }
   g.burst(e.x, e.y, 24, 2);
 }
+const chainTargets: Enemy[] = [];
+const chainVisited = new Uint32Array(8);
+const killTargets: Enemy[] = [];
 /** Rules respond to semantic hooks; secondary hits apply status without recursively emitting hook effects. */
 export function applyEvolutionRules(
   g: Hunt,
@@ -288,21 +315,21 @@ export function applyEvolutionRules(
       e.freeze = 1.5;
     if (g.rank('storm-arrow') && (g.evolutions.has('thunderstorm') || g.rng.next() < 0.2)) {
       let prev = e;
-      const visited = new Set<number>([e.id]),
-        n = g.evolutions.has('thunderstorm') ? 6 : 2;
+      const n = g.evolutions.has('thunderstorm') ? 6 : 2;
+      chainVisited[0] = e.id;
+      let visitedCount = 1;
       for (let i = 0; i < n; i++) {
         let next: Enemy | undefined;
-        g.hash.query(prev.x, prev.y, 180, (t) => {
-          if (
-            t.active &&
-            !visited.has(t.id) &&
-            distance(t, prev) < 180 &&
-            (!next || distance(t, prev) < distance(next, prev))
-          )
-            next = t;
-        });
+        const found = g.hash.query(prev.x, prev.y, 180, chainTargets);
+        for (let k = 0; k < found; k++) {
+          const t = chainTargets[k];
+          if (!t.active || distance(t, prev) >= 180) continue;
+          let visited = false;
+          for (let v = 0; v < visitedCount; v++) if (chainVisited[v] === t.id) visited = true;
+          if (!visited && (!next || distance(t, prev) < distance(next, prev))) next = t;
+        }
         if (!next) break;
-        visited.add(next.id);
+        chainVisited[visitedCount++] = next.id;
         damageEnemy(g, next, damage * 0.3 * (1 + 0.15 * i), undefined, 'thunderstorm', true);
         g.emit('status.storm', next.x, next.y);
         g.burst(next.x, next.y, 10);
@@ -311,15 +338,18 @@ export function applyEvolutionRules(
     }
   }
   if (hook === 'kill') {
-    if (g.evolutions.has('hellfire') && e.burn > 0)
-      g.hash.query(e.x, e.y, 120, (t) => {
+    if (g.evolutions.has('hellfire') && e.burn > 0) {
+      const found = g.hash.query(e.x, e.y, 120, killTargets);
+      for (let i = 0; i < found; i++) {
+        const t = killTargets[i];
         if (t.active && distance(t, e) < 120) t.burn = 2;
-      });
+      }
+    }
     if (g.evolutions.has('red-harvest') && e.bleed > 0) {
       let n = 0;
-      g.hash.query(e.x, e.y, 200, (t) => {
-        if (t.active && n++ < 3) t.bleed = 3;
-      });
+      const found = g.hash.query(e.x, e.y, 200, killTargets);
+      for (let i = 0; i < found; i++)
+        if (killTargets[i].active && n++ < 3) killTargets[i].bleed = 3;
     }
     if (g.evolutions.has('apex-hunter') && e.mark) {
       let next: Enemy | undefined;
@@ -330,21 +360,20 @@ export function applyEvolutionRules(
     }
     if (e.elite === 4) {
       const t = g.threats.acquire();
-      if (t)
-        Object.assign(t, {
-          x: e.x,
-          y: e.y,
-          kind: 2,
-          r: 100,
-          clock: 0,
-          duration: 0.6,
-          damage: 25,
-          vx: 0,
-          vy: 0,
-          owner: e.id,
-          angle: 0,
-          length: 0,
-        });
+      if (t) {
+        t.x = e.x;
+        t.y = e.y;
+        t.kind = 2;
+        t.r = 100;
+        t.clock = 0;
+        t.duration = 0.6;
+        t.damage = 25;
+        t.vx = 0;
+        t.vy = 0;
+        t.owner = e.id;
+        t.angle = 0;
+        t.length = 0;
+      }
     }
   }
 }

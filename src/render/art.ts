@@ -1,4 +1,4 @@
-import { Texture } from 'pixi.js';
+import { Rectangle, Texture } from 'pixi.js';
 export const PALETTE = {
   silver: '#daefff',
   red: '#fb5368',
@@ -6,15 +6,34 @@ export const PALETTE = {
   floor: '#080d19',
   rim: '#24344b',
 };
+/** Atlas edge (px). Every baked sprite shares one texture source so the crowd batches together. */
+const ATLAS = 1024;
+const PAD = 2;
 export function bakeArt() {
   const assets: Record<string, Texture> = {};
+  const atlas = document.createElement('canvas');
+  atlas.width = atlas.height = ATLAS;
+  const ctx = atlas.getContext('2d')!;
+  const frames: Record<string, Rectangle> = {};
+  let cx = 0,
+    cy = 0,
+    row = 0;
   const bake = (name: string, draw: (c: CanvasRenderingContext2D) => void, size = 128) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = size;
-    const c = canvas.getContext('2d')!;
-    c.translate(size / 2, size / 2);
-    draw(c);
-    assets[name] = Texture.from(canvas);
+    if (cx + size > ATLAS) {
+      cx = 0;
+      cy += row;
+      row = 0;
+    }
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cx, cy, size, size);
+    ctx.clip();
+    ctx.translate(cx + size / 2, cy + size / 2);
+    draw(ctx);
+    ctx.restore();
+    frames[name] = new Rectangle(cx, cy, size, size);
+    cx += size + PAD;
+    row = Math.max(row, size + PAD);
   };
   const path = (c: CanvasRenderingContext2D, points: number[], fill: string, stroke = fill) => {
     c.beginPath();
@@ -246,5 +265,7 @@ export function bakeArt() {
     },
     96,
   );
+  const source = Texture.from(atlas).source;
+  for (const [name, frame] of Object.entries(frames)) assets[name] = new Texture({ source, frame });
   return assets;
 }
