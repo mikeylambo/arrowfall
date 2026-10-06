@@ -7,14 +7,75 @@
       "cell": 192,
       "modelHeight": 1.5,
       "heightPx": 144,
-      "pivot": [0.5, 0.78],
-      "directions": [0, 1, 2, 6, 7],
+      "pivot": [
+        0.5,
+        0.78
+      ],
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
       "ink": "#1b2233",
       "rim": "#ffffff",
       "clips": [
-        { "name": "idle", "clip": "idle", "frames": 8, "loop": true },
-        { "name": "run", "clip": "run", "frames": 8, "loop": true }
+        {
+          "name": "idle",
+          "clip": "idle",
+          "frames": 8,
+          "loop": true
+        },
+        {
+          "name": "run",
+          "clip": "run",
+          "frames": 8,
+          "loop": true
+        }
       ]
+    },
+    {
+      "id": "hunter",
+      "cell": 192,
+      "modelHeight": 1.2,
+      "heightPx": 144,
+      "pivot": [
+        0.5,
+        0.82
+      ],
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#1b2233",
+      "rim": "#ffffff",
+      "clips": [
+        {
+          "name": "idle",
+          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-rigged.glb",
+          "frames": 8,
+          "loop": true
+        },
+        {
+          "name": "run",
+          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-running.glb",
+          "frames": 8,
+          "loop": true
+        }
+      ],
+      "source": {
+        "concept": "art-source/hunter-sheet-final.webp",
+        "meshy": {
+          "multi-image-to-3d": "01a112e6-527e-74f4-b7fb-3d3d69208aed",
+          "remesh": "01a112e9-f7bd-70aa-b0fc-b0e0591e5dc6",
+          "rigging": "01a112eb-84dd-7014-ae41-074b95762e28"
+        },
+        "note": "Re-download expired GLBs with: meshy download --resource rigging --task-id <id> --asset result.rigged_character_glb_url"
+      }
     }
   ]
 }
