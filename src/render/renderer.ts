@@ -50,6 +50,9 @@ export class View {
   readonly actors = new Container();
   readonly arrows = new Container();
   readonly threatLayer = new Container();
+  /** The hunter draws above every threat so it is never lost in a crowd. */
+  readonly hero = new Container();
+  readonly cutout = new Sprite();
   readonly overlay = new Graphics();
   readonly worldLines = new Graphics();
   /** Static world marks (landmarks), tessellated once per attach. */
@@ -114,13 +117,17 @@ export class View {
     this.weakPoint.tint = tint(PALETTE.weak);
     this.weakPoint.visible = false;
     this.threatLayer.addChild(this.weakPoint);
-    this.root.addChild(this.atmosphere.mistHigh);
+    this.root.addChild(this.hero, this.atmosphere.mistHigh);
     this.app.stage.addChild(this.atmosphere.vignette, this.overlay);
     this.hunter.texture = this.art.hunter;
     this.hunter.anchor.set(0.5);
     this.hunter.scale.set(0.7);
     this.diegetic = new Diegetic(this.art);
-    this.actors.addChild(this.diegetic.under, this.hunter, this.diegetic.over);
+    this.cutout.texture = this.art.bloom;
+    this.cutout.anchor.set(0.5);
+    this.cutout.tint = tint(PALETTE.background);
+    this.cutout.alpha = 0.75;
+    this.hero.addChild(this.cutout, this.diegetic.under, this.hunter, this.diegetic.over);
     this.raven.texture = this.art.raven;
     this.raven.anchor.set(0.5);
     this.raven.scale.set(0.45);
@@ -349,6 +356,8 @@ export class View {
       }
     }
     this.hunter.position.set(p.x, p.y);
+    this.cutout.position.set(p.x, p.y);
+    this.cutout.scale.set(g.crowd > 40 ? 0.95 : 0.7);
     this.hunter.rotation = p.aim;
     this.hunter.alpha = p.invuln > 0 ? 0.55 + 0.45 * Math.sin(g.realTime * 30) : 1;
     for (let i = 0; i < 3; i++) {
@@ -396,7 +405,8 @@ export class View {
       tg = this.threatGraphics;
     w.clear();
     tg.clear();
-    const red = this.colorblind ? C.colorblind : C.threat;
+    const red = this.colorblind ? C.colorblind : C.threat,
+      crowded = g.crowd > 150;
     if (this.showBands && !this.camp) {
       w.circle(p.x, p.y, g.bow.near).stroke({ color: 0x98c7e6, alpha: 0.06, width: 1 });
       w.circle(p.x, p.y, g.bow.far).stroke({ color: 0x98c7e6, alpha: 0.11, width: 1 });
@@ -473,14 +483,18 @@ export class View {
         else {
           const endX = t.x + Math.cos(t.angle) * t.length,
             endY = t.y + Math.sin(t.angle) * t.length;
+          // Charge lanes get a translucent body; aim lines are a single stroke that thins in a crowd.
+          if (t.kind === 1)
+            tg.moveTo(t.x, t.y)
+              .lineTo(endX, endY)
+              .stroke({ color: red, width: t.r * 2, alpha: 0.12 });
           tg.moveTo(t.x, t.y)
             .lineTo(endX, endY)
             .stroke({
               color: red,
-              width: t.kind === 1 ? t.r * 2 : 2,
-              alpha: t.kind === 1 ? 0.12 : 0.6,
+              width: t.kind === 1 ? 2 : 1.5,
+              alpha: t.kind === 1 ? 0.85 : crowded ? 0.3 : 0.7,
             });
-          tg.moveTo(t.x, t.y).lineTo(endX, endY).stroke({ color: red, width: 2, alpha: 0.85 });
           if (this.colorblind)
             for (let i = 0; i < 10; i++) {
               const x = t.x + ((endX - t.x) * i) / 10,
