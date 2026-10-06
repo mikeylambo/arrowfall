@@ -1,7 +1,8 @@
 import { it, expect } from 'vitest';
 import { Hunt } from '../../src/sim/game';
 import { freshProfile } from '../../src/sim/profile';
-import { loose, damageEnemy, applyEvolutionRules } from '../../src/sim/combat';
+import { loose, damageEnemy, applyEvolutionRules, updateArrows } from '../../src/sim/combat';
+import { BOSSES } from '../../src/data/bosses';
 import { EVOLUTIONS } from '../../src/data/evolutions';
 function fixture(id: string) {
   const g = new Hunt(313, freshProfile());
@@ -76,4 +77,38 @@ it('Apex Hunter passes the Mark and grants its temporary bonus', () => {
 it('Heaven’s Volley perfect emits thirty-six rain arrows', () => {
   const { g } = fixture('heaven-s-volley');
   expect(g.arrows.items.filter((a) => a.active && a.source === 'rain')).toHaveLength(36);
+});
+it('Bramble King takes full damage only through its crown', () => {
+  const hit = (dy: number) => {
+    const g = new Hunt(313, freshProfile());
+    g.freezeSpawns = true;
+    g.spawnBoss(1);
+    const boss = g.boss!;
+    boss.root = 999;
+    const before = boss.hp;
+    const a = g.arrows.acquire()!;
+    Object.assign(a, {
+      x: boss.x - 120,
+      y: boss.y + dy,
+      vx: 800,
+      vy: 0,
+      life: 1,
+      damage: 100,
+      pierce: 0,
+      perfect: false,
+      full: false,
+      crit: false,
+      r: 3,
+      source: 'bow',
+      travel: 0,
+      hitCount: 0,
+    });
+    g.reindex();
+    for (let i = 0; i < 12 && a.active; i++) updateArrows(g, 1 / 60);
+    return before - boss.hp;
+  };
+  const crown = hit(BOSSES[1].crown!.dy),
+    body = hit(30);
+  expect(crown).toBeGreaterThan(0);
+  expect(body).toBeCloseTo(crown * 0.25, 0);
 });

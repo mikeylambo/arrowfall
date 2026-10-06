@@ -1,6 +1,7 @@
 import type { Hunt } from './game';
 import type { Enemy, Arrow, Threat } from './types';
 import type { Cover } from './world';
+import { BOSSES } from '../data/bosses';
 import { T, distance, len } from '../data/tuning';
 import { drawProfile, drawDamage } from './bow';
 export function loose(
@@ -195,7 +196,13 @@ export function updateArrows(g: Hunt, dt: number) {
         )
           multiplier *= 1.5;
       }
-      if (e.boss === 1 && a.source !== 'rain' && Math.abs(e.y - a.y) > 15) multiplier *= 0.25;
+      if (e.boss === 1 && a.source !== 'rain') {
+        // Full damage when the arrow's line of flight passes through the crown.
+        const crown = BOSSES[1].crown!,
+          speed = len(a.vx, a.vy) || 1,
+          miss = Math.abs((a.vx * (e.y + crown.dy - a.y) - a.vy * (e.x - a.x)) / speed);
+        if (miss > crown.r + a.r) multiplier *= 0.25;
+      }
       if (e.boss === 2 && e.state === 4) {
         e.state = 0;
         g.burst(e.x, e.y, 20);

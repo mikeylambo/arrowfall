@@ -86,7 +86,7 @@ The silhouette must read as "archer" without the bow.
 | Boss | Read | Weak point |
 | --- | --- | --- |
 | The Black Shuck | giant spectral black hound, burning eyes, smoke mane | head / front arc |
-| The Bramble King | crowned tangle of thorns | **crown** (GDD). The sim currently rewards a horizontal centre band; align the two before final art. |
+| The Bramble King | crowned tangle of thorns, never turns | the **crown** on top: full damage only when an arrow's line of flight passes through it (`BOSSES[1].crown`); the body takes 25% |
 | The Night Hag | flying hunched crone, tattered cloak, casts a moon-shadow | the real one's ground shadow; heart lantern |
 | The Huntmaster | antler-crowned mirror archer, cape; mounts a spectral stag in phase II | head and crown; red perfect-window flash when drawing |
 

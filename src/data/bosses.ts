@@ -26,8 +26,10 @@ export const BOSSES = [
     hp: 4500,
     radius: 58,
     telegraph: 1,
-    // Only arrows within 15 px of its centre line bite: a horizontal heart seam.
-    art: { form: 'bramble', size: 196, weak: { x: 0, y: 0, r: 0.16 }, faces: false } as BossArt,
+    // Only the glowing crown takes full damage (GDD 10); the thorn body takes 25%.
+    // The crown sits above the body on screen and never rotates.
+    crown: { dy: -42, r: 24 },
+    art: { form: 'bramble', size: 196, weak: { x: 0, y: -0.43, r: 0.2 }, faces: false } as BossArt,
   },
   {
     id: 'hag',

@@ -306,7 +306,7 @@ export const BOSS_FORMS: Record<BossArt['form'], (c: Ctx, t: Tone, h: number) =>
     FORMS.wolf(c, t, (h / UNIT) * 1.0, (h / UNIT) * 0.58);
   },
   bramble(c, t, h) {
-    // A thorn mass with no facing; bright seam marks the vulnerable centre line.
+    // A thorn mass with no facing; the glowing crown on top is the only full-damage target.
     for (let i = 0; i < 22; i++) {
       const a = (i / 22) * Math.PI * 2,
         r = h * (i % 2 ? 0.98 : 0.78);
@@ -324,8 +324,24 @@ export const BOSS_FORMS: Record<BossArt['form'], (c: Ctx, t: Tone, h: number) =>
       c.fillStyle = t.shade;
       c.fill();
     }
-    c.fillStyle = t.eye;
-    c.fillRect(-h * 0.56, -2, h * 1.12, 4);
+    // Crown of thorns around the weak point (the baked white-gold core sits inside it).
+    poly(c, [
+      -h * 0.3,
+      -h * 0.36,
+      -h * 0.34,
+      -h * 0.66,
+      -h * 0.17,
+      -h * 0.5,
+      0,
+      -h * 0.74,
+      h * 0.17,
+      -h * 0.5,
+      h * 0.34,
+      -h * 0.66,
+      h * 0.3,
+      -h * 0.36,
+    ]);
+    solid(c, t, t.shade);
   },
   hag(c, t, h) {
     // Tall hunched crone in a tattered cloak, claws forward.
