@@ -448,7 +448,7 @@ export class Hunt {
     this.moving = len(input.mx, input.my) > 0.1;
     this.enemyDeadeye = Math.max(0, this.enemyDeadeye - realDt);
     this.bannerTime = Math.max(0, this.bannerTime - realDt);
-    this.shake = Math.max(0, this.shake - realDt * 20);
+    this.shake = Math.max(0, this.shake - realDt * T.shakeDecay);
     this.flash = Math.max(0, this.flash - realDt * 3);
     this.aim.x = input.ax;
     this.aim.y = input.ay;
@@ -720,7 +720,7 @@ export class Hunt {
     if (this.god || p.invuln > 0 || p.dodge > 0) return;
     p.hp -= amount;
     p.invuln = T.invulnerability;
-    this.shake = 6;
+    this.shake = T.maxShake;
     this.emit('player.hurt');
     this.burst(p.x, p.y, 16, 1);
   }
@@ -752,9 +752,9 @@ export class Hunt {
     if (this.kills % 10 === 0) this.earned++;
     if (e.elite >= 0) {
       this.earned += 5;
-      this.player.focus = Math.min(100, this.player.focus + 8);
+      this.player.focus = Math.min(100, this.player.focus + T.focusElite);
       this.emit('enemy.elite.kill');
-      this.hitstop = 0.06;
+      this.hitstop = T.hitstopElite;
     }
     if (e.boss >= 0) {
       this.earned += 50;
@@ -915,7 +915,7 @@ export class Hunt {
           false,
         );
       }
-    this.shake = 6;
+    this.shake = T.maxShake;
     this.emit('deadeye.release');
   }
   eligible() {

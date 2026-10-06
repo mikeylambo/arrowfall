@@ -55,6 +55,8 @@ let options = {
   bindings: controls.bindings,
   music: 0.25,
   sfx: 0.7,
+  shake: 1,
+  reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
 };
 try {
   options = { ...options, ...JSON.parse(localStorage.getItem('arrowfall.options') || '{}') };
@@ -65,6 +67,8 @@ controls.assist = options.assist;
 view.colorblind = options.colorblind;
 view.showBands = options.bands;
 view.numbers = options.numbers;
+view.shake = options.shake;
+view.reducedMotion = options.reducedMotion;
 await view.init($('game-canvas') as HTMLCanvasElement);
 const adapter = new PixiAdapter({
   loadLevel(id) {
@@ -124,6 +128,8 @@ function saveOptions() {
     localStorage.setItem('arrowfall.options', JSON.stringify(options));
   } catch {}
   view.colorblind = options.colorblind;
+  view.shake = options.shake;
+  view.reducedMotion = options.reducedMotion;
   view.showBands = options.bands;
   view.numbers = options.numbers;
   controls.toggle = options.toggle;
@@ -282,7 +288,12 @@ function settings() {
       { id: 'option:assist', label: `Aim Assist · ${Math.round(options.assist * 100)}%` },
       { id: 'option:uiScale', label: `UI Scale · ${Math.round(options.uiScale * 100)}%` },
       { id: 'option:bands', label: `Range Bands · ${options.bands ? 'On' : 'Off'}` },
-      { id: 'option:shake', label: `Screen Shake · ${Math.round(view.shake * 100)}%` },
+      { id: 'option:shake', label: `Screen Shake · ${Math.round(options.shake * 100)}%` },
+      {
+        id: 'option:reducedMotion',
+        label: `Reduced Motion · ${options.reducedMotion ? 'On' : 'Off'}`,
+        description: 'No shake, pulses or drift; softer flashes',
+      },
       { id: 'option:music', label: `Music · ${Math.round(options.music * 100)}%` },
       { id: 'option:sfx', label: `SFX · ${Math.round(options.sfx * 100)}%` },
       { id: 'option:fullscreen', label: 'Fullscreen' },
@@ -461,14 +472,14 @@ app.flow.onActivate = (screen, id) => {
   }
   if (screen === 'options') {
     const key = id.slice(7);
-    if (['autoLoose', 'toggle', 'colorblind', 'bands', 'numbers'].includes(key)) {
+    if (['autoLoose', 'toggle', 'colorblind', 'bands', 'numbers', 'reducedMotion'].includes(key)) {
       const k = key as 'autoLoose';
       options[k] = !options[k];
     }
     if (key === 'assist')
       options.assist = options.assist >= 1 ? 0 : Math.min(1, options.assist + 0.1);
     if (key === 'uiScale') options.uiScale = options.uiScale >= 1.5 ? 0.75 : options.uiScale + 0.25;
-    if (key === 'shake') view.shake = view.shake <= 0 ? 1 : Math.max(0, view.shake - 0.25);
+    if (key === 'shake') options.shake = options.shake <= 0 ? 1 : Math.max(0, options.shake - 0.25);
     if (key === 'music' || key === 'sfx') {
       options[key] = options[key] <= 0 ? 1 : Math.max(0, options[key] - 0.1);
       app.audioMixer?.setVolume(key, options[key]);

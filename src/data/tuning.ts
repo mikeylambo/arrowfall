@@ -44,8 +44,12 @@ export const T = {
   hitstopPerfect: 0.04,
   /** Freeze-frame on an elite or boss kill (s). */
   hitstopElite: 0.06,
-  /** Peak screen shake amplitude (px). */
+  /** Freeze-frame when a boss changes phase (s). */
+  hitstopPhase: 0.15,
+  /** Peak screen shake amplitude (px); hurt and Deadeye release kick to this. */
   maxShake: 6,
+  /** Screen shake decay (px/s). */
+  shakeDecay: 20,
   /** Overdraw auto-release. false: the draw holds at overdraw until the player lets go. */
   autoLoose: false as boolean,
 };

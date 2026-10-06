@@ -71,7 +71,8 @@ export function bakeArt() {
   let cx = 0,
     cy = 0,
     row = 0;
-  const bake = (name: string, draw: (c: Ctx) => void, size = 128) => {
+  /** Paint into the next free atlas cell (w x h, origin at its centre). */
+  const bake = (name: string, draw: (c: Ctx) => void, size = 128, height = size) => {
     if (cx + size > ATLAS) {
       cx = 0;
       cy += row;
@@ -79,14 +80,14 @@ export function bakeArt() {
     }
     ctx.save();
     ctx.beginPath();
-    ctx.rect(cx, cy, size, size);
+    ctx.rect(cx, cy, size, height);
     ctx.clip();
-    ctx.translate(cx + size / 2, cy + size / 2);
+    ctx.translate(cx + size / 2, cy + height / 2);
     draw(ctx);
     ctx.restore();
-    frames[name] = new Rectangle(cx, cy, size, size);
+    frames[name] = new Rectangle(cx, cy, size, height);
     cx += size + PAD;
-    row = Math.max(row, size + PAD);
+    row = Math.max(row, height + PAD);
   };
 
   bake('hunter', (c) => {
@@ -229,6 +230,7 @@ export function bakeArt() {
       c.stroke();
     },
     96,
+    24,
   );
   bake(
     'xp',
@@ -332,6 +334,46 @@ export function bakeArt() {
       },
       48,
     );
+  // Juice: arrow trail (fades toward the tail), impact spark, soft bloom.
+  bake(
+    'trail',
+    (c) => {
+      const gr = c.createLinearGradient(-64, 0, 64, 0);
+      gr.addColorStop(0, '#ffffff00');
+      gr.addColorStop(1, '#ffffffcc');
+      c.fillStyle = gr;
+      c.beginPath();
+      c.moveTo(-64, 0);
+      c.lineTo(64, -2.5);
+      c.lineTo(64, 2.5);
+      c.closePath();
+      c.fill();
+    },
+    128,
+    8,
+  );
+  bake(
+    'spark',
+    (c) => {
+      const gr = c.createLinearGradient(-24, 0, 24, 0);
+      gr.addColorStop(0, '#ffffff00');
+      gr.addColorStop(0.7, '#ffffffee');
+      gr.addColorStop(1, '#ffffff');
+      c.fillStyle = gr;
+      c.fillRect(-24, -2, 48, 4);
+    },
+    48,
+    8,
+  );
+  bake('bloom', (c) => {
+    const gr = c.createRadialGradient(0, 0, 0, 0, 0, 62);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(0.25, '#ffffffaa');
+    gr.addColorStop(0.6, '#ffffff33');
+    gr.addColorStop(1, '#ffffff00');
+    c.fillStyle = gr;
+    c.fillRect(-64, -64, 128, 128);
+  });
   const source = Texture.from(atlas).source;
   for (const [name, frame] of Object.entries(frames)) assets[name] = new Texture({ source, frame });
   return assets;

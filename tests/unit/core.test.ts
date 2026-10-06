@@ -70,6 +70,26 @@ it('perfect shot gains focus; overdraw holds until release unless autoLoose', ()
     T.autoLoose = flag;
   }
 });
+it('hitstop and shake values come from tuning', () => {
+  const saved = { ...T };
+  T.hitstopPerfect = 0.09;
+  T.maxShake = 4;
+  try {
+    const g = new Hunt(1, freshProfile());
+    g.freezeSpawns = true;
+    for (let i = 0; i < 37; i++) g.step(1 / 60, { ...input, draw: true });
+    g.step(1 / 60, input);
+    expect(g.perfects).toBe(1);
+    expect(g.hitstop).toBe(0.09);
+    const frozen = g.time;
+    g.step(1 / 60, input);
+    expect(g.time).toBe(frozen);
+    g.hurt(5);
+    expect(g.shake).toBe(4);
+  } finally {
+    Object.assign(T, saved);
+  }
+});
 it('assist loose fires at full draw as a perfect shot', () => {
   const g = new Hunt(1, freshProfile());
   g.freezeSpawns = true;

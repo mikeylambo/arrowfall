@@ -136,3 +136,25 @@ export const ATMOSPHERE = {
   /** Atlas frames scattered across the moor. */
   decals: ['grass1', 'grass2', 'grass3', 'heather', 'pebble1', 'pebble2'],
 };
+
+/** Juice (render/vfx.ts and renderer). Presentation only; never read by the sim. */
+export const JUICE = {
+  /** Effect sprite pool size. */
+  pool: 500,
+  /** Arrow trail length at base arrow speed (px) and opacity. */
+  trailLength: 70,
+  trailAlpha: 0.45,
+  /** Red death flash duration (s). */
+  deathFlash: 0.12,
+  /** Violet bloom pulse on the bow after a perfect release (s). */
+  perfectBloom: 0.26,
+  /** Full-screen chime flash opacity per unit of sim flash. */
+  chimeFlash: 0.55,
+  /** Deadeye: violet screen tint opacity and desaturation (0..1). */
+  deadeyeTint: 0.09,
+  deadeyeDesaturate: 0.35,
+  /** Hit punch: extra sprite scale per second of enemy hit flash. */
+  hitPunch: 1.4,
+  /** Reduced motion keeps this fraction of flash intensity. */
+  reducedFlash: 0.3,
+};

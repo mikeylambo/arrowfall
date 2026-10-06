@@ -2,7 +2,7 @@ import type { Hunt } from './game';
 import type { Enemy } from './types';
 import { ENEMIES } from '../data/enemies';
 import { BOSSES } from '../data/bosses';
-import { distance, len } from '../data/tuning';
+import { T, distance, len } from '../data/tuning';
 import { blockedMove, type Cover } from './world';
 import { damageEnemy } from './combat';
 const harvestTargets: Enemy[] = [];
@@ -319,7 +319,7 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
   const before = e.phase;
   e.phase = e.hp / e.maxHp > 0.66 ? 1 : e.hp / e.maxHp > 0.33 ? 2 : 3;
   if (e.phase !== before) {
-    g.hitstop = 0.15;
+    g.hitstop = T.hitstopPhase;
     g.announce(`${BOSSES[e.boss].name} · Phase ${e.phase}`);
     g.emit('boss.phase');
   }

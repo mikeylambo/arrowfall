@@ -40,9 +40,9 @@ export function loose(
       g.perfects++;
       p.streak++;
       g.maxStreak = Math.max(g.maxStreak, p.streak);
-      p.focus = Math.min(100, p.focus + 12 * (1 + 0.25 * g.rank('moonwell')));
+      p.focus = Math.min(100, p.focus + T.focusPerfect * (1 + 0.25 * g.rank('moonwell')));
       g.emit('bow.perfect');
-      g.hitstop = 0.04;
+      g.hitstop = T.hitstopPerfect;
       g.burst(p.x, p.y, 18, 2);
       g.flash = 0.15;
     } else {
@@ -123,7 +123,7 @@ export function updateArrows(g: Hunt, dt: number) {
     near = g.bow.near * (1 - widen),
     far = g.bow.far * (1 + widen),
     sweetBonus = 1.15 + 0.1 * g.rank('far-sight'),
-    focusPerHit = 3 * (1 + 0.25 * g.rank('moonwell'));
+    focusPerHit = T.focusHit * (1 + 0.25 * g.rank('moonwell'));
   for (const a of g.arrows.items) {
     if (!a.active) continue;
     a.life -= dt;

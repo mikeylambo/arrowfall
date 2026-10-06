@@ -1,4 +1,14 @@
-import { Application, Container, Sprite, Graphics, Texture, Assets, Text } from 'pixi.js';
+import {
+  Application,
+  Container,
+  Sprite,
+  Graphics,
+  Texture,
+  Assets,
+  Text,
+  ColorMatrixFilter,
+} from 'pixi.js';
+import { Vfx } from './vfx';
 import { Atmosphere } from './ground';
 
 import { UNIT } from './silhouettes';
@@ -9,7 +19,7 @@ import { bakeArt, BOSS_HALF } from './art';
 import type { Hunt } from '../sim/game';
 import { ENEMIES } from '../data/enemies';
 import { STATIONS } from '../data/world';
-import { PALETTE, tint } from '../data/art';
+import { PALETTE, JUICE, tint } from '../data/art';
 
 /** Palette as Pixi tints. */
 const C = {
@@ -27,6 +37,12 @@ export class View {
   readonly app = new Application();
   readonly root = new Container();
   atmosphere!: Atmosphere;
+  vfx!: Vfx;
+  trailSprites: Sprite[] = [];
+  markGlows: Sprite[] = [];
+  readonly deadeyeFilter = new ColorMatrixFilter();
+  /** Accessibility: no shake, no scale pulses, no fog drift, dimmed flashes. */
+  reducedMotion = false;
   readonly cover = new Container();
   readonly effects = new Container();
   readonly actors = new Container();
@@ -114,7 +130,15 @@ export class View {
       this.ghostSprites.push(s);
     }
     this.enemySprites = this.pool(500, this.art.husk, this.threatLayer);
+    this.trailSprites = this.pool(1400, this.art.trail, this.arrows);
+    for (const t of this.trailSprites) t.anchor.set(1, 0.5);
     this.arrowSprites = this.pool(1400, this.art.arrow, this.arrows);
+    this.markGlows = this.pool(40, this.art.bloom, this.effects);
+    for (const m of this.markGlows) m.tint = C.focus;
+    this.vfx = new Vfx(this.art);
+    this.root.addChildAt(this.vfx.layer, this.root.getChildIndex(this.threatLayer));
+    this.deadeyeFilter.saturate(-JUICE.deadeyeDesaturate);
+    this.root.filterArea = this.app.screen;
     this.pickupSprites = this.pool(1600, this.art.xp, this.effects);
     this.particleSprites = this.pool(2000, this.art.particle, this.effects);
     this.threatLayer.addChild(this.threatGraphics);
@@ -185,15 +209,16 @@ export class View {
       targetY = p.y + Math.sin(p.aim) * look;
     this.camera.x += (targetX - this.camera.x) * Math.min(1, realDt * 8);
     this.camera.y += (targetY - this.camera.y) * Math.min(1, realDt * 8);
-    const sx = Math.sin(g.realTime * 89) * g.shake * this.shake,
-      sy = Math.cos(g.realTime * 113) * g.shake * this.shake;
+    const shake = this.reducedMotion ? 0 : Math.min(g.shake, T.maxShake) * this.shake,
+      sx = Math.sin(g.realTime * 89) * shake,
+      sy = Math.cos(g.realTime * 113) * shake;
     this.root.scale.set(this.zoom);
     this.root.position.set(
       this.width / 2 - this.camera.x * this.zoom + sx,
       this.height / 2 - this.camera.y * this.zoom + sy,
     );
     const atmosphereStart = performance.now();
-    this.atmosphere.update(this, g.realTime);
+    this.atmosphere.update(this, this.reducedMotion ? 0 : g.realTime);
     this.timing.atmosphere += (performance.now() - atmosphereStart - this.timing.atmosphere) * 0.1;
     for (let i = 0; i < this.coverSprites.length; i++) {
       const s = this.coverSprites[i];
@@ -216,7 +241,7 @@ export class View {
       } else {
         s.texture = this.art[e.elite >= 0 ? ENEMIES[e.kind].id + '.elite' : ENEMIES[e.kind].id];
         s.rotation = e.angle;
-        s.scale.set(e.r / UNIT);
+        s.scale.set((e.r / UNIT) * (this.reducedMotion ? 1 : 1 + e.flash * JUICE.hitPunch));
       }
       s.alpha = e.fade > 0 ? 0.17 : e.kind === 6 && e.state === 0 ? 0.5 : Math.min(1, e.age / 0.4);
       if (
@@ -246,16 +271,49 @@ export class View {
     }
     for (let i = 0; i < g.arrows.items.length; i++) {
       const a = g.arrows.items[i],
-        s = this.arrowSprites[i];
-      s.visible = a.active;
+        s = this.arrowSprites[i],
+        trail = this.trailSprites[i];
+      s.visible = trail.visible = a.active;
       if (a.active) {
+        const angle = Math.atan2(a.vy, a.vx),
+          speed = Math.sqrt(a.vx * a.vx + a.vy * a.vy);
         s.position.set(a.x, a.y);
-        s.rotation = Math.atan2(a.vy, a.vx);
+        s.rotation = angle;
         s.scale.set(a.perfect ? 0.8 : 0.6);
         s.alpha = dim;
         s.tint = a.source === 'phantom' ? C.phantom : 0xffffff;
+        // Short trail behind the shaft, longer for faster arrows, fading as the arrow ages.
+        trail.position.set(a.x - Math.cos(angle) * 18, a.y - Math.sin(angle) * 18);
+        trail.rotation = angle;
+        trail.scale.set(
+          (JUICE.trailLength / 128) *
+            Math.min(1.6, speed / T.arrowSpeed) *
+            Math.min(1, a.travel / 60),
+          a.perfect ? 1.4 : 1,
+        );
+        trail.alpha = JUICE.trailAlpha * dim;
+        trail.tint = a.perfect ? C.focus : a.source === 'phantom' ? C.phantom : C.silver;
       }
     }
+    // Deadeye marks glow violet under their targets.
+    let glows = 0;
+    if (g.deadeye > 0 || g.focusMarks > 0)
+      for (const e of g.enemies.items)
+        if (e.active && e.deadmark && glows < this.markGlows.length) {
+          const m = this.markGlows[glows++];
+          m.visible = true;
+          m.position.set(e.x, e.y);
+          m.scale.set((e.r / 40) * (this.reducedMotion ? 1 : 1 + 0.12 * Math.sin(g.realTime * 8)));
+          m.alpha = 0.75;
+        }
+    for (let i = glows; i < this.markGlows.length; i++) this.markGlows[i].visible = false;
+    this.vfx.reducedMotion = this.reducedMotion;
+    this.vfx.handle(g);
+    this.vfx.update(realDt);
+    // Deadeye: slight desaturation of the world and a violet wash.
+    const deadeye = g.deadeye > 0;
+    if (deadeye !== (this.root.filters?.length === 1))
+      this.root.filters = deadeye ? [this.deadeyeFilter] : [];
     for (let i = 0; i < g.pickups.items.length; i++) {
       const q = g.pickups.items[i],
         s = this.pickupSprites[i];
@@ -459,7 +517,13 @@ export class View {
       });
     if (g.deadeye > 0)
       o.circle(x, y, 60 * this.zoom).stroke({ color: C.focus, width: 1, alpha: 0.5 });
+    if (g.deadeye > 0)
+      o.rect(0, 0, this.width, this.height).fill({ color: C.focus, alpha: JUICE.deadeyeTint });
+    // Chime flash on a perfect release.
     if (g.flash > 0)
-      o.rect(0, 0, this.width, this.height).fill({ color: 0xdaefff, alpha: g.flash * 0.16 });
+      o.rect(0, 0, this.width, this.height).fill({
+        color: C.focusLight,
+        alpha: g.flash * JUICE.chimeFlash * (this.reducedMotion ? JUICE.reducedFlash : 1),
+      });
   }
 }
