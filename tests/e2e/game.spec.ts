@@ -110,8 +110,12 @@ test('evolutions are selectable and emit damage/effect evidence', async ({ page 
   await page.mouse.down();
   await page.waitForTimeout(2400);
   await page.mouse.up();
-  await page.keyboard.press('Space');
+  // Let the release land on its own frame; a dodge in the same frame cancels the draw.
   await expect.poll(() => command(page, 'window.__ARROWFALL__.state.shots')).toBeGreaterThan(0);
+  await page.keyboard.press('Space');
+  await expect
+    .poll(() => command(page, 'window.__ARROWFALL__.sim().player.cooldown'))
+    .toBeGreaterThan(0);
   await page.screenshot({ path: 'test-results/evolutions.png' });
   expect(errors).toEqual([]);
 });
