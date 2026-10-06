@@ -179,5 +179,5 @@ export const DIEGETIC = {
 export const SHEETS: { hunter: string; enemies: Record<string, string> } = {
   hunter: 'hunter',
   /** Enemy id -> sheet id; elites use '<sheet>-elite'. */
-  enemies: { husk: 'husk' },
+  enemies: { husk: 'husk', poacher: 'poacher', knight: 'knight', changeling: 'changeling' },
 };

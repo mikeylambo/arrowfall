@@ -191,6 +191,200 @@
         0.62,
         0.5
       ]
+    },
+    {
+      "id": "poacher",
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "albedo": [
+        1.0,
+        0.62,
+        0.5
+      ],
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "cell": 144,
+      "modelHeight": 1.0,
+      "heightPx": 104,
+      "pivot": [
+        0.5,
+        0.85
+      ],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_212141_poacher_01a11317/poacher-walking.glb",
+          "frames": 12,
+          "loop": true,
+          "inPlace": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_212141_poacher_01a11317/poacher-attack.glb",
+          "frames": 4,
+          "loop": false,
+          "start": 0,
+          "end": 0.3,
+          "inPlace": true,
+          "drawing": true
+        }
+      ],
+      "bow": {
+        "hand": "LeftHand",
+        "stringHand": "RightHand",
+        "size": 0.3,
+        "wood": "#7a1820",
+        "trim": "#ff9aa8",
+        "arrow": "#ff6670"
+      },
+      "source": {
+        "concept": "art-source/poacher-sheet.png",
+        "meshy": {
+          "image-to-image": "01a11317-c40a-70f1-87f5-b6ae7e2a35f1",
+          "multi-image-to-3d": "01a11319-4a37-7536-be30-88a68417908b",
+          "remesh": "01a1131c-44bc-7772-8ba0-0e0220763179",
+          "rigging": "01a1131d-e4a6-725f-9d93-dcad906751d0",
+          "animations": {
+            "attack": "01a1131f-ba52-73cb-806d-2a9b2b9dc7fe"
+          }
+        }
+      }
+    },
+    {
+      "id": "knight",
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "albedo": [
+        1.0,
+        0.62,
+        0.5
+      ],
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "cell": 160,
+      "modelHeight": 1.0,
+      "heightPx": 112,
+      "pivot": [
+        0.5,
+        0.82
+      ],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_212153_knight_01a11317/knight-move.glb",
+          "frames": 16,
+          "loop": true,
+          "end": 1.73,
+          "inPlace": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_212153_knight_01a11317/knight-attack.glb",
+          "frames": 6,
+          "loop": false,
+          "start": 0.6,
+          "end": 1.9,
+          "inPlace": true
+        }
+      ],
+      "source": {
+        "concept": "art-source/knight-sheet.png",
+        "meshy": {
+          "image-to-image": "01a11317-cb86-7636-ad34-f3e16df1f4df",
+          "multi-image-to-3d": "01a11319-4a4a-7390-8f0f-27a876365896",
+          "remesh": "01a1131b-f260-72c2-b9b1-f68846c2c92d",
+          "rigging": "01a1131e-acfc-755f-8ae1-1083ff787f9c",
+          "animations": {
+            "move": "01a1131f-ed15-7319-8d22-700686c4a575",
+            "attack": "01a11320-1f99-74d0-8519-aa816d4b8786"
+          }
+        }
+      }
+    },
+    {
+      "id": "changeling",
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "albedo": [
+        1.0,
+        0.62,
+        0.5
+      ],
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "cell": 256,
+      "modelHeight": 1.3,
+      "heightPx": 128,
+      "pivot": [
+        0.5,
+        0.88
+      ],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_212156_changeling_01a11317/changeling-running.glb",
+          "frames": 8,
+          "loop": true,
+          "inPlace": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_212156_changeling_01a11317/changeling-attack.glb",
+          "frames": 6,
+          "loop": false,
+          "start": 1.4,
+          "end": 2.6,
+          "inPlace": true
+        }
+      ],
+      "source": {
+        "concept": "art-source/changeling-sheet.png",
+        "meshy": {
+          "image-to-image": "01a11317-d2f3-74ad-93dd-3453a954a895",
+          "multi-image-to-3d": "01a11319-4a28-72ad-8399-63f269b3bd25",
+          "remesh": "01a1131b-f20f-7268-8c92-8be21195c29d",
+          "rigging": "01a1131f-190c-7449-a66e-d06706cb06c5",
+          "animations": {
+            "attack": "01a11320-51fd-7463-aad2-a6dd8cfd8631"
+          }
+        }
+      }
     }
   ]
 }

@@ -1,0 +1,104 @@
+{
+  "schema_version": 2,
+  "project_name": "poacher",
+  "folder": "20261006_212141_poacher_01a11317",
+  "root_task_id": "01a11317-c40a-70f1-87f5-b6ae7e2a35f1",
+  "created_at": "2026-10-06T21:21:41.241Z",
+  "updated_at": "2026-10-06T21:30:20.152Z",
+  "tasks": [
+    {
+      "task_id": "01a11317-c40a-70f1-87f5-b6ae7e2a35f1",
+      "task_type": "image-to-image",
+      "resource": "image-to-image",
+      "endpoint": "/openapi/v1/image-to-image",
+      "stage": "concept",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "concept/image_0.png"
+      ],
+      "task_json": "task_01a11317-c40a-70f1-87f5-b6ae7e2a35f1.json",
+      "operation_id": null,
+      "created_at": "2026-10-06T21:21:50.928Z",
+      "updated_at": "2026-10-06T21:21:52.229Z"
+    },
+    {
+      "task_id": "01a11319-4a37-7536-be30-88a68417908b",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a11319-4a37-7536-be30-88a68417908b.json",
+      "operation_id": "f7f7778f-c7f6-4bab-a0fe-eb420d9101f4",
+      "created_at": "2026-10-06T21:23:11.606Z",
+      "updated_at": "2026-10-06T21:26:18.924Z"
+    },
+    {
+      "task_id": "01a11319-4a37-7536-be30-88a68417908b",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "preview",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "preview.png"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-10-06T21:26:20.256Z",
+      "updated_at": "2026-10-06T21:26:20.256Z"
+    },
+    {
+      "task_id": "01a1131c-44bc-7772-8ba0-0e0220763179",
+      "task_type": "remesh",
+      "resource": "remesh",
+      "endpoint": "/openapi/v1/remesh",
+      "stage": "remesh",
+      "parent_task_id": "01a11319-4a37-7536-be30-88a68417908b",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a1131c-44bc-7772-8ba0-0e0220763179.json",
+      "operation_id": "81cad3d7-de47-4d08-a70a-b29f377019ea",
+      "created_at": "2026-10-06T21:26:22.196Z",
+      "updated_at": "2026-10-06T21:28:07.224Z"
+    },
+    {
+      "task_id": "01a1131d-e4a6-725f-9d93-dcad906751d0",
+      "task_type": "rig",
+      "resource": "rigging",
+      "endpoint": "/openapi/v1/rigging",
+      "stage": "rigging",
+      "parent_task_id": "01a1131c-44bc-7772-8ba0-0e0220763179",
+      "status": "SUCCEEDED",
+      "files": [
+        "poacher-rigged.glb",
+        "poacher-walking.glb",
+        "poacher-running.glb"
+      ],
+      "task_json": "task_01a1131d-e4a6-725f-9d93-dcad906751d0.json",
+      "operation_id": "8ac083ee-7798-4e2d-83fb-ccc8b2f2d99e",
+      "created_at": "2026-10-06T21:28:12.696Z",
+      "updated_at": "2026-10-06T21:28:34.195Z"
+    },
+    {
+      "task_id": "01a1131f-ba52-73cb-806d-2a9b2b9dc7fe",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-attack",
+      "parent_task_id": "01a1131d-e4a6-725f-9d93-dcad906751d0",
+      "status": "SUCCEEDED",
+      "files": [
+        "poacher-attack.glb"
+      ],
+      "task_json": "task_01a1131f-ba52-73cb-806d-2a9b2b9dc7fe.json",
+      "operation_id": "133e7be9-be59-49a0-8bcd-504bfdd2a67c",
+      "created_at": "2026-10-06T21:30:09.181Z",
+      "updated_at": "2026-10-06T21:30:20.152Z"
+    }
+  ]
+}

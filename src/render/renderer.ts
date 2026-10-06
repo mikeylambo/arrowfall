@@ -19,10 +19,21 @@ import { T } from '../data/tuning';
 import { ART_PATHS } from '../data/artPaths';
 import { bakeArt, BOSS_HALF } from './art';
 import type { Hunt } from '../sim/game';
+import type { Enemy } from '../sim/types';
 import { ENEMIES } from '../data/enemies';
 import { STATIONS } from '../data/world';
 import { PALETTE, JUICE, SHEETS, tint } from '../data/art';
 
+/**
+ * How far an enemy is through its attack wind-up (0..1), or null when it isn't winding up.
+ * Poachers draw for their telegraph time, Changelings pounce after 0.6 s, melee enemies
+ * slam after their 0.6 s ring.
+ */
+function attackProgress(e: Enemy, telegraph: number): number | null {
+  if (e.kind === 3) return e.state === 1 ? 1 - Math.max(0, e.clock) / telegraph : null;
+  if (e.kind === 7) return e.state === 1 ? 1 - Math.max(0, e.clock) / 0.6 : null;
+  return e.state === 3 ? 1 - Math.max(0, e.clock) / 0.6 : null;
+}
 /** Palette as Pixi tints. */
 const C = {
   silver: tint(PALETTE.silver),
@@ -284,10 +295,14 @@ export class View {
           punch = this.reducedMotion ? 1 : 1 + e.flash * JUICE.hitPunch;
         if (sheet) {
           // 3/4 sheet: upright on its feet, own animation phase, attack follows the telegraph.
-          const winding = e.state === 3 && sheet.has('attack'),
-            frame = winding
-              ? sheet.frame('attack', e.angle, 0, 1 - Math.max(0, e.clock) / 0.6)
-              : sheet.frame('move', e.angle, g.realTime + e.id * 0.37);
+          const windup = attackProgress(e, def.telegraph),
+            standing = e.kind === 3 && Math.hypot(p.x - e.x, p.y - e.y) < 430,
+            frame =
+              windup !== null && sheet.has('attack')
+                ? sheet.frame('attack', e.angle, 0, windup)
+                : standing && sheet.has('attack')
+                  ? sheet.frame('attack', e.angle, 0, 0)
+                  : sheet.frame('move', e.angle, g.realTime + e.id * 0.37);
           s.texture = frame.texture;
           s.anchor.set(sheet.manifest.pivot[0], sheet.manifest.pivot[1]);
           const k = 0.5 * (e.r / def.radius) * punch;

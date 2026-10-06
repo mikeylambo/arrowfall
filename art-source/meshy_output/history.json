@@ -18,6 +18,33 @@
       "created_at": "2026-10-06T20:56:51.513Z",
       "updated_at": "2026-10-06T21:02:52.067Z",
       "task_count": 7
+    },
+    {
+      "folder": "20261006_212141_poacher_01a11317",
+      "prompt": "poacher",
+      "task_type": "image-to-image",
+      "root_task_id": "01a11317-c40a-70f1-87f5-b6ae7e2a35f1",
+      "created_at": "2026-10-06T21:21:41.241Z",
+      "updated_at": "2026-10-06T21:30:20.152Z",
+      "task_count": 6
+    },
+    {
+      "folder": "20261006_212153_knight_01a11317",
+      "prompt": "knight",
+      "task_type": "image-to-image",
+      "root_task_id": "01a11317-cb86-7636-ad34-f3e16df1f4df",
+      "created_at": "2026-10-06T21:21:53.016Z",
+      "updated_at": "2026-10-06T21:30:46.242Z",
+      "task_count": 7
+    },
+    {
+      "folder": "20261006_212156_changeling_01a11317",
+      "prompt": "changeling",
+      "task_type": "image-to-image",
+      "root_task_id": "01a11317-d2f3-74ad-93dd-3453a954a895",
+      "created_at": "2026-10-06T21:21:56.497Z",
+      "updated_at": "2026-10-06T21:30:59.067Z",
+      "task_count": 6
     }
   ]
 }

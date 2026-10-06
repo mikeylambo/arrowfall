@@ -1,0 +1,120 @@
+{
+  "schema_version": 2,
+  "project_name": "knight",
+  "folder": "20261006_212153_knight_01a11317",
+  "root_task_id": "01a11317-cb86-7636-ad34-f3e16df1f4df",
+  "created_at": "2026-10-06T21:21:53.016Z",
+  "updated_at": "2026-10-06T21:30:46.242Z",
+  "tasks": [
+    {
+      "task_id": "01a11317-cb86-7636-ad34-f3e16df1f4df",
+      "task_type": "image-to-image",
+      "resource": "image-to-image",
+      "endpoint": "/openapi/v1/image-to-image",
+      "stage": "concept",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "concept/image_0.png"
+      ],
+      "task_json": "task_01a11317-cb86-7636-ad34-f3e16df1f4df.json",
+      "operation_id": null,
+      "created_at": "2026-10-06T21:21:54.374Z",
+      "updated_at": "2026-10-06T21:21:55.699Z"
+    },
+    {
+      "task_id": "01a11319-4a4a-7390-8f0f-27a876365896",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a11319-4a4a-7390-8f0f-27a876365896.json",
+      "operation_id": "1aea102c-c6dc-40e6-8227-b684b066bc35",
+      "created_at": "2026-10-06T21:23:11.203Z",
+      "updated_at": "2026-10-06T21:25:58.021Z"
+    },
+    {
+      "task_id": "01a11319-4a4a-7390-8f0f-27a876365896",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "preview",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "preview.png"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-10-06T21:25:59.694Z",
+      "updated_at": "2026-10-06T21:25:59.694Z"
+    },
+    {
+      "task_id": "01a1131b-f260-72c2-b9b1-f68846c2c92d",
+      "task_type": "remesh",
+      "resource": "remesh",
+      "endpoint": "/openapi/v1/remesh",
+      "stage": "remesh",
+      "parent_task_id": "01a11319-4a4a-7390-8f0f-27a876365896",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a1131b-f260-72c2-b9b1-f68846c2c92d.json",
+      "operation_id": "e80a9eaf-e083-4be0-8177-bcb53b2d2505",
+      "created_at": "2026-10-06T21:26:01.103Z",
+      "updated_at": "2026-10-06T21:28:58.621Z"
+    },
+    {
+      "task_id": "01a1131e-acfc-755f-8ae1-1083ff787f9c",
+      "task_type": "rig",
+      "resource": "rigging",
+      "endpoint": "/openapi/v1/rigging",
+      "stage": "rigging",
+      "parent_task_id": "01a1131b-f260-72c2-b9b1-f68846c2c92d",
+      "status": "SUCCEEDED",
+      "files": [
+        "knight-rigged.glb",
+        "knight-walking.glb",
+        "knight-running.glb"
+      ],
+      "task_json": "task_01a1131e-acfc-755f-8ae1-1083ff787f9c.json",
+      "operation_id": "01affc55-d8d2-4b18-9a68-4246b6639a9f",
+      "created_at": "2026-10-06T21:29:03.382Z",
+      "updated_at": "2026-10-06T21:29:24.930Z"
+    },
+    {
+      "task_id": "01a1131f-ed15-7319-8d22-700686c4a575",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-move",
+      "parent_task_id": "01a1131e-acfc-755f-8ae1-1083ff787f9c",
+      "status": "SUCCEEDED",
+      "files": [
+        "knight-move.glb"
+      ],
+      "task_json": "task_01a1131f-ed15-7319-8d22-700686c4a575.json",
+      "operation_id": "c0601e4e-8b45-4d98-a041-03dfe9996d08",
+      "created_at": "2026-10-06T21:30:22.277Z",
+      "updated_at": "2026-10-06T21:30:33.380Z"
+    },
+    {
+      "task_id": "01a11320-1f99-74d0-8519-aa816d4b8786",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-attack",
+      "parent_task_id": "01a1131e-acfc-755f-8ae1-1083ff787f9c",
+      "status": "SUCCEEDED",
+      "files": [
+        "knight-attack.glb"
+      ],
+      "task_json": "task_01a11320-1f99-74d0-8519-aa816d4b8786.json",
+      "operation_id": "9583266d-c104-4480-bf57-f5df70536077",
+      "created_at": "2026-10-06T21:30:35.121Z",
+      "updated_at": "2026-10-06T21:30:46.242Z"
+    }
+  ]
+}
