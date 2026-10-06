@@ -23,7 +23,7 @@
     "format:check": "prettier --check src tests"
   },
   "dependencies": {
-    "@slu/web-shell": "file:../slu-web-shell-1.1.0.tgz",
+    "@slu/web-shell": "github:mikeylambo/Web-Game-Shell-v1.02#d5bdb4ae2ac09109088a5f0e524badd60996ee3b",
     "pixi.js": "^8.14.0"
   },
   "devDependencies": {
