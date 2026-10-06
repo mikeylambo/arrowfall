@@ -45,6 +45,24 @@
       "created_at": "2026-10-06T21:21:56.497Z",
       "updated_at": "2026-10-06T21:30:59.067Z",
       "task_count": 6
+    },
+    {
+      "folder": "20261006_233913_hound_01a11395",
+      "prompt": "hound",
+      "task_type": "multi-image-to-3d",
+      "root_task_id": "01a11395-d20c-7532-a61c-20e43ecb65be",
+      "created_at": "2026-10-06T23:39:13.392Z",
+      "updated_at": "2026-10-06T23:41:22.037Z",
+      "task_count": 3
+    },
+    {
+      "folder": "20261006_234127_stag_01a11397",
+      "prompt": "stag",
+      "task_type": "multi-image-to-3d",
+      "root_task_id": "01a11397-e25e-74be-af24-864edc8262a6",
+      "created_at": "2026-10-06T23:41:27.592Z",
+      "updated_at": "2026-10-06T23:45:00.746Z",
+      "task_count": 3
     }
   ]
 }

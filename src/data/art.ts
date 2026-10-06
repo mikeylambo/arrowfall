@@ -190,7 +190,9 @@ export const SHEETS: {
     changeling: 'changeling',
     wisp: 'wisp',
     worm: 'worm',
+    hound: 'hound',
+    stag: 'stag',
   },
-  /** Boss id -> sheet id. Huntmaster reuses the Poacher model (see art-source/sprites.json). */
-  bosses: { huntmaster: 'huntmaster' },
+  /** Boss id -> sheet id. Huntmaster reuses the Poacher model, the Shuck the Moonhound (art-source/sprites.json). */
+  bosses: { shuck: 'shuck', huntmaster: 'huntmaster' },
 };

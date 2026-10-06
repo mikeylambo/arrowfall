@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { PROCEDURAL } from './procedural';
+import { PROCEDURAL, rigid } from './procedural';
 
 export interface ClipJob {
   /** Clip name in the manifest, e.g. 'idle'. */
@@ -69,6 +69,8 @@ export interface SpriteJob {
   test?: boolean;
   /** Code-built character (render-sprites/procedural.ts) instead of a GLB. */
   procedural?: string;
+  /** Unrigged model driven by renderer-side motion (procedural.ts RIGID). */
+  rigid?: string;
   /** Antler crown on the head bone (boss weak point), in the given colour. */
   crown?: { color: string; size: number };
   bow?: BowJob;
@@ -400,7 +402,7 @@ export async function renderJob(job: SpriteJob) {
       src.root.scale.setScalar(k);
       const c = box.getCenter(new THREE.Vector3());
       src.root.position.set(-c.x * k, -box.min.y * k, -c.z * k);
-      loaded.set(key, src);
+      loaded.set(key, job.rigid ? rigid(src, job.rigid, job.modelHeight) : src);
     }
     return loaded.get(key)!;
   };

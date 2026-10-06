@@ -13,6 +13,7 @@
 - **Diegetic UI.** The bowstring shows tension and the perfect window, an arrow sits nocked on it, Focus gathers as moonlight motes and a halo, and dodge recovery shows as an arc at the hunter's feet. The HUD text is trimmed.
 
 Evidence in `evidence/` is regenerated with `npm run evidence`:
+
 - `hunt.png` (minute four, drawing in the perfect window)
 - `deadeye.png`
 - `crowd-350.png` (349 enemies / 582 arrows)
@@ -24,5 +25,5 @@ Evidence in `evidence/` is regenerated with `npm run evidence`:
 
 - **GPU budget on target devices** (Steam Deck, laptop iGPU). All numbers here come from software WebGL (swiftshader) in a 4-vCPU container. Frame rate there is fill-rate bound and says nothing about real GPUs.
 - **Human playtest** of the new overdraw hold (`autoLoose: false`), Focus/draw readability with the trimmed HUD, and boss weak-point clarity in motion.
-- **Art.** Silhouettes and boss art are procedural placeholders. Painted sheets and animation are still production work.
+- **Art.** All 8 enemies, the Black Shuck and the Huntmaster use 3/4 cel-shaded sprite sheets (`public/art/sprites`). The Bramble King and Night Hag still use procedural placeholders. `?sprites=off` falls back to the procedural art.
 - Physical controller pass, boss TTK balance, full audio production, and Vercel preview (needs a GitHub token with access to the private shell repo). These are carried over from the previous status.

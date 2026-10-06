@@ -169,3 +169,90 @@ export const PROCEDURAL: Record<
   string,
   () => { root: THREE.Object3D; clips: THREE.AnimationClip[] }
 > = { wisp, worm };
+
+/**
+ * Motion for unrigged models (Meshy model-only): the whole mesh sits in a `body` group whose
+ * origin is at the feet, and these clips bob, pitch and squash it. Cheap, and at sprite size a
+ * gallop read comes almost entirely from the bounce and lean. Pitch is about X; +x leans forward.
+ */
+type Motion = { root: THREE.Object3D; clips: THREE.AnimationClip[] };
+const smooth = (k: number) => k * k * (3 - 2 * k);
+function rigidClip(
+  name: string,
+  d: number,
+  n: number,
+  f: (t: number) => { y?: number; z?: number; pitch?: number; roll?: number; sq?: number },
+) {
+  return new THREE.AnimationClip(name, d, [
+    positionTrack('body', d, n, (t) => {
+      const m = f(t);
+      return [0, m.y ?? 0, m.z ?? 0];
+    }),
+    rotationTrack('body', d, n, (t) => {
+      const m = f(t);
+      return [m.pitch ?? 0, 0, m.roll ?? 0];
+    }),
+    scaleTrack('body', d, n, (t) => {
+      const s = 1 + (f(t).sq ?? 0);
+      return [1 / Math.sqrt(s), s, 1 / Math.sqrt(s)];
+    }),
+  ]);
+}
+
+export const RIGID: Record<string, (h: number) => THREE.AnimationClip[]> = {
+  /** Moonhound: fast bounding gallop; the lunge crouches low, then springs forward stretched. */
+  hound: (h) => [
+    rigidClip('move', 0.5, 12, (t) => {
+      const w = (t / 0.5) * Math.PI * 2;
+      return {
+        y: Math.max(0, Math.sin(w)) * 0.09 * h,
+        pitch: Math.cos(w) * 0.13,
+        sq: Math.sin(w) * 0.07,
+      };
+    }),
+    rigidClip('attack', 0.6, 12, (t) => {
+      const k = t / 0.6;
+      const crouch = smooth(Math.min(1, k / 0.75)),
+        spring = smooth(Math.max(0, (k - 0.75) / 0.25));
+      return {
+        y: spring * 0.12 * h,
+        z: spring * 0.25 * h,
+        pitch: -0.12 * crouch * (1 - spring) + 0.22 * spring,
+        sq: -0.22 * crouch * (1 - spring) + 0.12 * spring,
+      };
+    }),
+  ],
+  /** Hollow Stag: heavy trot; the charge rears back, then drops its antlers forward. */
+  stag: (h) => [
+    rigidClip('move', 0.8, 12, (t) => {
+      const w = (t / 0.8) * Math.PI * 2;
+      return {
+        y: Math.abs(Math.sin(w)) * 0.035 * h,
+        pitch: Math.sin(w) * 0.05,
+        roll: Math.sin(w) * 0.03,
+        sq: -Math.abs(Math.cos(w)) * 0.03,
+      };
+    }),
+    rigidClip('attack', 0.9, 12, (t) => {
+      const k = t / 0.9;
+      const rear = Math.sin(Math.min(1, k / 0.7) * Math.PI),
+        drop = smooth(Math.max(0, (k - 0.55) / 0.45));
+      return {
+        y: rear * 0.08 * h,
+        z: drop * 0.06 * h,
+        pitch: -0.32 * rear + 0.28 * drop,
+        sq: 0.05 * rear - 0.08 * drop,
+      };
+    }),
+  ],
+};
+
+/** Wrap a loaded static model so RIGID clips can drive it. */
+export function rigid(src: Motion, motion: string, height: number): Motion {
+  const root = new THREE.Group(),
+    body = new THREE.Group();
+  body.name = 'body';
+  body.add(src.root);
+  root.add(body);
+  return { root, clips: RIGID[motion](height) };
+}

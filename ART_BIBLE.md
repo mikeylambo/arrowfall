@@ -24,26 +24,26 @@ References: MapleStory archers (proportion, silhouette, a single accent), graphi
 
 ## Proportions
 
-| Character | Heads tall | In-game height | Notes |
-| --- | --- | --- | --- |
-| Hunter | 2.5 | 72 px | big hood, readable face, long cloak tail, bow held forward |
-| Regular enemies | 1.5–3 by type | 36–80 px | sized to collision radius; never larger than the hitbox implies |
-| Bosses | — | 3–4× a regular enemy (160–200 px) | weak point is the brightest pixel on the body |
+| Character       | Heads tall    | In-game height                    | Notes                                                           |
+| --------------- | ------------- | --------------------------------- | --------------------------------------------------------------- |
+| Hunter          | 2.5           | 72 px                             | big hood, readable face, long cloak tail, bow held forward      |
+| Regular enemies | 1.5–3 by type | 36–80 px                          | sized to collision radius; never larger than the hitbox implies |
+| Bosses          | —             | 3–4× a regular enemy (160–200 px) | weak point is the brightest pixel on the body                   |
 
 ## Palette
 
 Held in `src/data/art.ts` `PALETTE`; this table is the source the code mirrors.
 
-| Role | Value | Use |
-| --- | --- | --- |
-| Night base | `#060a16` | clear colour, deepest shadow |
-| Ground | `#070c18` → `#121d31`, moss `#14233a` | forest floor, low contrast |
-| Moonlight | `#c4d4ff` | key light tint, fog, ground light |
-| Silver (the hunter) | body `#e6ecf5`, shade `#9eabc0`, rim `#ffffff` | hunter, arrows, pickups |
-| Blood-red (threats) | base `#c8323c`, rim `#ff6670`, darker per type | every enemy, telegraph, enemy projectile |
-| Elite | body `#ff4d58`, outline `#fff2f3` | brighter body plus pale outline |
-| Violet (earned power) | `#9b6bff` | perfect window, Focus, Deadeye, cards, evolutions, relics |
-| Weak point | `#ffe7a8` | boss weak points only |
+| Role                  | Value                                          | Use                                                       |
+| --------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| Night base            | `#060a16`                                      | clear colour, deepest shadow                              |
+| Ground                | `#070c18` → `#121d31`, moss `#14233a`          | forest floor, low contrast                                |
+| Moonlight             | `#c4d4ff`                                      | key light tint, fog, ground light                         |
+| Silver (the hunter)   | body `#e6ecf5`, shade `#9eabc0`, rim `#ffffff` | hunter, arrows, pickups                                   |
+| Blood-red (threats)   | base `#c8323c`, rim `#ff6670`, darker per type | every enemy, telegraph, enemy projectile                  |
+| Elite                 | body `#ff4d58`, outline `#fff2f3`              | brighter body plus pale outline                           |
+| Violet (earned power) | `#9b6bff`                                      | perfect window, Focus, Deadeye, cards, evolutions, relics |
+| Weak point            | `#ffe7a8`                                      | boss weak points only                                     |
 
 **Violet means power you earned** (decided): the perfect window and release, Focus, Deadeye, upgrade cards, evolutions and relics. Elites stay in the red family. The GDD tri-colour table matches.
 
@@ -60,6 +60,7 @@ Held in `src/data/art.ts` `PALETTE`; this table is the source the code mirrors.
 ### The hunter (default until named)
 
 A hooded night hunter of the Silver Order (GDD section 2):
+
 - deep hood shading the face, with two bright eyes visible;
 - a long cloak that tails behind and swings on the run;
 - a recurve bow held forward;
@@ -70,35 +71,35 @@ The silhouette must read as "archer" without the bow.
 
 ### Enemies (GDD section 9 shape language)
 
-| Enemy | Silhouette | Signature detail |
-| --- | --- | --- |
-| Husk | hunched round blob, arms dragging | hollow glowing eye holes |
-| Moonhound | low, long wedge; legs splayed | red glint on crouch |
-| Wisp | flame teardrop trailing tongues | hollow bright core; shimmers when faded |
-| Poacher | upright, narrow, hood and bow line | mirrors the hunter, in red |
-| Hollow Stag | wide antlered mass | antlers are the read |
-| Barrow Knight | broad shield slab facing forward | the shield covers the front 120° and must look like it |
-| Barrow Worm | segmented arc breaching the ground | dirt trail when underground |
-| Changeling | sits as a fake XP shard, then a spiky shard creature | the disguise must be almost, not quite, an XP shard |
+| Enemy         | Silhouette                                           | Signature detail                                       |
+| ------------- | ---------------------------------------------------- | ------------------------------------------------------ |
+| Husk          | hunched round blob, arms dragging                    | hollow glowing eye holes                               |
+| Moonhound     | low, long wedge; legs splayed                        | red glint on crouch                                    |
+| Wisp          | flame teardrop trailing tongues                      | hollow bright core; shimmers when faded                |
+| Poacher       | upright, narrow, hood and bow line                   | mirrors the hunter, in red                             |
+| Hollow Stag   | wide antlered mass                                   | antlers are the read                                   |
+| Barrow Knight | broad shield slab facing forward                     | the shield covers the front 120° and must look like it |
+| Barrow Worm   | segmented arc breaching the ground                   | dirt trail when underground                            |
+| Changeling    | sits as a fake XP shard, then a spiky shard creature | the disguise must be almost, not quite, an XP shard    |
 
 ### Bosses (GDD section 10)
 
-| Boss | Read | Weak point |
-| --- | --- | --- |
-| The Black Shuck | giant spectral black hound, burning eyes, smoke mane | head / front arc |
-| The Bramble King | crowned tangle of thorns, never turns | the **crown** on top: full damage only when an arrow's line of flight passes through it (`BOSSES[1].crown`); the body takes 25% |
-| The Night Hag | flying hunched crone, tattered cloak, casts a moon-shadow | the real one's ground shadow; heart lantern |
-| The Huntmaster | antler-crowned mirror archer, cape; mounts a spectral stag in phase II | head and crown; red perfect-window flash when drawing |
+| Boss             | Read                                                                   | Weak point                                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| The Black Shuck  | giant spectral black hound, burning eyes, smoke mane                   | head / front arc                                                                                                                |
+| The Bramble King | crowned tangle of thorns, never turns                                  | the **crown** on top: full damage only when an arrow's line of flight passes through it (`BOSSES[1].crown`); the body takes 25% |
+| The Night Hag    | flying hunched crone, tattered cloak, casts a moon-shadow              | the real one's ground shadow; heart lantern                                                                                     |
+| The Huntmaster   | antler-crowned mirror archer, cape; mounts a spectral stag in phase II | head and crown; red perfect-window flash when drawing                                                                           |
 
 ## Animation set
 
 Clips are rendered at 12 fps.
 
-| Character | Clips (frames) |
-| --- | --- |
-| Hunter | idle 8, run 8, draw 6 (the last frame holds), release 4, dodge 6, hurt 3 |
-| Regular enemy | move 6, telegraph 4, attack 4 (death is handled by VFX) |
-| Boss | idle/move 8, each telegraph 4–6, each attack 4–6, phase change 6 |
+| Character     | Clips (frames)                                                           |
+| ------------- | ------------------------------------------------------------------------ |
+| Hunter        | idle 8, run 8, draw 6 (the last frame holds), release 4, dodge 6, hurt 3 |
+| Regular enemy | move 6, telegraph 4, attack 4 (death is handled by VFX)                  |
+| Boss          | idle/move 8, each telegraph 4–6, each attack 4–6, phase change 6         |
 
 ## Sprite and memory budget (2019 MacBook Pro floor)
 
@@ -114,5 +115,7 @@ Clips are rendered at 12 fps.
 3. **Rig and animate.** Meshy rigging gives the walk and run clips; other clips come from the animation catalog, mapped to the set above.
 4. **Render.** `tools/render-sprites` (three.js, headless) renders the 8 directions × clips with the toon ramp, ink outline, rim and contact shadow, and packs the frames into atlas pages and a manifest.
 5. **Integrate.** The manifest feeds `src/data/art.ts`, and the renderer swaps procedural stand-ins for sprite sheets per character id.
+
+**Credit savers.** Quadrupeds (Moonhound, Hollow Stag) are model-only: no remesh or rig. Their gallop, lunge and charge come from renderer-side motion (`tools/render-sprites/procedural.ts` `RIGID`). The Wisp and Barrow Worm are built in code. Bosses reuse models where the read allows: the Huntmaster reuses the Poacher, and the Black Shuck reuses the Moonhound.
 
 **Gate.** The hunter goes through the whole pipeline first and is judged in-game before any other character is made.

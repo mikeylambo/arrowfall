@@ -7,17 +7,8 @@
       "cell": 192,
       "modelHeight": 1.5,
       "heightPx": 144,
-      "pivot": [
-        0.5,
-        0.78
-      ],
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "pivot": [0.5, 0.78],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#1b2233",
       "rim": "#ffffff",
       "clips": [
@@ -40,17 +31,8 @@
       "cell": 224,
       "modelHeight": 1.2,
       "heightPx": 172,
-      "pivot": [
-        0.5,
-        0.82
-      ],
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "pivot": [0.5, 0.82],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#1b2233",
       "rim": "#ffffff",
       "clips": [
@@ -133,17 +115,8 @@
       "cell": 128,
       "modelHeight": 0.9,
       "heightPx": 96,
-      "pivot": [
-        0.5,
-        0.85
-      ],
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "pivot": [0.5, 0.85],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#3a0a10",
       "rim": "#ff6670",
       "clips": [
@@ -186,28 +159,14 @@
           }
         }
       },
-      "albedo": [
-        1.0,
-        0.62,
-        0.5
-      ]
+      "albedo": [1.0, 0.62, 0.5]
     },
     {
       "id": "poacher",
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#3a0a10",
       "rim": "#ff6670",
-      "albedo": [
-        1.0,
-        0.62,
-        0.5
-      ],
+      "albedo": [1.0, 0.62, 0.5],
       "variants": [
         {
           "suffix": "elite",
@@ -218,10 +177,7 @@
       "cell": 144,
       "modelHeight": 1.0,
       "heightPx": 104,
-      "pivot": [
-        0.5,
-        0.85
-      ],
+      "pivot": [0.5, 0.85],
       "clips": [
         {
           "name": "move",
@@ -264,20 +220,10 @@
     },
     {
       "id": "knight",
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#3a0a10",
       "rim": "#ff6670",
-      "albedo": [
-        1.0,
-        0.62,
-        0.5
-      ],
+      "albedo": [1.0, 0.62, 0.5],
       "variants": [
         {
           "suffix": "elite",
@@ -288,10 +234,7 @@
       "cell": 160,
       "modelHeight": 1.0,
       "heightPx": 112,
-      "pivot": [
-        0.5,
-        0.82
-      ],
+      "pivot": [0.5, 0.82],
       "clips": [
         {
           "name": "move",
@@ -327,20 +270,10 @@
     },
     {
       "id": "changeling",
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#3a0a10",
       "rim": "#ff6670",
-      "albedo": [
-        1.0,
-        0.62,
-        0.5
-      ],
+      "albedo": [1.0, 0.62, 0.5],
       "variants": [
         {
           "suffix": "elite",
@@ -351,10 +284,7 @@
       "cell": 256,
       "modelHeight": 1.3,
       "heightPx": 128,
-      "pivot": [
-        0.5,
-        0.88
-      ],
+      "pivot": [0.5, 0.88],
       "clips": [
         {
           "name": "move",
@@ -389,13 +319,7 @@
     {
       "id": "wisp",
       "procedural": "wisp",
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#3a0a10",
       "rim": "#ff6670",
       "variants": [
@@ -408,10 +332,7 @@
       "cell": 128,
       "modelHeight": 0.9,
       "heightPx": 84,
-      "pivot": [
-        0.5,
-        0.82
-      ],
+      "pivot": [0.5, 0.82],
       "clips": [
         {
           "name": "move",
@@ -426,13 +347,7 @@
     {
       "id": "worm",
       "procedural": "worm",
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#3a0a10",
       "rim": "#ff6670",
       "variants": [
@@ -445,10 +360,7 @@
       "cell": 192,
       "modelHeight": 0.43,
       "heightPx": 30,
-      "pivot": [
-        0.5,
-        0.75
-      ],
+      "pivot": [0.5, 0.75],
       "clips": [
         {
           "name": "move",
@@ -468,27 +380,14 @@
     },
     {
       "id": "huntmaster",
-      "directions": [
-        0,
-        1,
-        2,
-        6,
-        7
-      ],
+      "directions": [0, 1, 2, 6, 7],
       "ink": "#2a0508",
       "rim": "#ff6670",
-      "albedo": [
-        0.85,
-        0.45,
-        0.42
-      ],
+      "albedo": [0.85, 0.45, 0.42],
       "cell": 256,
       "modelHeight": 1.0,
       "heightPx": 200,
-      "pivot": [
-        0.5,
-        0.86
-      ],
+      "pivot": [0.5, 0.86],
       "clips": [
         {
           "name": "move",
@@ -522,6 +421,115 @@
       },
       "source": {
         "note": "Reuses the Poacher model and animations (no Meshy credits); crown and bow are procedural props."
+      }
+    },
+    {
+      "id": "hound",
+      "directions": [0, 1, 2, 6, 7],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "albedo": [1.0, 0.62, 0.5],
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "rigid": "hound",
+      "cell": 176,
+      "modelHeight": 0.8,
+      "heightPx": 84,
+      "pivot": [0.5, 0.72],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_233913_hound_01a11395/hound.glb",
+          "frames": 6,
+          "loop": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_233913_hound_01a11395/hound.glb",
+          "frames": 6,
+          "loop": false
+        }
+      ],
+      "source": {
+        "concept": "art-source/hound-sheet.jpg",
+        "meshy": {
+          "multi-image-to-3d": "01a11395-d20c-7532-a61c-20e43ecb65be"
+        },
+        "note": "Model only (no remesh or rig); motion is renderer-side (procedural.ts RIGID)."
+      }
+    },
+    {
+      "id": "stag",
+      "directions": [0, 1, 2, 6, 7],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "albedo": [1.0, 0.62, 0.5],
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "rigid": "stag",
+      "cell": 224,
+      "modelHeight": 1.3,
+      "heightPx": 140,
+      "pivot": [0.5, 0.78],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_234127_stag_01a11397/stag.glb",
+          "frames": 6,
+          "loop": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_234127_stag_01a11397/stag.glb",
+          "frames": 8,
+          "loop": false
+        }
+      ],
+      "source": {
+        "concept": "art-source/stag-sheet.jpg",
+        "meshy": {
+          "multi-image-to-3d": "01a11397-e25e-74be-af24-864edc8262a6"
+        },
+        "note": "Model only (no remesh or rig); motion is renderer-side (procedural.ts RIGID)."
+      }
+    },
+    {
+      "id": "shuck",
+      "directions": [0, 1, 2, 6, 7],
+      "ink": "#ff6670",
+      "rim": "#ff9aa8",
+      "albedo": [0.3, 0.24, 0.3],
+      "rigid": "hound",
+      "cell": 320,
+      "modelHeight": 0.8,
+      "heightPx": 176,
+      "pivot": [0.5, 0.74],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_233913_hound_01a11395/hound.glb",
+          "frames": 6,
+          "loop": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_233913_hound_01a11395/hound.glb",
+          "frames": 6,
+          "loop": false
+        }
+      ],
+      "source": {
+        "note": "Reuses the Moonhound model (no Meshy credits): darker albedo, red ink, 2x scale."
       }
     }
   ]

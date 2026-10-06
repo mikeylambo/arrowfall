@@ -35,6 +35,14 @@ function attackProgress(e: Enemy, telegraph: number): number | null {
   // Barrow Worm: rears up through its 0.8 s red ring, stays up while it strikes.
   if (e.kind === 6)
     return e.state === 1 ? 1 - Math.max(0, e.clock) / 0.8 : e.state === 2 ? 1 : null;
+  // Moonhound crouches through its telegraph and holds the spring through the lunge; the Hollow
+  // Stag rears through its 0.9 s telegraph and keeps its antlers down for the charge.
+  if (e.kind === 1 || e.kind === 4)
+    return e.state === 1
+      ? 1 - Math.max(0, e.clock) / (e.kind === 4 ? 0.9 : telegraph)
+      : e.state === 2
+        ? 1
+        : null;
   return e.state === 3 ? 1 - Math.max(0, e.clock) / 0.6 : null;
 }
 /** Palette as Pixi tints. */
@@ -186,6 +194,8 @@ export class View {
       this.ghostSprites.push(s);
     }
     this.enemySprites = this.pool(500, this.art.husk, this.threatLayer);
+    // The boss weak point draws over the bodies (a sheet boss wears it on its head).
+    this.threatLayer.addChild(this.weakPoint);
     this.trailSprites = this.pool(1400, this.art.trail, this.arrows);
     for (const t of this.trailSprites) t.anchor.set(1, 0.5);
     this.arrowSprites = this.pool(1400, this.art.arrow, this.arrows);
@@ -292,16 +302,21 @@ export class View {
       const bossSheet = e.boss >= 0 ? this.bossSheets[BOSSES[e.boss].id] : undefined;
       if (bossSheet) {
         // Boss on a 3/4 sheet: its draw follows the telegraph, sized to the boss art height.
+        // The Shuck crouches through its 0.7 s lunge telegraph and holds the spring while charging.
         const art = BOSSES[e.boss].art,
-          drawing = e.boss === 3 && e.state === 1 && bossSheet.has('attack'),
-          frame = drawing
-            ? bossSheet.frame(
-                'attack',
-                e.angle,
-                0,
-                1 - Math.max(0, e.clock) / (e.phase === 1 ? 0.8 : 1.2),
-              )
-            : bossSheet.frame('move', e.angle, g.realTime),
+          windup =
+            e.boss === 3 && e.state === 1
+              ? 1 - Math.max(0, e.clock) / (e.phase === 1 ? 0.8 : 1.2)
+              : e.boss === 0 && e.state > 0
+                ? e.state === 1
+                  ? 1 - Math.max(0, e.clock) / 0.7
+                  : 1
+                : null,
+          facing = e.boss === 0 && e.state > 0 ? e.tx : e.angle,
+          frame =
+            windup !== null && bossSheet.has('attack')
+              ? bossSheet.frame('attack', facing, 0, windup)
+              : bossSheet.frame('move', e.angle, g.realTime),
           k = art.size / (bossSheet.manifest.heightPx ?? art.size);
         s.texture = frame.texture;
         s.anchor.set(bossSheet.manifest.pivot[0], bossSheet.manifest.pivot[1]);
@@ -362,8 +377,13 @@ export class View {
         wx = art.weak.x * BOSS_HALF * k,
         wy = art.weak.y * BOSS_HALF * k,
         pulse = 0.5 + 0.5 * Math.sin(g.realTime * 5);
-      // Sheet bosses wear their weak point (the crown) on top of the head.
-      if (sheet) this.weakPoint.position.set(boss.x, boss.y - art.size * 0.97);
+      // Sheet bosses: the Shuck's weak point is its head, at the front; others wear a crown.
+      if (sheet && boss.boss === 0)
+        this.weakPoint.position.set(
+          boss.x + Math.cos(boss.angle) * art.size * 0.42,
+          boss.y + Math.sin(boss.angle) * art.size * 0.12 - art.size * 0.66,
+        );
+      else if (sheet) this.weakPoint.position.set(boss.x, boss.y - art.size * 0.97);
       else
         this.weakPoint.position.set(
           boss.x + wx * Math.cos(rot) - wy * Math.sin(rot),
