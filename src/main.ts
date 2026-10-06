@@ -651,6 +651,7 @@ if (devMode) {
     profile: () => structuredClone(profile),
     timeline: () => game?.timeline.slice(),
     sim: () => game,
+    view: () => view,
   };
 }
 $('dev').innerHTML =

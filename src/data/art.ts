@@ -141,6 +141,8 @@ export const ATMOSPHERE = {
 export const JUICE = {
   /** Effect sprite pool size. */
   pool: 500,
+  /** Most effect sprites started per frame. */
+  perFrame: 90,
   /** Arrow trail length at base arrow speed (px) and opacity. */
   trailLength: 70,
   trailAlpha: 0.45,

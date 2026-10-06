@@ -30,6 +30,8 @@ export class Vfx {
   private readonly pool: Fx[] = [];
   private cursor = 0;
   private seed = 1;
+  /** Effects still allowed this frame; crowds degrade to fewer sparks, not slower frames. */
+  private budget = 0;
   reducedMotion = false;
   constructor(private readonly art: Record<string, Texture>) {
     for (let i = 0; i < JUICE.pool; i++) {
@@ -54,15 +56,8 @@ export class Vfx {
     this.seed = (Math.imul(this.seed, 1664525) + 1013904223) | 0;
     return (this.seed >>> 0) / 4294967296;
   }
+  /** Next slot in rotation: slots are handed out in order, so the next one is the oldest. */
   private take(): Fx {
-    for (let k = 0; k < this.pool.length; k++) {
-      const i = (this.cursor + k) % this.pool.length;
-      if (this.pool[i].life <= 0) {
-        this.cursor = (i + 1) % this.pool.length;
-        return this.pool[i];
-      }
-    }
-    // Pool saturated: recycle the oldest slot in rotation.
     const fx = this.pool[this.cursor];
     this.cursor = (this.cursor + 1) % this.pool.length;
     return fx;
@@ -79,6 +74,8 @@ export class Vfx {
     vx = 0,
     vy = 0,
   ) {
+    if (this.budget <= 0) return;
+    this.budget--;
     const fx = this.take();
     fx.sprite.texture = this.art[texture];
     fx.sprite.position.set(x, y);
@@ -121,6 +118,7 @@ export class Vfx {
   /** Translate this frame's sim events into effects. */
   handle(g: Hunt) {
     const p = g.player;
+    this.budget = JUICE.perFrame;
     for (const e of g.events) {
       const id = e.id;
       if (id.startsWith('enemy.hit.')) {
