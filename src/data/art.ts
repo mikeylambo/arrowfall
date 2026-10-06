@@ -87,6 +87,8 @@ export const PALETTE = {
   /** Perfect window, Deadeye and Focus. Never used for anything else. */
   focus: '#9b6bff',
   focusLight: '#cdb6ff',
+  /** Boss weak points: white-hot gold, brighter than any other boss pixel. */
+  weak: '#ffe7a8',
   /** Neutral world and pickups. */
   silver: '#dbe8f7',
   heal: '#ffe3c2',

@@ -1,3 +1,15 @@
+/**
+ * Procedural silhouette, drawn top-down facing +x. Lengths are in units of the
+ * collision radius, so art scales with the hitbox and never misrepresents it.
+ */
+export interface Silhouette {
+  /** Body archetype painter (render/silhouettes.ts). */
+  form: 'shambler' | 'wolf' | 'wisp' | 'archer' | 'antlered' | 'brute' | 'serpent' | 'hag';
+  /** Extent along the facing direction, in radii. */
+  length: number;
+  /** Extent across the facing direction, in radii. */
+  width: number;
+}
 export interface EnemyDef {
   id: string;
   name: string;
@@ -8,6 +20,7 @@ export interface EnemyDef {
   xp: number;
   radius: number;
   telegraph: number;
+  silhouette: Silhouette;
 }
 export const ENEMIES: EnemyDef[] = [
   {
@@ -20,6 +33,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 1,
     radius: 15,
     telegraph: 0.6,
+    silhouette: { form: 'shambler', length: 1.15, width: 1.05 },
   },
   {
     id: 'hound',
@@ -31,6 +45,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 1,
     radius: 16,
     telegraph: 0.5,
+    silhouette: { form: 'wolf', length: 2.1, width: 0.7 },
   },
   {
     id: 'wisp',
@@ -42,6 +57,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 2,
     radius: 13,
     telegraph: 0.6,
+    silhouette: { form: 'wisp', length: 1.6, width: 0.95 },
   },
   {
     id: 'poacher',
@@ -53,6 +69,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 3,
     radius: 16,
     telegraph: 0.8,
+    silhouette: { form: 'archer', length: 1, width: 1.25 },
   },
   {
     id: 'stag',
@@ -64,6 +81,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 4,
     radius: 25,
     telegraph: 0.9,
+    silhouette: { form: 'antlered', length: 1.5, width: 1.7 },
   },
   {
     id: 'knight',
@@ -75,6 +93,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 4,
     radius: 21,
     telegraph: 0.6,
+    silhouette: { form: 'brute', length: 0.95, width: 1.5 },
   },
   {
     id: 'worm',
@@ -86,6 +105,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 3,
     radius: 19,
     telegraph: 0.8,
+    silhouette: { form: 'serpent', length: 2.3, width: 0.75 },
   },
   {
     id: 'changeling',
@@ -97,6 +117,7 @@ export const ENEMIES: EnemyDef[] = [
     xp: 5,
     radius: 17,
     telegraph: 0.6,
+    silhouette: { form: 'hag', length: 1.35, width: 1.45 },
   },
 ];
 export const ELITES = [

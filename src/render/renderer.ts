@@ -1,8 +1,11 @@
 import { Application, Container, Sprite, Graphics, Texture, Assets, Text } from 'pixi.js';
 import { Atmosphere } from './ground';
+
+import { UNIT } from './silhouettes';
+import { BOSSES } from '../data/bosses';
 import { T } from '../data/tuning';
 import { ART_PATHS } from '../data/artPaths';
-import { bakeArt } from './art';
+import { bakeArt, BOSS_HALF } from './art';
 import type { Hunt } from '../sim/game';
 import { ENEMIES } from '../data/enemies';
 import { STATIONS } from '../data/world';
@@ -43,6 +46,7 @@ export class View {
   particleSprites: Sprite[] = [];
   coverSprites: Sprite[] = [];
   hunter = new Sprite();
+  weakPoint = new Sprite();
   raven = new Sprite();
   ghostSprites: Sprite[] = [];
   camera = { x: 7500, y: 4250 };
@@ -87,6 +91,11 @@ export class View {
       this.threatLayer,
     );
     this.threatLayer.addChild(this.threatGraphics);
+    this.weakPoint.texture = this.art.ring;
+    this.weakPoint.anchor.set(0.5);
+    this.weakPoint.tint = tint(PALETTE.weak);
+    this.weakPoint.visible = false;
+    this.threatLayer.addChild(this.weakPoint);
     this.root.addChild(this.atmosphere.mistHigh);
     this.app.stage.addChild(this.atmosphere.vignette, this.overlay);
     this.hunter.texture = this.art.hunter;
@@ -192,16 +201,23 @@ export class View {
         Math.abs(s.x - this.camera.x) < this.width / 2 / this.zoom + 150 &&
         Math.abs(s.y - this.camera.y) < this.height / 2 / this.zoom + 150;
     }
-    const dim = g.enemies.count > 150 ? 0.7 : 1;
+    const dim = g.crowd > 150 ? 0.7 : 1;
     for (let i = 0; i < g.enemies.items.length; i++) {
       const e = g.enemies.items[i],
         s = this.enemySprites[i];
       s.visible = e.active;
       if (!e.active) continue;
-      s.texture = this.art[e.elite >= 0 ? ENEMIES[e.kind].id + '.elite' : ENEMIES[e.kind].id];
       s.position.set(e.x, e.y);
-      s.rotation = e.angle;
-      s.scale.set(e.boss >= 0 ? e.r / 19 : e.r / 23);
+      if (e.boss >= 0) {
+        const art = BOSSES[e.boss].art;
+        s.texture = this.art['boss.' + BOSSES[e.boss].id];
+        s.rotation = art.faces ? e.angle : 0;
+        s.scale.set(art.size / (BOSS_HALF * 2));
+      } else {
+        s.texture = this.art[e.elite >= 0 ? ENEMIES[e.kind].id + '.elite' : ENEMIES[e.kind].id];
+        s.rotation = e.angle;
+        s.scale.set(e.r / UNIT);
+      }
       s.alpha = e.fade > 0 ? 0.17 : e.kind === 6 && e.state === 0 ? 0.5 : Math.min(1, e.age / 0.4);
       if (
         g.event === 3 &&
@@ -210,16 +226,23 @@ export class View {
         !g.rank('lantern')
       )
         s.alpha *= 0.22;
-      if (e.boss === 1) {
-        s.texture = this.art.stag;
-        s.rotation = -Math.PI / 2;
-      }
-      if (e.boss === 2) {
-        s.texture = this.art.wisp;
-      }
-      if (e.boss === 3) {
-        s.texture = this.art.poacher;
-      }
+    }
+    // Boss weak point: a slow pulse ring over the baked white-hot core.
+    const boss = g.boss?.active ? g.boss : null;
+    this.weakPoint.visible = !!boss;
+    if (boss) {
+      const art = BOSSES[boss.boss].art,
+        k = art.size / (BOSS_HALF * 2),
+        rot = art.faces ? boss.angle : 0,
+        wx = art.weak.x * BOSS_HALF * k,
+        wy = art.weak.y * BOSS_HALF * k,
+        pulse = 0.5 + 0.5 * Math.sin(g.realTime * 5);
+      this.weakPoint.position.set(
+        boss.x + wx * Math.cos(rot) - wy * Math.sin(rot),
+        boss.y + wx * Math.sin(rot) + wy * Math.cos(rot),
+      );
+      this.weakPoint.scale.set(((art.weak.r * BOSS_HALF * k) / 40) * (1.1 + 0.35 * pulse));
+      this.weakPoint.alpha = 0.35 + 0.45 * (1 - pulse);
     }
     for (let i = 0; i < g.arrows.items.length; i++) {
       const a = g.arrows.items[i],

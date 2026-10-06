@@ -1,5 +1,8 @@
 import { Rectangle, Texture } from 'pixi.js';
-import { PALETTE, ENEMY_TONES } from '../data/art';
+import { PALETTE, ENEMY_TONES, BOSS_TONES } from '../data/art';
+import { ENEMIES } from '../data/enemies';
+import { BOSSES } from '../data/bosses';
+import { FORMS, BOSS_FORMS } from './silhouettes';
 
 type Ctx = CanvasRenderingContext2D;
 /** Colours handed to a shape painter. */
@@ -14,8 +17,10 @@ export interface Tone {
 }
 
 /** Atlas edge (px). Every baked sprite shares one texture source so the crowd batches together. */
-const ATLAS = 1024;
+const ATLAS = 2048;
 const PAD = 2;
+/** Half the longest dimension of a boss figure inside its 256 px cell. */
+export const BOSS_HALF = 115;
 
 export const path = (c: Ctx, points: number[], fill: string, stroke = fill, width = 2) => {
   c.beginPath();
@@ -31,96 +36,6 @@ export const path = (c: Ctx, points: number[], fill: string, stroke = fill, widt
 const glow = (c: Ctx, color: string, blur = 12) => {
   c.shadowColor = color;
   c.shadowBlur = blur;
-};
-
-/** Enemy painters. Each draws a top-down figure facing +x inside a 128 px cell. */
-const ENEMY_SHAPES: Record<string, (c: Ctx, t: Tone) => void> = {
-  husk(c, t) {
-    path(
-      c,
-      [-19, 12, -17, -4, -8, -23, 9, -18, 15, -3, 22, 12, 7, 22, -10, 20],
-      t.body,
-      t.rim,
-      t.width,
-    );
-    c.fillStyle = t.eye;
-    c.fillRect(-5, -8, 5, 3);
-    c.fillRect(6, -7, 4, 3);
-  },
-  hound(c, t) {
-    path(
-      c,
-      [
-        -30, -7, -20, -20, -4, -14, 12, -20, 17, -10, 30, -7, 25, 6, 10, 8, 2, 20, -7, 9, -22, 13,
-        -29, 4,
-      ],
-      t.body,
-      t.rim,
-      t.width,
-    );
-    c.fillStyle = t.eye;
-    c.fillRect(17, -6, 5, 3);
-  },
-  wisp(c, t) {
-    path(
-      c,
-      [0, -32, 13, -14, 22, 2, 14, 17, 1, 28, -17, 18, -20, 0, -6, -14],
-      t.body,
-      t.rim,
-      t.width,
-    );
-    c.fillStyle = t.eye;
-    c.beginPath();
-    c.ellipse(0, 5, 4, 12, 0, 0, 7);
-    c.fill();
-  },
-  poacher(c, t) {
-    path(c, [-15, -20, 3, -23, 13, -4, 15, 20, -20, 20, -12, 0], t.body, t.rim, t.width);
-    c.strokeStyle = t.rim;
-    c.beginPath();
-    c.moveTo(18, -25);
-    c.quadraticCurveTo(38, 0, 18, 25);
-    c.stroke();
-  },
-  stag(c, t) {
-    path(c, [-28, -8, -10, -19, 16, -14, 30, 0, 13, 18, -14, 14, -31, 8], t.body, t.rim, t.width);
-    c.strokeStyle = t.rim;
-    for (const sign of [-1, 1]) {
-      c.beginPath();
-      c.moveTo(9, sign * 10);
-      c.lineTo(17, sign * 27);
-      c.lineTo(10, sign * 42);
-      c.moveTo(17, sign * 27);
-      c.lineTo(28, sign * 40);
-      c.stroke();
-    }
-  },
-  knight(c, t) {
-    path(c, [-22, -25, 6, -23, 18, 0, 5, 25, -22, 23], t.shade, t.rim, t.width);
-    path(c, [10, -30, 29, -20, 32, 15, 15, 31, 6, 4], t.body, t.rim, t.width);
-    c.fillStyle = t.eye;
-    c.fillRect(-7, -5, 6, 3);
-  },
-  worm(c, t) {
-    c.strokeStyle = t.rim;
-    c.lineWidth = t.width;
-    for (let i = 0; i < 5; i++) {
-      c.beginPath();
-      c.ellipse((i - 2) * 11, Math.sin(i) * 9, 9, 14, 0, 0, 7);
-      c.fillStyle = i === 4 ? t.body : t.shade;
-      c.fill();
-      c.stroke();
-    }
-  },
-  changeling(c, t) {
-    path(
-      c,
-      [0, -28, 10, -7, 29, 0, 12, 12, 0, 29, -10, 9, -28, 0, -10, -9],
-      t.body,
-      t.rim,
-      t.width,
-    );
-  },
 };
 
 /** Normal enemies: type red with a lighter red rim. Elites: brighter body, pale thick outline. */
@@ -192,13 +107,60 @@ export function bakeArt() {
     c.quadraticCurveTo(43, 0, 20, 29);
     c.stroke();
   });
-  for (const [id, draw] of Object.entries(ENEMY_SHAPES))
+  for (const def of ENEMIES)
     for (const elite of [false, true])
-      bake(elite ? id + '.elite' : id, (c) => {
-        const tone = enemyTone(id, elite);
+      bake(elite ? def.id + '.elite' : def.id, (c) => {
+        const tone = enemyTone(def.id, elite);
         glow(c, tone.glow, tone.blur);
-        draw(c, tone);
+        FORMS[def.silhouette.form](c, tone, def.silhouette.length, def.silhouette.width);
       });
+  for (const boss of BOSSES)
+    bake(
+      'boss.' + boss.id,
+      (c) => {
+        const tone = BOSS_TONES[boss.id];
+        const t: Tone = {
+          body: tone.body,
+          shade: tone.shade,
+          rim: PALETTE.threat.rim,
+          eye: PALETTE.threat.eye,
+          width: 3,
+          glow: PALETTE.threat.base,
+          blur: 14,
+        };
+        glow(c, t.glow, t.blur);
+        BOSS_FORMS[boss.art.form](c, t, BOSS_HALF);
+        // Weak point: a white-hot core, the brightest pixel on the boss.
+        const w = boss.art.weak,
+          x = w.x * BOSS_HALF,
+          y = w.y * BOSS_HALF,
+          r = w.r * BOSS_HALF;
+        c.shadowColor = PALETTE.weak;
+        c.shadowBlur = 18;
+        const gr = c.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, '#ffffff');
+        gr.addColorStop(0.45, PALETTE.weak);
+        gr.addColorStop(1, PALETTE.weak + '00');
+        c.fillStyle = gr;
+        c.beginPath();
+        c.arc(x, y, r, 0, Math.PI * 2);
+        c.fill();
+      },
+      256,
+    );
+  bake(
+    'ring',
+    (c) => {
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = 4;
+      c.shadowColor = '#ffffff';
+      c.shadowBlur = 8;
+      c.beginPath();
+      c.arc(0, 0, 40, 0, Math.PI * 2);
+      c.stroke();
+    },
+    96,
+  );
   bake('tree', (c) => {
     // Moonlit canopy: overlapping crowns, dark core, cool rim on the moon side (top-left).
     const crowns: [number, number, number][] = [
