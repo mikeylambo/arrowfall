@@ -279,6 +279,7 @@ export class Hunt {
     this.timeline.push(`${Math.floor(this.time)} ${text}`);
     this.emit('world.event');
   }
+  /** Particle spray. color: 0 silver, 1 threat red, 2 focus violet, 3 elite. */
   burst(x: number, y: number, n = 12, color = 0) {
     const density = this.crowd > 150 ? 0.55 : 1;
     for (let i = 0; i < n * density; i++) {
@@ -535,7 +536,7 @@ export class Hunt {
         p.draw += dt;
         if (before < profile.full && p.draw >= profile.full) {
           this.emit('bow.window');
-          this.burst(p.x, p.y, 8);
+          this.burst(p.x, p.y, 8, 2);
         }
         const auto = this.assistLoose ? profile.full : profile.auto;
         if (p.draw >= auto && (this.assistLoose || (T.autoLoose && this.bow.id !== 'letoff'))) {
@@ -730,7 +731,7 @@ export class Hunt {
     this.chain = Math.min(10, this.chain + 1);
     this.chainTime = this.evolutions.has('apex-hunter') ? 3.5 : 1.5;
     this.player.predator = 3;
-    this.burst(e.x, e.y, e.boss >= 0 ? 80 : 12, e.elite >= 0 ? 2 : 1);
+    this.burst(e.x, e.y, e.boss >= 0 ? 80 : 12, e.elite >= 0 ? 3 : 1);
     this.emit('enemy.kill.' + ENEMIES[e.kind].id, e.x, e.y);
     const drop = this.pickups.acquire();
     if (drop) {

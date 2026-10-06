@@ -43,7 +43,7 @@ export function loose(
       p.focus = Math.min(100, p.focus + 12 * (1 + 0.25 * g.rank('moonwell')));
       g.emit('bow.perfect');
       g.hitstop = 0.04;
-      g.burst(p.x, p.y, 18);
+      g.burst(p.x, p.y, 18, 2);
       g.flash = 0.15;
     } else {
       p.streak = 0;
@@ -291,7 +291,7 @@ function area(g: Hunt, e: Enemy, r: number, damage: number, source: string) {
     if (t !== e && t.active && distance(t, e) < r)
       damageEnemy(g, t, damage, undefined, source, true);
   }
-  g.burst(e.x, e.y, 24, 2);
+  g.burst(e.x, e.y, 24, 0);
 }
 const chainTargets: Enemy[] = [];
 const chainVisited = new Uint32Array(8);

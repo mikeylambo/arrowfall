@@ -631,6 +631,7 @@ if (devMode) {
       if (game?.boss) game.kill(game.boss);
     },
     stress: () => game?.stressFill(),
+    grayscale: (on = true) => document.documentElement.classList.toggle('grayscale', on),
     event: (i: number) => game?.startEvent(i),
     formation: (i: number) => game?.formation(i),
     profile: () => structuredClone(profile),
@@ -639,7 +640,7 @@ if (devMode) {
   };
 }
 $('dev').innerHTML =
-  `<b>ARROWFALL</b><br><button data-dev="focus">Fill Focus</button><button data-dev="god">God Mode</button><button data-dev="stress">350 Enemies</button><br>${BOSSES.map((b, i) => `<button data-boss="${i}">${fmt(b.time)} ${b.name}</button>`).join('')}<select id="dev-grant">${[...UPGRADES.map((u) => ({ id: u.id, name: u.name })), ...EVOLUTIONS.map((e) => ({ id: 'evo:' + e.id, name: e.name }))].map((x) => `<option value="${x.id}">${x.name}</option>`).join('')}</select><button data-dev="grant">Grant</button>`;
+  `<b>ARROWFALL</b><br><button data-dev="focus">Fill Focus</button><button data-dev="god">God Mode</button><button data-dev="stress">350 Enemies</button><button data-dev="grayscale">Grayscale</button><br>${BOSSES.map((b, i) => `<button data-boss="${i}">${fmt(b.time)} ${b.name}</button>`).join('')}<select id="dev-grant">${[...UPGRADES.map((u) => ({ id: u.id, name: u.name })), ...EVOLUTIONS.map((e) => ({ id: 'evo:' + e.id, name: e.name }))].map((x) => `<option value="${x.id}">${x.name}</option>`).join('')}</select><button data-dev="grant">Grant</button>`;
 $('dev').onclick = (e) => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b || !game) return;
@@ -651,9 +652,14 @@ $('dev').onclick = (e) => {
   if (d.dev === 'focus') game.player.focus = 100;
   if (d.dev === 'god') game.god = !game.god;
   if (d.dev === 'stress') (window as any).__ARROWFALL__.stress();
+  if (d.dev === 'grayscale') document.documentElement.classList.toggle('grayscale');
   if (d.dev === 'grant') game.grant(($('dev-grant') as HTMLSelectElement).value);
 };
 addEventListener('keydown', (e) => {
+  if (e.code === 'F2' && devMode) {
+    e.preventDefault();
+    document.documentElement.classList.toggle('grayscale');
+  }
   if (e.code === 'F1' && devMode) {
     e.preventDefault();
     $('dev').classList.toggle('visible');

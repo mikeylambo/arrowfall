@@ -4,6 +4,20 @@ import { bakeArt } from './art';
 import type { Hunt } from '../sim/game';
 import { ENEMIES } from '../data/enemies';
 import { STATIONS } from '../data/world';
+import { PALETTE, tint } from '../data/art';
+
+/** Palette as Pixi tints. */
+const C = {
+  silver: tint(PALETTE.silver),
+  focus: tint(PALETTE.focus),
+  focusLight: tint(PALETTE.focusLight),
+  threat: tint(PALETTE.threat.telegraph),
+  threatBase: tint(PALETTE.threat.base),
+  elite: tint(PALETTE.elite.rim),
+  colorblind: tint(PALETTE.colorblindThreat),
+  heal: tint(PALETTE.heal),
+  phantom: 0x9fc4ff,
+};
 export class View {
   readonly app = new Application();
   readonly root = new Container();
@@ -47,7 +61,7 @@ export class View {
     await this.app.init({
       canvas,
       resizeTo: window,
-      background: '#070b15',
+      background: PALETTE.background,
       antialias: false,
       resolution: Math.min(devicePixelRatio, 2),
       autoDensity: true,
@@ -79,7 +93,7 @@ export class View {
     this.effects.addChild(this.raven);
     for (let i = 0; i < 3; i++) {
       const s = this.sprite(this.art.hunter, this.actors);
-      s.tint = 0xb48aff;
+      s.tint = C.phantom;
       s.alpha = 0.25;
       s.scale.set(0.7);
       this.ghostSprites.push(s);
@@ -92,7 +106,7 @@ export class View {
     for (let i = 0; i < 60; i++) {
       const text = new Text({
         text: '',
-        style: { fontFamily: 'Georgia', fontSize: 18, fill: 0xdaefff },
+        style: { fontFamily: 'Georgia', fontSize: 18, fill: C.silver },
       });
       text.anchor.set(0.5);
       text.visible = false;
@@ -206,11 +220,10 @@ export class View {
         s = this.enemySprites[i];
       s.visible = e.active;
       if (!e.active) continue;
-      s.texture = this.art[ENEMIES[e.kind].id === 'hound' ? 'hound' : ENEMIES[e.kind].id];
+      s.texture = this.art[e.elite >= 0 ? ENEMIES[e.kind].id + '.elite' : ENEMIES[e.kind].id];
       s.position.set(e.x, e.y);
       s.rotation = e.angle;
       s.scale.set(e.boss >= 0 ? e.r / 19 : e.r / 23);
-      s.tint = e.flash > 0 ? 0xffffff : this.colorblind ? 0xffb567 : 0xffffff;
       s.alpha = e.fade > 0 ? 0.17 : e.kind === 6 && e.state === 0 ? 0.5 : Math.min(1, e.age / 0.4);
       if (
         g.event === 3 &&
@@ -239,7 +252,7 @@ export class View {
         s.rotation = Math.atan2(a.vy, a.vx);
         s.scale.set(a.perfect ? 0.8 : 0.6);
         s.alpha = dim;
-        s.tint = a.source === 'phantom' ? 0xc7adff : 0xffffff;
+        s.tint = a.source === 'phantom' ? C.phantom : 0xffffff;
       }
     }
     for (let i = 0; i < g.pickups.items.length; i++) {
@@ -250,7 +263,7 @@ export class View {
         s.texture = this.art[q.kind === 2 ? 'berry' : 'xp'];
         s.position.set(q.x, q.y);
         s.scale.set(0.55 + 0.04 * Math.sin(g.realTime * 3 + i));
-        s.tint = q.kind === 1 ? 0xb48aff : 0xffffff;
+        s.tint = q.kind === 2 ? 0xffffff : q.kind === 1 ? C.elite : C.silver;
       }
     }
     for (let i = 0; i < g.particles.items.length; i++) {
@@ -261,7 +274,14 @@ export class View {
         s.position.set(q.x, q.y);
         s.scale.set(q.size * 0.2);
         s.alpha = (q.life / q.max) * (q.color === 1 ? 1 : dim);
-        s.tint = q.color === 1 ? 0xfb5368 : q.color === 2 ? 0xb48aff : 0xdaefff;
+        s.tint =
+          q.color === 1
+            ? C.threatBase
+            : q.color === 2
+              ? C.focus
+              : q.color === 3
+                ? C.elite
+                : C.silver;
       }
     }
     this.hunter.position.set(p.x, p.y);
@@ -312,7 +332,7 @@ export class View {
       tg = this.threatGraphics;
     w.clear();
     tg.clear();
-    const red = this.colorblind ? 0xffbe76 : 0xfb5368;
+    const red = this.colorblind ? C.colorblind : C.threat;
     if (this.showBands && !this.camp) {
       w.circle(p.x, p.y, g.bow.near).stroke({ color: 0x98c7e6, alpha: 0.06, width: 1 });
       w.circle(p.x, p.y, g.bow.far).stroke({ color: 0x98c7e6, alpha: 0.11, width: 1 });
@@ -320,7 +340,7 @@ export class View {
     if (this.camp) {
       for (const s of STATIONS) {
         w.circle(s.x, s.y, 45).stroke({
-          color: s.id === 'trail' ? 0xb48aff : 0x8aaccc,
+          color: 0x8aaccc,
           alpha: 0.5,
           width: 2,
         });
@@ -346,15 +366,11 @@ export class View {
       w.circle(g.eventX, g.eventY, 1050).stroke({ color: 0xb5d2ed, alpha: 0.5, width: 6 });
     for (const e of g.enemies.items)
       if (e.active) {
-        if (e.elite >= 0)
-          tg.circle(e.x, e.y, e.r + 9).stroke({
-            color: e.elite === 5 ? 0xdaefff : 0xb48aff,
-            width: 2,
-            alpha: 0.8,
-          });
+        if (e.elite === 5)
+          tg.circle(e.x, e.y, e.r + 9).stroke({ color: C.silver, width: 2, alpha: 0.8 });
         if (e.deadmark || e.mark) {
           tg.circle(e.x, e.y, e.r + 16).stroke({
-            color: e.deadmark ? 0xdaefff : 0xb48aff,
+            color: e.deadmark ? C.focus : C.silver,
             width: 2,
             alpha: 1,
           });
@@ -366,7 +382,7 @@ export class View {
         if (e.kind === 6 && e.state === 0)
           tg.moveTo(e.x - Math.cos(e.angle) * 42, e.y - Math.sin(e.angle) * 42)
             .lineTo(e.x, e.y)
-            .stroke({ color: 0xfb5368, alpha: 0.4, width: 5 });
+            .stroke({ color: red, alpha: 0.4, width: 5 });
         if (e.slow > 0 || e.freeze > 0)
           tg.poly([e.x, e.y - 24, e.x + 24, e.y, e.x, e.y + 24, e.x - 24, e.y]).stroke({
             color: 0xdaefff,
@@ -389,7 +405,7 @@ export class View {
             .lineTo(t.x + Math.cos(t.angle) * t.length, t.y + Math.sin(t.angle) * t.length)
             .stroke({ color: red, width: 3, alpha: 0.65 });
         } else if (t.kind === 5)
-          w.circle(t.x, t.y, t.r).stroke({ color: 0xb48aff, width: 2, alpha: 0.7 });
+          w.circle(t.x, t.y, t.r).stroke({ color: C.silver, width: 2, alpha: 0.7 });
         else {
           const endX = t.x + Math.cos(t.angle) * t.length,
             endY = t.y + Math.sin(t.angle) * t.length;
@@ -424,7 +440,7 @@ export class View {
     const perfect = p.draw >= full && p.draw <= full + win;
     const r = 27 - Math.min(1, p.draw / full) * 13;
     o.circle(x, y, r).stroke({
-      color: perfect ? 0xffffff : 0xaecbe0,
+      color: perfect ? C.focus : 0xaecbe0,
       width: perfect ? 3 : 1.5,
       alpha: perfect ? 1 : 0.65,
     });
@@ -436,12 +452,12 @@ export class View {
       .stroke({ color: 0xdaefff, width: 1, alpha: 0.7 });
     if (p.focus > 0)
       o.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * p.focus) / 100).stroke({
-        color: 0xbba3ff,
+        color: C.focus,
         width: 3,
         alpha: 0.9,
       });
     if (g.deadeye > 0)
-      o.circle(x, y, 60 * this.zoom).stroke({ color: 0xdaefff, width: 1, alpha: 0.3 });
+      o.circle(x, y, 60 * this.zoom).stroke({ color: C.focus, width: 1, alpha: 0.5 });
     if (g.flash > 0)
       o.rect(0, 0, this.width, this.height).fill({ color: 0xdaefff, alpha: g.flash * 0.16 });
   }

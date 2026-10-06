@@ -1,8 +1,9 @@
 :root {
   --silver: #dbeaff;
   --muted: #8fa3bd;
-  --violet: #b48aff;
-  --red: #fb5368;
+  /* Mirrors data/art.ts PALETTE: violet = perfect/Deadeye/Focus only, red = threats. */
+  --violet: #9b6bff;
+  --red: #c8323c;
   font-family: Inter, system-ui, sans-serif;
   color: var(--silver);
   color-scheme: dark;
@@ -81,7 +82,7 @@ button {
 }
 #ui .slu-choice:hover,
 #ui .slu-choice[data-focused='true'] {
-  border-color: #baa5ec88;
+  border-color: #dbeaff88;
   background: #392a5755;
   transform: translateX(3px);
 }
@@ -174,7 +175,7 @@ button {
 .health .bar {
   margin-top: 10px;
   height: 4px;
-  background: #fb536825;
+  background: #dbeaff1c;
 }
 .bar i {
   height: 100%;
@@ -183,8 +184,8 @@ button {
   box-shadow: 0 0 10px #dbeaff66;
 }
 .health .bar i {
-  background: #fb6578;
-  box-shadow: 0 0 12px #fb536850;
+  background: #eef3fa;
+  box-shadow: 0 0 12px #dbeaff55;
 }
 .moon-clock {
   position: absolute;
@@ -221,7 +222,7 @@ button {
   line-height: 1.8;
 }
 .inventory b {
-  color: #cab4ff;
+  color: var(--silver);
   font-weight: 500;
 }
 .xp {
@@ -267,7 +268,7 @@ button {
   transform: translateX(-50%);
   text-align: center;
   font: 24px Georgia;
-  color: #dbccff;
+  color: #c4d7f1;
   max-width: 80vw;
 }
 .boss {
@@ -282,12 +283,12 @@ button {
   color: #ff9aa8;
 }
 .boss .bar {
-  background: #fb536820;
+  background: #c8323c33;
   height: 4px;
   margin-top: 10px;
 }
 .boss i {
-  background: #fb5368;
+  background: var(--red);
 }
 .camp-title {
   position: fixed;
@@ -304,7 +305,7 @@ button {
 }
 .camp-title p {
   font-size: 14px;
-  color: #b48aff;
+  color: var(--muted);
 }
 .station {
   position: fixed;
@@ -319,8 +320,8 @@ button {
 }
 .station:hover,
 .station.near {
-  color: #eee2ff;
-  text-shadow: 0 0 10px #b48aff;
+  color: #ffffff;
+  text-shadow: 0 0 10px #dbeaff;
 }
 .hint {
   position: fixed;
@@ -442,4 +443,8 @@ button {
   .station {
     font-size: 14px;
   }
+}
+/* Dev readability check (F2): the player and threats must stay distinct without hue. */
+html.grayscale {
+  filter: grayscale(1);
 }
