@@ -1,0 +1,21 @@
+{
+  "style": "chibi game character, 2.5 heads tall, bold clean ink outline, flat two-tone cel shading with a hard shadow edge, cool moonlight from the upper left, thin silver rim light, limited palette, MapleStory-inspired proportions, premium mobile/PC game concept art, full body, plain light grey background, character sheet",
+  "negative": "photorealistic, painterly texture on the character, gradients on clothing, text, watermark, extra limbs, cropped feet, busy background, green or yellow accents",
+  "characters": {
+    "hunter": {
+      "pose": "a-pose",
+      "multiView": true,
+      "prompt": "a hooded night hunter of the Silver Order: deep hood shading the face with two bright silver eyes, long dark slate cloak with silver-white lining that tails behind, fitted leather jerkin, dark gloves and boots, a recurve bow held in the left hand, a quiver of glowing white moonlight arrows on the back, silver and slate palette with white highlights only"
+    },
+    "husk": {
+      "pose": "a-pose",
+      "multiView": true,
+      "prompt": "a hunched shambling husk monster, round lumpy body with dragging arms, hollow glowing eye holes, entirely blood-red palette (#c8323c base, darker shadows), cute-creepy chibi"
+    },
+    "moonhound": {
+      "pose": "none",
+      "multiView": true,
+      "prompt": "a lean spectral moonhound, low and long body, splayed legs, wedge-shaped snout, smoky tail, glowing red eyes, entirely blood-red palette, cute-creepy chibi quadruped"
+    }
+  }
+}
