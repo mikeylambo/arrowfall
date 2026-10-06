@@ -68,6 +68,10 @@ export interface SpriteJob {
   test?: boolean;
   bow?: BowJob;
   eyes?: EyesJob;
+  /** Albedo multiplier (elite variants render brighter). */
+  brightness?: number;
+  /** Per-channel colour correction toward the palette (linear RGB multipliers). */
+  albedo?: [number, number, number];
   page: number;
 }
 
@@ -75,13 +79,21 @@ const PITCH = (40 * Math.PI) / 180;
 const SUPERSAMPLE = 2;
 
 /** Toon ramp, terminator at N.L = 0.35 with a cool shadow (art bible). */
-function toonMaterial(source: THREE.Material, rim: THREE.Color): THREE.Material {
+function toonMaterial(
+  source: THREE.Material,
+  rim: THREE.Color,
+  brightness = 1,
+  albedo: [number, number, number] = [1, 1, 1],
+): THREE.Material {
   const src = source as THREE.MeshStandardMaterial;
   const ramp = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 255, 255, 255, 255]), 2, 1);
   ramp.minFilter = ramp.magFilter = THREE.NearestFilter;
   ramp.needsUpdate = true;
   const m = new THREE.MeshToonMaterial({
-    color: src.color ?? new THREE.Color(0xffffff),
+    color: (src.color ?? new THREE.Color(0xffffff))
+      .clone()
+      .multiply(new THREE.Color(albedo[0], albedo[1], albedo[2]))
+      .multiplyScalar(brightness),
     map: src.map ?? null,
     gradientMap: ramp,
     emissive: src.emissive ?? new THREE.Color(0),
@@ -337,8 +349,8 @@ export async function renderJob(job: SpriteJob) {
         const mesh = o as THREE.Mesh;
         if (mesh.isMesh)
           mesh.material = Array.isArray(mesh.material)
-            ? mesh.material.map((m) => toonMaterial(m, rim))
-            : toonMaterial(mesh.material, rim);
+            ? mesh.material.map((m) => toonMaterial(m, rim, job.brightness, job.albedo))
+            : toonMaterial(mesh.material, rim, job.brightness, job.albedo);
       });
       // Normalise: feet on y=0, centred, scaled to modelHeight.
       const box = new THREE.Box3().setFromObject(src.root);

@@ -127,6 +127,70 @@
         "radius": 0.018,
         "color": "#ffffff"
       }
+    },
+    {
+      "id": "husk",
+      "cell": 128,
+      "modelHeight": 0.9,
+      "heightPx": 96,
+      "pivot": [
+        0.5,
+        0.85
+      ],
+      "directions": [
+        0,
+        1,
+        2,
+        6,
+        7
+      ],
+      "ink": "#3a0a10",
+      "rim": "#ff6670",
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261006_205651_husk_01a11301/husk-move.glb",
+          "frames": 16,
+          "loop": true,
+          "start": 0,
+          "end": 1.6,
+          "inPlace": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261006_205651_husk_01a11301/husk-attack.glb",
+          "frames": 6,
+          "loop": false,
+          "start": 0.3,
+          "end": 1.4,
+          "inPlace": true
+        }
+      ],
+      "variants": [
+        {
+          "suffix": "elite",
+          "ink": "#fff2f3",
+          "brightness": 1.35
+        }
+      ],
+      "source": {
+        "concept": "art-source/husk-sheet.png",
+        "meshy": {
+          "image-to-image": "01a11301-1ee1-77fd-8bf8-db185ee6b0bb",
+          "multi-image-to-3d": "01a11301-f154-77a3-aaf5-4d5863604657",
+          "remesh": "01a11304-2d64-7275-b2eb-0f446679a6d2",
+          "rigging": "01a11305-7d74-718b-8610-b4d3dc4cd2f4",
+          "animations": {
+            "move": "01a11306-60d0-71b7-9a2c-79941a173db1",
+            "attack": "01a11306-93a1-7027-97f0-0374a2e2b0f8"
+          }
+        }
+      },
+      "albedo": [
+        1.0,
+        0.62,
+        0.5
+      ]
     }
   ]
 }

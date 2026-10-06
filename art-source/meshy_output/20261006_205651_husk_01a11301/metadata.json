@@ -1,0 +1,116 @@
+{
+  "schema_version": 2,
+  "project_name": "husk",
+  "folder": "20261006_205651_husk_01a11301",
+  "root_task_id": "01a11301-1ee1-77fd-8bf8-db185ee6b0bb",
+  "created_at": "2026-10-06T20:56:51.513Z",
+  "updated_at": "2026-10-06T21:02:52.067Z",
+  "tasks": [
+    {
+      "task_id": "01a11301-1ee1-77fd-8bf8-db185ee6b0bb",
+      "task_type": "image-to-image",
+      "resource": "image-to-image",
+      "endpoint": "/openapi/v1/image-to-image",
+      "stage": "concept",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "concept/image_0.png"
+      ],
+      "task_json": "task_01a11301-1ee1-77fd-8bf8-db185ee6b0bb.json",
+      "operation_id": null,
+      "created_at": "2026-10-06T20:57:08.251Z",
+      "updated_at": "2026-10-06T20:57:09.660Z"
+    },
+    {
+      "task_id": "01a11301-f154-77a3-aaf5-4d5863604657",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a11301-f154-77a3-aaf5-4d5863604657.json",
+      "operation_id": "5782e962-b98f-412c-8ee9-38c496883ed7",
+      "created_at": "2026-10-06T20:57:40.861Z",
+      "updated_at": "2026-10-06T20:59:46.640Z"
+    },
+    {
+      "task_id": "01a11301-f154-77a3-aaf5-4d5863604657",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "preview",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "preview.png"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-10-06T20:59:47.984Z",
+      "updated_at": "2026-10-06T20:59:47.984Z"
+    },
+    {
+      "task_id": "01a11304-2d64-7275-b2eb-0f446679a6d2",
+      "task_type": "remesh",
+      "resource": "remesh",
+      "endpoint": "/openapi/v1/remesh",
+      "stage": "remesh",
+      "parent_task_id": "01a11301-f154-77a3-aaf5-4d5863604657",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a11304-2d64-7275-b2eb-0f446679a6d2.json",
+      "operation_id": "0ab67236-5198-4047-ba35-4a934388267f",
+      "created_at": "2026-10-06T21:00:03.370Z",
+      "updated_at": "2026-10-06T21:01:27.981Z"
+    },
+    {
+      "task_id": "01a11305-7d74-718b-8610-b4d3dc4cd2f4",
+      "task_type": "rig",
+      "resource": "rigging",
+      "endpoint": "/openapi/v1/rigging",
+      "stage": "rigging",
+      "parent_task_id": "01a11304-2d64-7275-b2eb-0f446679a6d2",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a11305-7d74-718b-8610-b4d3dc4cd2f4.json",
+      "operation_id": "cf86eeac-524c-4ac6-a18d-c0a3af925ea0",
+      "created_at": "2026-10-06T21:01:32.639Z",
+      "updated_at": "2026-10-06T21:01:49.476Z"
+    },
+    {
+      "task_id": "01a11306-60d0-71b7-9a2c-79941a173db1",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-move",
+      "parent_task_id": "01a11305-7d74-718b-8610-b4d3dc4cd2f4",
+      "status": "SUCCEEDED",
+      "files": [
+        "husk-move.glb"
+      ],
+      "task_json": "task_01a11306-60d0-71b7-9a2c-79941a173db1.json",
+      "operation_id": "587679a9-14aa-4447-93bd-32fba25616e7",
+      "created_at": "2026-10-06T21:02:27.776Z",
+      "updated_at": "2026-10-06T21:02:39.143Z"
+    },
+    {
+      "task_id": "01a11306-93a1-7027-97f0-0374a2e2b0f8",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-attack",
+      "parent_task_id": "01a11305-7d74-718b-8610-b4d3dc4cd2f4",
+      "status": "SUCCEEDED",
+      "files": [
+        "husk-attack.glb"
+      ],
+      "task_json": "task_01a11306-93a1-7027-97f0-0374a2e2b0f8.json",
+      "operation_id": "87774b13-5be9-418f-9806-91801008037e",
+      "created_at": "2026-10-06T21:02:40.854Z",
+      "updated_at": "2026-10-06T21:02:52.067Z"
+    }
+  ]
+}

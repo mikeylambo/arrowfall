@@ -176,6 +176,8 @@ export const DIEGETIC = {
 };
 
 /** Rendered 3/4 sprite sheets (public/art/sprites/<id>) per character. Missing sheets fall back to baked art. */
-export const SHEETS = {
+export const SHEETS: { hunter: string; enemies: Record<string, string> } = {
   hunter: 'hunter',
+  /** Enemy id -> sheet id; elites use '<sheet>-elite'. */
+  enemies: { husk: 'husk' },
 };

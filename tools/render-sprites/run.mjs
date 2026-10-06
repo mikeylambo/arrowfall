@@ -27,8 +27,18 @@ page.on('console', (m) => m.type() === 'error' && console.error('console:', m.te
 await page.goto('http://127.0.0.1:5198/tools/render-sprites/index.html');
 await page.waitForFunction(() => window.renderJob);
 try {
-  for (const job of config.characters) {
-    if (only.length && !only.includes(job.id)) continue;
+  // Variants (e.g. elites) re-render the same character with a different ink and brightness.
+  const jobs = config.characters.flatMap((c) => [
+    c,
+    ...(c.variants ?? []).map((v) => ({
+      ...c,
+      ...v,
+      id: `${c.id}-${v.suffix}`,
+      variants: undefined,
+    })),
+  ]);
+  for (const job of jobs) {
+    if (only.length && !only.some((id) => job.id === id || job.id.startsWith(id + '-'))) continue;
     const t = Date.now();
     const result = await page.evaluate((job) => window.renderJob(job), {
       page: config.page,

@@ -70,6 +70,8 @@ export class View {
   hunter = new Sprite();
   /** 3/4 sprite sheet for the hunter, when one is rendered (dev preview: ?sprites=<sheet id>). */
   hunterSheet: Sheet | null = null;
+  /** Enemy sheets by sheet id (normal and '-elite'). */
+  enemySheets: Record<string, Sheet> = {};
   readonly footShadow = new Sprite();
   weakPoint = new Sprite();
   raven = new Sprite();
@@ -146,6 +148,12 @@ export class View {
     const override = new URLSearchParams(location.search).get('sprites');
     if (override !== 'off') this.hunterSheet = await loadSheet(override ?? SHEETS.hunter);
     this.diegetic.sheetBow = !!this.hunterSheet;
+    if (override !== 'off')
+      for (const id of Object.values(SHEETS.enemies))
+        for (const sheetId of [id, id + '-elite']) {
+          const sheet = await loadSheet(sheetId);
+          if (sheet) this.enemySheets[sheetId] = sheet;
+        }
     this.raven.texture = this.art.raven;
     this.raven.anchor.set(0.5);
     this.raven.scale.set(0.45);
@@ -264,12 +272,33 @@ export class View {
       if (e.boss >= 0) {
         const art = BOSSES[e.boss].art;
         s.texture = this.art['boss.' + BOSSES[e.boss].id];
+        s.anchor.set(0.5);
         s.rotation = art.faces ? e.angle : 0;
         s.scale.set(art.size / (BOSS_HALF * 2));
       } else {
-        s.texture = this.art[e.elite >= 0 ? ENEMIES[e.kind].id + '.elite' : ENEMIES[e.kind].id];
-        s.rotation = e.angle;
-        s.scale.set((e.r / UNIT) * (this.reducedMotion ? 1 : 1 + e.flash * JUICE.hitPunch));
+        const def = ENEMIES[e.kind],
+          sheetId = SHEETS.enemies[def.id],
+          sheet = sheetId
+            ? this.enemySheets[e.elite >= 0 ? sheetId + '-elite' : sheetId]
+            : undefined,
+          punch = this.reducedMotion ? 1 : 1 + e.flash * JUICE.hitPunch;
+        if (sheet) {
+          // 3/4 sheet: upright on its feet, own animation phase, attack follows the telegraph.
+          const winding = e.state === 3 && sheet.has('attack'),
+            frame = winding
+              ? sheet.frame('attack', e.angle, 0, 1 - Math.max(0, e.clock) / 0.6)
+              : sheet.frame('move', e.angle, g.realTime + e.id * 0.37);
+          s.texture = frame.texture;
+          s.anchor.set(sheet.manifest.pivot[0], sheet.manifest.pivot[1]);
+          const k = 0.5 * (e.r / def.radius) * punch;
+          s.scale.set(frame.mirror ? -k : k, k);
+          s.rotation = 0;
+        } else {
+          s.texture = this.art[e.elite >= 0 ? def.id + '.elite' : def.id];
+          s.anchor.set(0.5);
+          s.rotation = e.angle;
+          s.scale.set((e.r / UNIT) * punch);
+        }
       }
       s.alpha = e.fade > 0 ? 0.17 : e.kind === 6 && e.state === 0 ? 0.5 : Math.min(1, e.age / 0.4);
       if (
