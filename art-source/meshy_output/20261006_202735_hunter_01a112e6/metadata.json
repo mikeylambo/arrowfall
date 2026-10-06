@@ -4,7 +4,7 @@
   "folder": "20261006_202735_hunter_01a112e6",
   "root_task_id": "01a112e6-527e-74f4-b7fb-3d3d69208aed",
   "created_at": "2026-10-06T20:27:35.083Z",
-  "updated_at": "2026-10-06T20:33:45.244Z",
+  "updated_at": "2026-10-06T20:41:38.901Z",
   "tasks": [
     {
       "task_id": "01a112e6-527e-74f4-b7fb-3d3d69208aed",
@@ -85,6 +85,86 @@
       "operation_id": "28032f5c-bd10-405c-82ae-46ddfee982dd",
       "created_at": "2026-10-06T20:33:10.985Z",
       "updated_at": "2026-10-06T20:33:45.244Z"
+    },
+    {
+      "task_id": "01a112f2-5093-7402-9136-7e0e294566f2",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-archery",
+      "parent_task_id": "01a112eb-84dd-7014-ae41-074b95762e28",
+      "status": "SUCCEEDED",
+      "files": [
+        "hunter-archery.glb"
+      ],
+      "task_json": "task_01a112f2-5093-7402-9136-7e0e294566f2.json",
+      "operation_id": "65dbb6f0-c9ff-4cf1-baf1-b26b0270dccf",
+      "created_at": "2026-10-06T20:40:32.979Z",
+      "updated_at": "2026-10-06T20:40:43.958Z"
+    },
+    {
+      "task_id": "01a112f2-959f-739c-b9dd-d38ae7c93908",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-dodge",
+      "parent_task_id": "01a112eb-84dd-7014-ae41-074b95762e28",
+      "status": "SUCCEEDED",
+      "files": [
+        "hunter-dodge.glb"
+      ],
+      "task_json": "task_01a112f2-959f-739c-b9dd-d38ae7c93908.json",
+      "operation_id": "8178fb1c-9118-4b87-b6f7-8e629e4342de",
+      "created_at": "2026-10-06T20:40:50.808Z",
+      "updated_at": "2026-10-06T20:41:06.513Z"
+    },
+    {
+      "task_id": "01a112f2-9ccb-7731-925f-6871d394664d",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-hurt",
+      "parent_task_id": "01a112eb-84dd-7014-ae41-074b95762e28",
+      "status": "SUCCEEDED",
+      "files": [
+        "hunter-hurt.glb"
+      ],
+      "task_json": "task_01a112f2-9ccb-7731-925f-6871d394664d.json",
+      "operation_id": "a397b05d-c56c-4768-a3bd-23826c0cb3f7",
+      "created_at": "2026-10-06T20:40:52.441Z",
+      "updated_at": "2026-10-06T20:41:09.420Z"
+    },
+    {
+      "task_id": "01a112f2-a2dc-7372-9b41-45f0f65109d7",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-drawwalk",
+      "parent_task_id": "01a112eb-84dd-7014-ae41-074b95762e28",
+      "status": "SUCCEEDED",
+      "files": [
+        "hunter-drawwalk.glb"
+      ],
+      "task_json": "task_01a112f2-a2dc-7372-9b41-45f0f65109d7.json",
+      "operation_id": "b6fdfea7-072a-4116-a017-2504e4aa373b",
+      "created_at": "2026-10-06T20:40:54.005Z",
+      "updated_at": "2026-10-06T20:41:12.391Z"
+    },
+    {
+      "task_id": "01a112f3-262b-737b-aa83-50070bde6944",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-idle",
+      "parent_task_id": "01a112eb-84dd-7014-ae41-074b95762e28",
+      "status": "SUCCEEDED",
+      "files": [
+        "hunter-idle.glb"
+      ],
+      "task_json": "task_01a112f3-262b-737b-aa83-50070bde6944.json",
+      "operation_id": "66fe8197-bfcb-4d1c-b48f-61d9101f57e4",
+      "created_at": "2026-10-06T20:41:27.597Z",
+      "updated_at": "2026-10-06T20:41:38.901Z"
     }
   ]
 }

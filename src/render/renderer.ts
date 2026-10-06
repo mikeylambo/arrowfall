@@ -377,16 +377,19 @@ export class View {
     this.cutout.scale.set(g.crowd > 40 ? 0.95 : 0.7);
     if (this.hunterSheet) {
       // 3/4 sprite: pick the clip from state, the direction from aim; feet sit on the entity.
-      const sheet = this.hunterSheet,
-        clip =
-          p.dodge > 0 && sheet.has('dodge')
-            ? 'dodge'
-            : p.draw > 0 && sheet.has('draw')
-              ? 'draw'
-              : g.moving && sheet.has('run')
-                ? 'run'
-                : 'idle',
-        frame = sheet.frame(clip, p.aim, clip === 'draw' ? p.draw : g.realTime);
+      // Clip from gameplay state: dodge and hurt follow their own timers, drawing holds its aim
+      // pose while standing and walks with the bow up while moving.
+      const sheet = this.hunterSheet;
+      let frame;
+      if (p.dodge > 0 && sheet.has('dodge'))
+        frame = sheet.frame('dodge', p.aim, 0, 1 - p.dodge / T.dodgeTime);
+      else if (p.invuln > 0 && sheet.has('hurt'))
+        frame = sheet.frame('hurt', p.aim, 0, 1 - p.invuln / T.invulnerability);
+      else if (p.draw > 0 && sheet.has('draw'))
+        frame = g.moving
+          ? sheet.frame('draw', p.aim, g.realTime)
+          : sheet.frame('draw', p.aim, 0, 0);
+      else frame = sheet.frame(g.moving && sheet.has('run') ? 'run' : 'idle', p.aim, g.realTime);
       this.hunter.texture = frame.texture;
       this.hunter.anchor.set(sheet.manifest.pivot[0], sheet.manifest.pivot[1]);
       this.hunter.scale.set(frame.mirror ? -0.5 : 0.5, 0.5);

@@ -38,7 +38,7 @@ export class Sheet {
    * Frame for a screen-space aim angle (radians, y down). Returns the texture and whether the
    * sprite must be mirrored (left-facing directions reuse their right-facing twins).
    */
-  frame(clip: string, angle: number, time: number) {
+  frame(clip: string, angle: number, time: number, progress?: number) {
     const set = this.textures[clip] ?? this.textures[Object.keys(this.textures)[0]];
     const meta = this.manifest.clips[clip] ?? Object.values(this.manifest.clips)[0];
     let dir = Math.round(angle / (Math.PI / 4)) % 8;
@@ -48,7 +48,13 @@ export class Sheet {
     const row = Math.max(0, this.manifest.directions.indexOf(source));
     const n = meta.frames,
       f = Math.floor(time * this.manifest.fps);
-    const index = meta.loop ? f % n : Math.min(n - 1, f);
+    // One-shot clips can be driven by gameplay progress (0..1) instead of wall time.
+    const index =
+      progress !== undefined
+        ? Math.min(n - 1, Math.max(0, Math.floor(progress * n)))
+        : meta.loop
+          ? f % n
+          : Math.min(n - 1, f);
     return { texture: set[row][index], mirror };
   }
 }

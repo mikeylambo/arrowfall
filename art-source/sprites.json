@@ -56,15 +56,43 @@
       "clips": [
         {
           "name": "idle",
-          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-rigged.glb",
+          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-idle.glb",
           "frames": 8,
-          "loop": true
+          "loop": true,
+          "start": 3.3,
+          "end": 4.03
         },
         {
           "name": "run",
           "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-running.glb",
           "frames": 8,
           "loop": true
+        },
+        {
+          "name": "draw",
+          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-drawwalk.glb",
+          "frames": 8,
+          "loop": true,
+          "drawing": true
+        },
+        {
+          "name": "dodge",
+          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-dodge.glb",
+          "frames": 6,
+          "loop": false,
+          "start": 0.45,
+          "end": 1.57,
+          "inPlace": true,
+          "noEyes": true
+        },
+        {
+          "name": "hurt",
+          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-hurt.glb",
+          "frames": 4,
+          "loop": false,
+          "start": 0,
+          "end": 1.0,
+          "noEyes": true
         }
       ],
       "source": {
@@ -72,9 +100,32 @@
         "meshy": {
           "multi-image-to-3d": "01a112e6-527e-74f4-b7fb-3d3d69208aed",
           "remesh": "01a112e9-f7bd-70aa-b0fc-b0e0591e5dc6",
-          "rigging": "01a112eb-84dd-7014-ae41-074b95762e28"
+          "rigging": "01a112eb-84dd-7014-ae41-074b95762e28",
+          "animations": {
+            "idle": "01a112f3-262b-737b-aa83-50070bde6944",
+            "archery": "01a112f2-5093-7402-9136-7e0e294566f2",
+            "dodge": "01a112f2-959f-739c-b9dd-d38ae7c93908",
+            "hurt": "01a112f2-9ccb-7731-925f-6871d394664d",
+            "drawwalk": "01a112f2-a2dc-7372-9b41-45f0f65109d7"
+          }
         },
-        "note": "Re-download expired GLBs with: meshy download --resource rigging --task-id <id> --asset result.rigged_character_glb_url"
+        "note": "Models are not committed. Re-download into the project folder with: NODE_USE_ENV_PROXY=1 npx meshy-cli@0.4.0 download --resource animate --task-id <id> --asset result.animation_glb_url --output art-source/meshy_output/<folder>/hunter-<clip>.glb (rigging: --resource rigging --asset result.basic_animations.running_glb_url)"
+      },
+      "bow": {
+        "hand": "LeftHand",
+        "stringHand": "RightHand",
+        "size": 0.32,
+        "wood": "#c9d3e3",
+        "trim": "#ffffff",
+        "arrow": "#ffffff"
+      },
+      "eyes": {
+        "bone": "headfront",
+        "forward": 0.02,
+        "up": 0.06,
+        "spread": 0.035,
+        "radius": 0.018,
+        "color": "#ffffff"
       }
     }
   ]

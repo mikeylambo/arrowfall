@@ -19,6 +19,36 @@ export interface ClipJob {
   frames: number;
   /** Hold the last frame instead of looping (draw, death). */
   loop: boolean;
+  /** Clip window in seconds; defaults to the whole clip. */
+  start?: number;
+  end?: number;
+  /** Extra yaw (degrees) so a side-on pose aims its bow, not its chest, at the direction. */
+  yaw?: number;
+  /** Strip horizontal root motion (rolls, lunges) so the figure stays on its pivot. */
+  inPlace?: boolean;
+  /** Pull the bowstring to the drawing hand. */
+  drawing?: boolean;
+  /** Hide the eye glints (tumbling clips such as rolls and hit reactions). */
+  noEyes?: boolean;
+}
+/** A procedural bow held in one hand; its string follows the other hand while drawing. */
+export interface BowJob {
+  hand: string;
+  stringHand: string;
+  /** Half the bow's length, in character heights. */
+  size: number;
+  wood: string;
+  trim: string;
+  arrow: string;
+}
+/** Emissive eyes placed relative to the head bone (character heights). */
+export interface EyesJob {
+  bone: string;
+  forward: number;
+  up: number;
+  spread: number;
+  radius: number;
+  color: string;
 }
 export interface SpriteJob {
   id: string;
@@ -36,6 +66,8 @@ export interface SpriteJob {
   clips: ClipJob[];
   /** Built-in mannequin instead of a GLB, for pipeline tests. */
   test?: boolean;
+  bow?: BowJob;
+  eyes?: EyesJob;
   page: number;
 }
 
@@ -139,6 +171,120 @@ const OUTLINE = {
 async function load(url: string) {
   const gltf = await new GLTFLoader().loadAsync(url);
   return { root: gltf.scene, clips: gltf.animations };
+}
+
+const v3 = () => new THREE.Vector3();
+const UP = new THREE.Vector3(0, 1, 0);
+/** Builds the bow, string, nocked arrow and eye glints; update() poses them from the skeleton. */
+function makeProps(job: SpriteJob, root: THREE.Object3D, rim: THREE.Color) {
+  const group = new THREE.Group();
+  const height = job.modelHeight;
+  const bone = (name: string) => {
+    const b = root.getObjectByName(name);
+    if (!b) throw new Error('missing bone ' + name);
+    return b;
+  };
+  const wood = toonMaterial(
+    new THREE.MeshStandardMaterial({ color: job.bow?.wood ?? '#2b3142' }),
+    rim,
+  );
+  const trim = new THREE.MeshBasicMaterial({ color: job.bow?.trim ?? '#e6ecf5' });
+  const glow = new THREE.MeshBasicMaterial({ color: job.bow?.arrow ?? '#ffffff' });
+  const limb = new THREE.Mesh(new THREE.BufferGeometry(), wood);
+  const string = new THREE.Mesh(new THREE.BufferGeometry(), trim);
+  const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 1, 6), glow);
+  // Stylised: the eyes glow through the hood brim whenever the face is turned toward camera.
+  const eyeMat = new THREE.MeshBasicMaterial({
+    color: job.eyes?.color ?? '#ffffff',
+    depthTest: false,
+  });
+  const eyes = [0, 1].map(() => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), eyeMat);
+    m.renderOrder = 10;
+    return m;
+  });
+  if (job.bow) group.add(limb, string, arrow);
+  if (job.eyes) group.add(...eyes);
+  const tube = (points: THREE.Vector3[], radius: number) =>
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 24, radius, 6, false);
+  return {
+    group,
+    update(drawing: boolean, camera: THREE.Camera, showEyes = true) {
+      root.updateMatrixWorld(true);
+      if (job.bow) {
+        const b = job.bow,
+          grip = bone(b.hand).getWorldPosition(v3()),
+          elbow = bone(b.hand).parent!.getWorldPosition(v3()),
+          pull = bone(b.stringHand).getWorldPosition(v3());
+        // Aim: along the forearm. The bow stands perpendicular to it, upright when it can be.
+        const aim = v3().subVectors(grip, elbow).normalize();
+        let up = v3().copy(UP).addScaledVector(aim, -UP.dot(aim));
+        if (up.lengthSq() < 0.05) up = v3().crossVectors(aim, new THREE.Vector3(1, 0, 0));
+        up.normalize();
+        const h = b.size * height,
+          belly = aim.clone().multiplyScalar(h * 0.18),
+          back = aim.clone().multiplyScalar(-h * 0.22);
+        const tipA = grip.clone().addScaledVector(up, h).add(back),
+          tipB = grip.clone().addScaledVector(up, -h).add(back);
+        limb.geometry.dispose();
+        limb.geometry = tube(
+          [
+            tipA,
+            grip
+              .clone()
+              .addScaledVector(up, h * 0.55)
+              .add(belly.clone().multiplyScalar(0.6)),
+            grip.clone().add(belly),
+            grip
+              .clone()
+              .addScaledVector(up, -h * 0.55)
+              .add(belly.clone().multiplyScalar(0.6)),
+            tipB,
+          ],
+          height * 0.02,
+        );
+        // The string runs tip-to-tip, or through the drawing hand when it is behind the grip.
+        const behind = v3().subVectors(pull, grip).dot(aim) < -height * 0.05;
+        const nock = drawing && behind ? pull : grip.clone().add(back);
+        string.geometry.dispose();
+        string.geometry = new THREE.TubeGeometry(
+          new THREE.CatmullRomCurve3([tipA, nock, tipB], false, 'chordal', 0),
+          16,
+          height * 0.004,
+          4,
+          false,
+        );
+        arrow.visible = drawing && behind;
+        if (arrow.visible) {
+          const tip = grip.clone().addScaledVector(aim, h * 0.55),
+            mid = v3().addVectors(nock, tip).multiplyScalar(0.5);
+          arrow.position.copy(mid);
+          arrow.scale.set(1, nock.distanceTo(tip), 1);
+          arrow.quaternion.setFromUnitVectors(UP, v3().subVectors(tip, nock).normalize());
+        }
+      }
+      if (job.eyes) {
+        const e = job.eyes,
+          // Face frame from head -> face-front bones (head bone axes vary between rigs).
+          head = bone('Head').getWorldPosition(v3()),
+          pos = bone(e.bone).getWorldPosition(v3()),
+          fwd = v3().subVectors(pos, head).setY(0).normalize(),
+          side = v3().crossVectors(UP, fwd).normalize(),
+          upv = UP,
+          toCamera = camera.getWorldDirection(v3()).negate(),
+          facing = fwd.dot(toCamera);
+        eyes.forEach((m, i) => {
+          m.visible = showEyes && facing > 0.25;
+          m.position
+            .copy(pos)
+            .addScaledVector(fwd, e.forward * height)
+            .addScaledVector(upv, e.up * height)
+            .addScaledVector(side, (i ? 1 : -1) * e.spread * height);
+          m.scale.setScalar(e.radius * height);
+        });
+      }
+    },
+  };
 }
 
 export async function renderJob(job: SpriteJob) {
@@ -261,17 +407,33 @@ export async function renderJob(job: SpriteJob) {
         : (src.clips[clipJob.clip ?? 0] ?? src.clips[0]);
     const action = clip ? mixer.clipAction(clip) : null;
     action?.play();
+    const props = job.bow || job.eyes ? makeProps(job, src.root, rim) : null;
+    if (props) scene.add(props.group);
+    // Root motion: the hips' horizontal offset at the window start is held for the whole clip.
+    const hips = clipJob.inPlace ? src.root.getObjectByName('Hips') : null;
+    const start = clipJob.start ?? 0,
+      end = clipJob.end ?? clip?.duration ?? 1;
+    mixer.setTime(start);
+    const hipRest = hips ? hips.position.clone() : null;
     frames[clipJob.name] = [];
     for (const dir of job.directions) {
       const row: { page: number; x: number; y: number }[] = [];
       // Direction 0 faces screen-right; directions step 45 degrees clockwise on screen.
-      src.root.rotation.y = Math.PI / 2 - (dir * Math.PI) / 4;
+      src.root.rotation.y =
+        Math.PI / 2 - (dir * Math.PI) / 4 + ((clipJob.yaw ?? 0) * Math.PI) / 180;
       for (let f = 0; f < clipJob.frames; f++) {
-        const duration = clip?.duration ?? 1;
-        const t = clipJob.loop
-          ? (f / clipJob.frames) * duration
-          : (f / Math.max(1, clipJob.frames - 1)) * duration;
+        const span = end - start;
+        const t =
+          start +
+          (clipJob.loop
+            ? (f / clipJob.frames) * span
+            : (f / Math.max(1, clipJob.frames - 1)) * span);
         mixer.setTime(t);
+        if (hips && hipRest) {
+          hips.position.x = hipRest.x;
+          hips.position.z = hipRest.z;
+        }
+        props?.update(!!clipJob.drawing, camera, !clipJob.noEyes);
         renderer.setRenderTarget(target);
         renderer.clear();
         renderer.render(scene, camera);
@@ -287,6 +449,7 @@ export async function renderJob(job: SpriteJob) {
       frames[clipJob.name].push(row);
     }
     scene.remove(src.root);
+    if (props) scene.remove(props.group);
   }
   renderer.dispose();
   return {

@@ -3,8 +3,7 @@ dist/
 test-results/
 playwright-report/
 public/art/sprites/*-test*
-# Meshy: keep only the GLBs the sprite renderer needs; task snapshots carry signed URLs.
+# Meshy: models are large and re-downloadable by task ID (art-source/sprites.json); task
+# snapshots carry signed URLs. Only metadata, previews and the rendered sheets are tracked.
 art-source/meshy_output/**/task_*.json
-art-source/meshy_output/**/hunter.glb
-art-source/meshy_output/**/hunter-15k.glb
-art-source/meshy_output/**/hunter-walking.glb
+art-source/meshy_output/**/*.glb
