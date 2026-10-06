@@ -131,7 +131,7 @@ button {
 #ui [data-screen-id='levelup'] .slu-choice {
   min-height: 190px;
   align-self: stretch;
-  border-top: 3px solid #ad8ae3;
+  border-top: 3px solid var(--violet);
   padding: 28px 22px;
 }
 #ui [data-screen-id='levelup'] .slu-choice-desc {

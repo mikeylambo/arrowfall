@@ -42,9 +42,11 @@ Once a generation the Hunt Moon rises wrong: cracked, bleeding light, and everyt
 
 | Color | Means | Used for |
 | --- | --- | --- |
-| Silver | Your light | The hunter, arrows, Focus, Deadeye, Moonraven, pickups |
-| Blood-red | The moon's corruption | Every enemy threat, enemy projectiles, telegraphs, low-HP warnings |
-| Violet | The between | Upgrade cards, elites, relics, evolutions, loot |
+| Silver | Your light | The hunter, arrows, Moonraven, XP and pickups |
+| Blood-red | The moon's corruption | Every enemy threat **including elites**, enemy projectiles, telegraphs, low-HP warnings |
+| Violet | Power you earned | The perfect window and release, Focus, Deadeye, upgrade cards, evolutions, relics |
+
+Violet pairs the core skill (the perfect release) with every reward it leads to, so the colour itself becomes the reward signal. Elites stay red because at 350 enemies "red means danger" must have no exceptions.
 
 Before midnight the world leans cold silver-blue. At the 10:00 moon turn the sky and ambient light shift toward blood-red, and the palette never fully recovers until dawn.
 

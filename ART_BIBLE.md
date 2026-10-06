@@ -42,10 +42,10 @@ Held in `src/data/art.ts` `PALETTE`; this table is the source the code mirrors.
 | Silver (the hunter) | body `#e6ecf5`, shade `#9eabc0`, rim `#ffffff` | hunter, arrows, pickups |
 | Blood-red (threats) | base `#c8323c`, rim `#ff6670`, darker per type | every enemy, telegraph, enemy projectile |
 | Elite | body `#ff4d58`, outline `#fff2f3` | brighter body plus pale outline |
-| Reserved third colour | violet `#9b6bff` | **open decision**, see below |
+| Violet (earned power) | `#9b6bff` | perfect window, Focus, Deadeye, cards, evolutions, relics |
 | Weak point | `#ffe7a8` | boss weak points only |
 
-**Open decision.** The current build follows the stabilize brief: violet means the perfect window, Deadeye and Focus. The GDD (section 2) says silver means Focus and Deadeye, and violet means elites, cards, relics and loot. Pick one before final hunter and UI art; it changes the hunter's glow and every reward colour.
+**Violet means power you earned** (decided): the perfect window and release, Focus, Deadeye, upgrade cards, evolutions and relics. Elites stay in the red family. The GDD tri-colour table matches.
 
 ## Line and shading spec (render pipeline)
 
