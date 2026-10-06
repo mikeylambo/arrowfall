@@ -1,3 +1,51 @@
-import {test,expect} from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-test('350-enemy stress scene records representative browser metrics',async({page})=>{const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?dev=1');await page.waitForFunction(()=> (window as any).__ARROWFALL__);await page.evaluate(()=>{const api=(window as any).__ARROWFALL__;api.startRun();api.stress();});await expect.poll(()=>page.evaluate(()=>(window as any).__ARROWFALL__.state.enemies)).toBe(350);await page.waitForTimeout(2500);const metrics=await page.evaluate(()=>{const api=(window as any).__ARROWFALL__,g=api.sim();const times:number[]=[];const input={mx:1,my:0,ax:g.player.x+500,ay:g.player.y,draw:true,dodge:false,deadeye:false};for(let i=0;i<180;i++){const t=performance.now();g.step(1/60,input);times.push(performance.now()-t);if(g.offers.length){g.choiceGuard=0;g.choose(0);}}times.sort((a,b)=>a-b);return {...api.state,simulationP99Ms:times[Math.floor(times.length*.99)],simulationMeanMs:times.reduce((a,b)=>a+b,0)/times.length,renderer:'Chromium software WebGL; not target-device certification'};});fs.writeFileSync('test-results/performance.json',JSON.stringify(metrics,null,2));await page.screenshot({path:'test-results/stress.png'});expect(errors).toEqual([]);expect(metrics.simulationP99Ms).toBeLessThan(16.7);});
+test('350-enemy stress scene records representative browser metrics', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?dev=1');
+  await page.waitForFunction(() => (window as any).__ARROWFALL__);
+  await page.evaluate(() => {
+    const api = (window as any).__ARROWFALL__;
+    api.startRun();
+    api.stress();
+  });
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__ARROWFALL__.state.enemies))
+    .toBe(350);
+  await page.waitForTimeout(2500);
+  const metrics = await page.evaluate(() => {
+    const api = (window as any).__ARROWFALL__,
+      g = api.sim();
+    const times: number[] = [];
+    const input = {
+      mx: 1,
+      my: 0,
+      ax: g.player.x + 500,
+      ay: g.player.y,
+      draw: true,
+      dodge: false,
+      deadeye: false,
+    };
+    for (let i = 0; i < 180; i++) {
+      const t = performance.now();
+      g.step(1 / 60, input);
+      times.push(performance.now() - t);
+      if (g.offers.length) {
+        g.choiceGuard = 0;
+        g.choose(0);
+      }
+    }
+    times.sort((a, b) => a - b);
+    return {
+      ...api.state,
+      simulationP99Ms: times[Math.floor(times.length * 0.99)],
+      simulationMeanMs: times.reduce((a, b) => a + b, 0) / times.length,
+      renderer: 'Chromium software WebGL; not target-device certification',
+    };
+  });
+  fs.writeFileSync('test-results/performance.json', JSON.stringify(metrics, null, 2));
+  await page.screenshot({ path: 'test-results/stress.png' });
+  expect(errors).toEqual([]);
+  expect(metrics.simulationP99Ms).toBeLessThan(16.7);
+});

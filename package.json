@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run e2e",
+    "check": "npm run format:check && npm run typecheck && npm run lint && npm run test && npm run build && npm run e2e",
     "verify": "npm run check",
     "certify:web": "npm run verify && slu-certify web",
     "certify:mobile": "npm run verify && slu-certify mobile",
@@ -18,7 +18,9 @@
     "e2e": "playwright test",
     "preview": "vite preview --host 0.0.0.0",
     "prebuild": "node tools/sync-art.mjs",
-    "predev": "node tools/sync-art.mjs"
+    "predev": "node tools/sync-art.mjs",
+    "format": "prettier --write src tests",
+    "format:check": "prettier --check src tests"
   },
   "dependencies": {
     "@slu/web-shell": "file:../slu-web-shell-1.1.0.tgz",

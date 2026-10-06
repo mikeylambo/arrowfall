@@ -1,109 +1,66 @@
-export const ART_MANIFEST=[
+export const ART_MANIFEST = [
   {
-    "id": "hunter",
-    "path": "/art/hunter.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle",
-      "run",
-      "draw",
-      "dodge"
-    ]
+    id: 'hunter',
+    path: '/art/hunter.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle', 'run', 'draw', 'dodge'],
   },
   {
-    "id": "shuck",
-    "path": "/art/shuck.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle"
-    ]
+    id: 'shuck',
+    path: '/art/shuck.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle'],
   },
   {
-    "id": "bramble",
-    "path": "/art/bramble.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle"
-    ]
+    id: 'bramble',
+    path: '/art/bramble.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle'],
   },
   {
-    "id": "hag",
-    "path": "/art/hag.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle"
-    ]
+    id: 'hag',
+    path: '/art/hag.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle'],
   },
   {
-    "id": "huntmaster",
-    "path": "/art/huntmaster.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle"
-    ]
+    id: 'huntmaster',
+    path: '/art/huntmaster.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle'],
   },
   {
-    "id": "raven",
-    "path": "/art/raven.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle"
-    ]
+    id: 'raven',
+    path: '/art/raven.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle'],
   },
   {
-    "id": "camp",
-    "path": "/art/camp.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle"
-    ]
+    id: 'camp',
+    path: '/art/camp.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle'],
   },
   {
-    "id": "title",
-    "path": "/art/title.png",
-    "width": 128,
-    "height": 128,
-    "pivot": [
-      0.5,
-      0.5
-    ],
-    "frames": [
-      "idle"
-    ]
-  }
+    id: 'title',
+    path: '/art/title.png',
+    width: 128,
+    height: 128,
+    pivot: [0.5, 0.5],
+    frames: ['idle'],
+  },
 ];

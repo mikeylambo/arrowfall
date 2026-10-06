@@ -1,2 +1,12 @@
-export const EVENTS=[{id:'migration',name:'Migration',duration:15,hint:'Keep clear of the herd’s charge lanes'},{id:'hunt',name:'The Hunt',duration:90,hint:'An elite Poacher band tracks you'},{id:'grove',name:'Quiet Grove',duration:20,hint:'Rest in the silver shrine to heal'},{id:'fog',name:'Fog Bank',duration:20,hint:'Marks and lantern light pierce the fog'}];
-export const FORMATIONS=['Crescent','Funnel','Spear','Ring','Crossfire','Pursuit'];
+export const EVENTS = [
+  {
+    id: 'migration',
+    name: 'Migration',
+    duration: 15,
+    hint: 'Keep clear of the herd’s charge lanes',
+  },
+  { id: 'hunt', name: 'The Hunt', duration: 90, hint: 'An elite Poacher band tracks you' },
+  { id: 'grove', name: 'Quiet Grove', duration: 20, hint: 'Rest in the silver shrine to heal' },
+  { id: 'fog', name: 'Fog Bank', duration: 20, hint: 'Marks and lantern light pierce the fog' },
+];
+export const FORMATIONS = ['Crescent', 'Funnel', 'Spear', 'Ring', 'Crossfire', 'Pursuit'];
