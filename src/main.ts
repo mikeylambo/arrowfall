@@ -16,6 +16,7 @@ import { Hunt } from './sim/game';
 import { BOWS } from './data/bows';
 import { BOSSES } from './data/bosses';
 import { UPGRADES } from './data/upgrades';
+import { PALETTE } from './data/art';
 import { EVOLUTIONS } from './data/evolutions';
 import { ENEMIES } from './data/enemies';
 import { DEEDS } from './data/meta';
@@ -694,7 +695,7 @@ addEventListener('keydown', (e) => {
 });
 function hud(g: Hunt) {
   const p = g.player;
-  $('hp').textContent = `${Math.max(0, Math.ceil(p.hp))} / ${p.maxHp}`;
+  $('hp').textContent = String(Math.max(0, Math.ceil(p.hp)));
   $('hp-fill').style.width = (p.hp / p.maxHp) * 100 + '%';
   $('time').textContent = fmt(g.time);
   $('night').textContent =
@@ -709,11 +710,12 @@ function hud(g: Hunt) {
             : g.time >= 120
               ? 'FIRST HOWL'
               : 'MOONRISE';
-  $('moon').style.color = g.time >= 600 || phase === 3 ? '#fb5368' : '#dbeaff';
-  $('stats').innerHTML =
-    `<b>LV ${g.level}</b> · ${g.kills} HUNTED<br>${p.cooldown > 0 ? 'Dodge ' + p.cooldown.toFixed(1) + ' s' : 'Dodge ready'} · ${p.focus >= 100 ? 'Deadeye ready' : 'Focus ' + Math.floor(p.focus)}`;
+  $('moon').style.color = g.time >= 600 || phase === 3 ? PALETTE.threat.rim : PALETTE.silver;
+  // Draw window, Focus and dodge recovery are shown on the hunter (render/diegetic.ts).
+  $('stats').innerHTML = `<b>LV ${g.level}</b> · ${g.kills}`;
+  $('controls').classList.toggle('faded', scene === 'hunt' && g.time > 20);
   $('xp-fill').style.width = (g.xp / xpNeeded(g.level)) * 100 + '%';
-  $('inventory').innerHTML = `${g.bow.name}<br>${['moonraven', 'thornsnare', 'lantern']
+  $('inventory').innerHTML = `${['moonraven', 'thornsnare', 'lantern']
     .filter((id) => g.rank(id) > 0)
     .map((id) => id + ' ' + g.rank(id))
     .join(

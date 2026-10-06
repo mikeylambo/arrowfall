@@ -160,3 +160,17 @@ export const JUICE = {
   /** Reduced motion keeps this fraction of flash intensity. */
   reducedFlash: 0.3,
 };
+
+/** In-world readouts on the hunter (render/diegetic.ts). Bow coordinates are hunter-texture px. */
+export const DIEGETIC = {
+  /** Bow tips and the string's rest position (texture px, facing +x). */
+  tipX: 20,
+  tipY: 29,
+  restX: 20,
+  /** How far a full draw pulls the nock back (texture px). */
+  pull: 16,
+  /** Focus motes: count, spawn ring and settle ring (world px). */
+  motes: 14,
+  moteFar: 78,
+  moteNear: 20,
+};

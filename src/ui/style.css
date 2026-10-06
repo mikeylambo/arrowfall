@@ -448,3 +448,13 @@ button {
 html.grayscale {
   filter: grayscale(1);
 }
+/* HUD trim: controls fade once the hunt is underway; the build mark only shows in menus. */
+.controls {
+  transition: opacity 1.5s;
+}
+.controls.faded {
+  opacity: 0;
+}
+#hud.visible ~ .footer-mark {
+  display: none;
+}

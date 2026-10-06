@@ -9,6 +9,7 @@ import {
   ColorMatrixFilter,
 } from 'pixi.js';
 import { Vfx } from './vfx';
+import { Diegetic } from './diegetic';
 import { Atmosphere } from './ground';
 
 import { UNIT } from './silhouettes';
@@ -38,6 +39,7 @@ export class View {
   readonly root = new Container();
   atmosphere!: Atmosphere;
   vfx!: Vfx;
+  diegetic!: Diegetic;
   trailSprites: Sprite[] = [];
   markGlows: Sprite[] = [];
   readonly deadeyeFilter = new ColorMatrixFilter();
@@ -117,7 +119,8 @@ export class View {
     this.hunter.texture = this.art.hunter;
     this.hunter.anchor.set(0.5);
     this.hunter.scale.set(0.7);
-    this.actors.addChild(this.hunter);
+    this.diegetic = new Diegetic(this.art);
+    this.actors.addChild(this.diegetic.under, this.hunter, this.diegetic.over);
     this.raven.texture = this.art.raven;
     this.raven.anchor.set(0.5);
     this.raven.scale.set(0.45);
@@ -307,6 +310,8 @@ export class View {
           m.alpha = 0.75;
         }
     for (let i = glows; i < this.markGlows.length; i++) this.markGlows[i].visible = false;
+    this.diegetic.reducedMotion = this.reducedMotion;
+    this.diegetic.update(g, this.hunter.scale.x);
     this.vfx.reducedMotion = this.reducedMotion;
     this.vfx.handle(g);
     this.vfx.update(realDt);
@@ -509,12 +514,6 @@ export class View {
       .moveTo(x + r + 3, y)
       .lineTo(x + r + 8, y)
       .stroke({ color: 0xdaefff, width: 1, alpha: 0.7 });
-    if (p.focus > 0)
-      o.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * p.focus) / 100).stroke({
-        color: C.focus,
-        width: 3,
-        alpha: 0.9,
-      });
     if (g.deadeye > 0)
       o.circle(x, y, 60 * this.zoom).stroke({ color: C.focus, width: 1, alpha: 0.5 });
     if (g.deadeye > 0)
