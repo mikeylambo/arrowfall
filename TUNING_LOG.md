@@ -36,3 +36,17 @@ Changes:
 - Renderer: all baked art shares one 1024² atlas so sprites batch across types. Landmark rings are tessellated once per attach instead of every frame. MSAA is off; sprites are pre-antialiased canvas art.
 
 Software WebGL frame rate is not a target-device measurement. Steam Deck and laptop iGPU budgets remain open (see BUILD_STATUS.md).
+
+## Ground and atmosphere cost
+
+`render/ground.ts` draws:
+- one world-anchored `TilingSprite` with a 512² seamless fbm moor texture, tinted with moonlight;
+- decals from the shared atlas in 1024² chunks, culled whole;
+- two fog `TilingSprite` sheets: 1.06× parallax below the actors and 1.3× above, both drifting;
+- one stretched vignette sprite.
+
+The old floor was a 15000×8500 `Graphics` rect plus about 510 tile sprites, and the tiles were culled by their top-left corner.
+
+- CPU: `Atmosphere.update` costs 0.06–0.14 ms per frame at stress (350 enemies / 600 arrows). The stress gate fails if it reaches 1 ms (`state.timing.atmosphere`).
+- GPU: the ground replaces the old floor's full-screen pass. Fog and vignette add three alpha-blended full-screen quads, and visible decals batch with the atlas. In software WebGL, submit time with atmosphere on versus off varied 11–36 ms between runs, too noisy to isolate. On-device GPU timing (Steam Deck / iGPU) is still open.
+- Off switch for profiling: `__ARROWFALL__.atmosphere(false)`.

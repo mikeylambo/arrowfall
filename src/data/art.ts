@@ -117,3 +117,20 @@ export const BOSS_TONES: Record<string, { body: string; shade: string }> = {
 
 /** Pixi tint from a palette hex string. */
 export const tint = (hex: string) => parseInt(hex.slice(1, 7), 16);
+
+/** Ground and atmosphere layers (render/ground.ts). */
+export const ATMOSPHERE = {
+  /** Fog below the actors: near-world parallax, slow drift. */
+  mistLow: { alpha: 0.1, parallax: 1.06, driftX: 9, driftY: 3, scale: 2.2 },
+  /** Fog above everything: stronger parallax, fainter. */
+  mistHigh: { alpha: 0.05, parallax: 1.3, driftX: -14, driftY: 5, scale: 3 },
+  /** Screen-edge darkening (0..1). */
+  vignette: 0.85,
+  /** Decal chunk edge (px); chunks are culled whole. */
+  chunk: 1024,
+  /** Decal grid spacing (px) and the chance a grid cell holds one. */
+  decalSpacing: 120,
+  decalDensity: 0.45,
+  /** Atlas frames scattered across the moor. */
+  decals: ['grass1', 'grass2', 'grass3', 'heather', 'pebble1', 'pebble2'],
+};

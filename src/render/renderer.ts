@@ -1,4 +1,6 @@
 import { Application, Container, Sprite, Graphics, Texture, Assets, Text } from 'pixi.js';
+import { Atmosphere } from './ground';
+import { T } from '../data/tuning';
 import { ART_PATHS } from '../data/artPaths';
 import { bakeArt } from './art';
 import type { Hunt } from '../sim/game';
@@ -21,7 +23,7 @@ const C = {
 export class View {
   readonly app = new Application();
   readonly root = new Container();
-  readonly floor = new Graphics();
+  atmosphere!: Atmosphere;
   readonly cover = new Container();
   readonly effects = new Container();
   readonly actors = new Container();
@@ -56,7 +58,7 @@ export class View {
   last = 0;
   frames: number[] = [];
   /** Smoothed per-frame CPU cost (ms): simulation, scene build, and GPU submit. */
-  timing = { sim: 0, scene: 0, submit: 0 };
+  timing = { sim: 0, scene: 0, submit: 0, atmosphere: 0 };
   async init(canvas: HTMLCanvasElement) {
     await this.app.init({
       canvas,
@@ -70,9 +72,12 @@ export class View {
     this.art = bakeArt();
     for (const [id, path] of Object.entries(ART_PATHS))
       this.art[id] = await Assets.load<Texture>(path);
+    this.atmosphere = new Atmosphere(this.art, T.worldWidth, T.worldHeight);
     this.app.stage.addChild(this.root);
     this.root.addChild(
-      this.floor,
+      this.atmosphere.ground,
+      this.atmosphere.decals,
+      this.atmosphere.mistLow,
       this.cover,
       this.landmarks,
       this.worldLines,
@@ -82,7 +87,8 @@ export class View {
       this.threatLayer,
     );
     this.threatLayer.addChild(this.threatGraphics);
-    this.app.stage.addChild(this.overlay);
+    this.root.addChild(this.atmosphere.mistHigh);
+    this.app.stage.addChild(this.atmosphere.vignette, this.overlay);
     this.hunter.texture = this.art.hunter;
     this.hunter.anchor.set(0.5);
     this.hunter.scale.set(0.7);
@@ -136,7 +142,6 @@ export class View {
       s.scale.set(o.kind ? o.r / 24 : o.r / 22);
       this.coverSprites.push(s);
     }
-    this.floor.clear();
     this.landmarks.clear();
     for (const l of g.world.landmarks) {
       this.landmarks.circle(l.x, l.y, l.name === 'Moonwell Clearing' ? 260 : 130).stroke({
@@ -152,36 +157,6 @@ export class View {
           .stroke({ color: 0x879bbb, alpha: 0.2, width: 2 });
       }
     }
-
-    // Baked sparse leaf and moonlight textures preserve a dark combat surface.
-    const ctx = document.createElement('canvas');
-    ctx.width = ctx.height = 512;
-    const c = ctx.getContext('2d')!;
-    c.fillStyle = '#0a1120';
-    c.fillRect(0, 0, 512, 512);
-    let seed = 931;
-    const random = () => {
-      seed = (Math.imul(seed, 1664525) + 1013904223) | 0;
-      return (seed >>> 0) / 4294967296;
-    };
-    for (let i = 0; i < 500; i++) {
-      c.strokeStyle = i % 2 ? '#1b273244' : '#24324444';
-      c.lineWidth = 1;
-      c.beginPath();
-      const x = random() * 512,
-        y = random() * 512;
-      c.moveTo(x, y);
-      c.lineTo(x + random() * 7, y + random() * 3);
-      c.stroke();
-    }
-    const texture = Texture.from(ctx);
-    for (let y = 0; y < 8500; y += 512)
-      for (let x = 0; x < 15000; x += 512) {
-        const s = new Sprite(texture);
-        s.position.set(x, y);
-        this.cover.addChildAt(s, 0);
-        this.coverSprites.push(s);
-      }
   }
   screenToWorld(x: number, y: number) {
     return {
@@ -208,6 +183,9 @@ export class View {
       this.width / 2 - this.camera.x * this.zoom + sx,
       this.height / 2 - this.camera.y * this.zoom + sy,
     );
+    const atmosphereStart = performance.now();
+    this.atmosphere.update(this, g.realTime);
+    this.timing.atmosphere += (performance.now() - atmosphereStart - this.timing.atmosphere) * 0.1;
     for (let i = 0; i < this.coverSprites.length; i++) {
       const s = this.coverSprites[i];
       s.visible =

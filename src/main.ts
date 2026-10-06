@@ -632,6 +632,9 @@ if (devMode) {
     },
     stress: () => game?.stressFill(),
     grayscale: (on = true) => document.documentElement.classList.toggle('grayscale', on),
+    atmosphere: (on = true) => {
+      view.atmosphere.enabled = on;
+    },
     event: (i: number) => game?.startEvent(i),
     formation: (i: number) => game?.formation(i),
     profile: () => structuredClone(profile),

@@ -200,20 +200,37 @@ export function bakeArt() {
         draw(c, tone);
       });
   bake('tree', (c) => {
-    c.shadowColor = '#0f2238';
-    c.shadowBlur = 20;
-    path(
-      c,
-      [
-        0, -58, 16, -32, 37, -40, 27, -14, 59, 0, 35, 18, 43, 42, 13, 34, 0, 59, -18, 32, -44, 42,
-        -33, 11, -59, -3, -29, -19, -34, -43, -12, -30,
-      ],
-      PALETTE.cover.tree,
-      PALETTE.cover.treeRim,
-    );
-    c.fillStyle = '#070b14';
+    // Moonlit canopy: overlapping crowns, dark core, cool rim on the moon side (top-left).
+    const crowns: [number, number, number][] = [
+      [0, 0, 34],
+      [-22, -14, 24],
+      [20, -18, 22],
+      [24, 14, 24],
+      [-18, 20, 24],
+      [-30, 6, 18],
+      [6, 28, 18],
+    ];
+    c.shadowColor = '#020509';
+    c.shadowBlur = 16;
+    c.shadowOffsetX = 8;
+    c.shadowOffsetY = 10;
+    c.fillStyle = PALETTE.cover.tree;
+    for (const [x, y, r] of crowns) {
+      c.beginPath();
+      c.arc(x, y, r, 0, 7);
+      c.fill();
+    }
+    c.shadowColor = 'transparent';
+    c.strokeStyle = PALETTE.cover.treeRim;
+    c.lineWidth = 2;
+    for (const [x, y, r] of crowns) {
+      c.beginPath();
+      c.arc(x, y, r - 1, Math.PI * 0.95, Math.PI * 1.6);
+      c.stroke();
+    }
+    c.fillStyle = '#060a12';
     c.beginPath();
-    c.ellipse(0, 0, 12, 18, 0, 0, 7);
+    c.arc(4, 4, 10, 0, 7);
     c.fill();
   });
   bake('stone', (c) => {
@@ -303,6 +320,56 @@ export function bakeArt() {
     },
     96,
   );
+  for (const [name, blades] of [
+    ['grass1', 5],
+    ['grass2', 7],
+    ['grass3', 4],
+  ] as const)
+    bake(
+      name,
+      (c) => {
+        c.strokeStyle = '#2a3d55';
+        c.lineWidth = 1.5;
+        c.lineCap = 'round';
+        for (let i = 0; i < blades; i++) {
+          const a = -Math.PI / 2 + (i - (blades - 1) / 2) * 0.32;
+          c.beginPath();
+          c.moveTo((i - blades / 2) * 2, 10);
+          c.quadraticCurveTo(Math.cos(a) * 8, 2, Math.cos(a) * 16, Math.sin(a) * 18 + 6);
+          c.stroke();
+        }
+      },
+      48,
+    );
+  bake(
+    'heather',
+    (c) => {
+      for (let i = 0; i < 9; i++) {
+        c.fillStyle = i % 3 ? '#2b2c48' : '#3a3557';
+        c.beginPath();
+        c.arc(Math.cos(i * 2.4) * (4 + i), Math.sin(i * 2.4) * (3 + i * 0.8), 2.4, 0, 7);
+        c.fill();
+      }
+    },
+    48,
+  );
+  for (const [name, r] of [
+    ['pebble1', 7],
+    ['pebble2', 5],
+  ] as const)
+    bake(
+      name,
+      (c) => {
+        path(
+          c,
+          [-r, -r * 0.4, -r * 0.2, -r, r, -r * 0.5, r * 0.8, r * 0.7, -r * 0.5, r * 0.8],
+          '#1a2638',
+          '#2c3d54',
+          1.2,
+        );
+      },
+      48,
+    );
   const source = Texture.from(atlas).source;
   for (const [name, frame] of Object.entries(frames)) assets[name] = new Texture({ source, frame });
   return assets;

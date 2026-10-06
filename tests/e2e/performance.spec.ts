@@ -19,43 +19,56 @@ test('350-enemy / 600-arrow stress scene stays inside the simulation budget', as
   expect(filled).toEqual({ enemies: 350, arrows: 600 });
   await page.waitForTimeout(1500);
   await page.screenshot({ path: 'test-results/stress.png' });
-  const metrics = await page.evaluate((frames) => {
-    const api = (window as any).__ARROWFALL__,
-      g = api.sim();
-    for (const id of ['fletcher-s-craft', 'piercer', 'ember-arrow', 'barbed-arrow', 'storm-arrow'])
-      g.grant(id);
-    const times: number[] = [];
-    let enemies = 0,
-      arrows = 0;
-    const input = { mx: 1, my: 0, ax: 0, ay: 0, draw: true, dodge: false, deadeye: false };
-    for (let i = 0; i < frames + 120; i++) {
-      g.stressFill();
-      input.ax = g.player.x + 500;
-      input.ay = g.player.y;
-      const t = performance.now();
-      g.step(1 / 60, input);
-      const dt = performance.now() - t;
-      g.events.length = 0; // the frame loop drains events every frame
-      if (g.offers.length) {
-        g.choiceGuard = 0;
-        g.choose(0);
+  // Ground + fog + vignette must stay inside 1 ms of CPU per frame at stress load.
+  const frameTiming = await page.evaluate(() => (window as any).__ARROWFALL__.state.timing);
+  expect(frameTiming.atmosphere).toBeLessThan(1);
+  const metrics = await page.evaluate(
+    ({ frames, frameTiming }) => {
+      const api = (window as any).__ARROWFALL__,
+        g = api.sim();
+      for (const id of [
+        'fletcher-s-craft',
+        'piercer',
+        'ember-arrow',
+        'barbed-arrow',
+        'storm-arrow',
+      ])
+        g.grant(id);
+      const times: number[] = [];
+      let enemies = 0,
+        arrows = 0;
+      const input = { mx: 1, my: 0, ax: 0, ay: 0, draw: true, dodge: false, deadeye: false };
+      for (let i = 0; i < frames + 120; i++) {
+        g.stressFill();
+        input.ax = g.player.x + 500;
+        input.ay = g.player.y;
+        const t = performance.now();
+        g.step(1 / 60, input);
+        const dt = performance.now() - t;
+        g.events.length = 0; // the frame loop drains events every frame
+        if (g.offers.length) {
+          g.choiceGuard = 0;
+          g.choose(0);
+        }
+        if (i < 120) continue;
+        times.push(dt);
+        for (const e of g.enemies.items) if (e.active) enemies++;
+        for (const a of g.arrows.items) if (a.active) arrows++;
       }
-      if (i < 120) continue;
-      times.push(dt);
-      for (const e of g.enemies.items) if (e.active) enemies++;
-      for (const a of g.arrows.items) if (a.active) arrows++;
-    }
-    times.sort((a, b) => a - b);
-    return {
-      frames,
-      avgEnemies: Math.round(enemies / frames),
-      avgArrows: Math.round(arrows / frames),
-      simulationP99Ms: times[Math.floor(times.length * 0.99)],
-      simulationP50Ms: times[Math.floor(times.length * 0.5)],
-      simulationMeanMs: times.reduce((a, b) => a + b, 0) / times.length,
-      renderer: 'Chromium software WebGL; not target-device certification',
-    };
-  }, FRAMES);
+      times.sort((a, b) => a - b);
+      return {
+        frames,
+        avgEnemies: Math.round(enemies / frames),
+        avgArrows: Math.round(arrows / frames),
+        simulationP99Ms: times[Math.floor(times.length * 0.99)],
+        simulationP50Ms: times[Math.floor(times.length * 0.5)],
+        simulationMeanMs: times.reduce((a, b) => a + b, 0) / times.length,
+        renderer: 'Chromium software WebGL; not target-device certification',
+        frameTiming,
+      };
+    },
+    { frames: FRAMES, frameTiming },
+  );
   fs.mkdirSync('test-results', { recursive: true });
   fs.writeFileSync('test-results/performance.json', JSON.stringify(metrics, null, 2));
   console.log('stress gate', JSON.stringify(metrics));
