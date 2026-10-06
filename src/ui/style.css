@@ -444,7 +444,7 @@ button {
     font-size: 14px;
   }
 }
-/* Dev readability check (F2): the player and threats must stay distinct without hue. */
+/* Dev readability check (F3): the player and threats must stay distinct without hue. */
 html.grayscale {
   filter: grayscale(1);
 }

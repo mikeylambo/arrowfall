@@ -672,7 +672,7 @@ $('dev').onclick = (e) => {
   if (d.dev === 'grant') game.grant(($('dev-grant') as HTMLSelectElement).value);
 };
 addEventListener('keydown', (e) => {
-  if (e.code === 'F2' && devMode) {
+  if (e.code === 'F3' && devMode) {
     e.preventDefault();
     document.documentElement.classList.toggle('grayscale');
   }

@@ -1,0 +1,15 @@
+{
+  "frames": 600,
+  "avgEnemies": 346,
+  "avgArrows": 585,
+  "simulationP99Ms": 5.800000000745058,
+  "simulationP50Ms": 1,
+  "simulationMeanMs": 1.2976666666613892,
+  "renderer": "Chromium software WebGL; not target-device certification",
+  "frameTiming": {
+    "sim": 9.543000000072643,
+    "scene": 3.6156985800799304,
+    "submit": 15.456160609917314,
+    "atmosphere": 0.08589385005613248
+  }
+}

@@ -12,3 +12,14 @@
 - The GDD leaves boon costs and most Deed mappings unspecified. Costs start at 50 and increase by 75 per rank; 60 concrete milestone/discovery Deeds are authored in data/meta.ts.
 - Hero art currently uses baked procedural stand-ins, as explicitly allowed by the build brief. Final painted sheets and authored music are production replacements.
 - The packaged headless Chromium uses software WebGL. It verifies functionality and screenshots, but is not a Steam Deck or laptop iGPU performance certification.
+
+## Stabilize and visual readability pass (2026-10)
+
+- **Pool and spatial index live in the game for now.** `sim/pool.ts` and `sim/grid.ts` keep the shell's `EntityPool` API, plus a cursor acquire and a closure-free grid. They stay in the game so the shell pin did not have to move again mid-pass. They are candidates to upstream into `modules/horde`.
+- **Two auto-loose concepts, kept apart.** `T.autoLoose` (tuning, default `false`) decides whether an overdraw releases on its own. The player-facing Auto-Loose assist (loose at full draw, always perfect) is a separate option; its sim field is `Hunt.assistLoose`. The `letoff` bow never auto-releases.
+- **Collision is authoritative over art.** Regular enemy sprites scale with their collision radius (`radius / UNIT`). Bosses render at 160–196 px (3–4× a regular enemy) with collision radii unchanged; the extra size is cloak, antlers or thorns around the hit body.
+- **Weak points match the mechanics.** Shuck: head (front perfect hits ×1.5). Bramble King: horizontal centre seam (hits within 15 px of its centre line). It does not rotate, so the seam stays truthful. Hag: lantern heart. Huntmaster: crown.
+- **Violet means one thing.** It is used only for the perfect window, Deadeye and Focus. Phantom effects, camp highlights, menu focus and heal pickups moved to silver or warm white. The health bar is silver (the player's); boss bars are red (a threat).
+- **Reduced motion keeps hitstop.** Reduced motion turns off shake, scale pulses and fog drift, and cuts flashes to 30%. Hitstop is a pause, not motion, so it stays. The option defaults to `prefers-reduced-motion`.
+- **VFX never touches the sim.** `render/vfx.ts` reads sim events, uses its own RNG and has a per-frame budget. In crowds it shows fewer sparks rather than taking longer frames.
+- **The hunter draws above all threats.** It sits on a soft navy cutout, so it stays findable in a 350-enemy crowd.
