@@ -458,3 +458,102 @@ html.grayscale {
 #hud.visible ~ .footer-mark {
   display: none;
 }
+
+/* Touch: twin floating sticks plus Dodge / Deadeye. Only shown once a touch is seen. */
+html.touch,
+html.touch body,
+html.touch #game-canvas {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html.touch .controls {
+  display: none;
+}
+#touch {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  display: none;
+}
+html.touch #touch.active {
+  display: block;
+}
+#touch .stick {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  margin: -56px 0 0 -56px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(219, 234, 255, 0.28);
+  background: radial-gradient(circle, rgba(219, 234, 255, 0.06), rgba(6, 10, 22, 0.35));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+#touch .stick.right {
+  width: 88px;
+  height: 88px;
+  margin: -44px 0 0 -44px;
+  border-color: rgba(155, 107, 255, 0.45);
+}
+#touch .stick.held {
+  opacity: 1;
+}
+#touch .knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgba(219, 234, 255, 0.85);
+  box-shadow: 0 0 18px rgba(196, 212, 255, 0.5);
+}
+#touch .stick.right .knob {
+  background: rgba(196, 178, 255, 0.9);
+  box-shadow: 0 0 18px rgba(155, 107, 255, 0.6);
+}
+#touch .touch-button {
+  position: absolute;
+  pointer-events: auto;
+  right: calc(24px + env(safe-area-inset-right));
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(219, 234, 255, 0.35);
+  background: rgba(8, 14, 27, 0.55);
+  color: var(--silver);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+#touch .touch-button:active {
+  transform: scale(0.94);
+}
+#touch .dodge {
+  bottom: calc(150px + env(safe-area-inset-bottom));
+}
+#touch .deadeye {
+  bottom: calc(236px + env(safe-area-inset-bottom));
+  opacity: 0.35;
+  border-color: rgba(155, 107, 255, 0.4);
+}
+#touch .deadeye.ready {
+  opacity: 1;
+  border-color: var(--violet);
+  box-shadow: 0 0 22px rgba(155, 107, 255, 0.55);
+  animation: ready-pulse 1.4s ease-in-out infinite;
+}
+@keyframes ready-pulse {
+  50% {
+    box-shadow: 0 0 34px rgba(155, 107, 255, 0.85);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #touch .deadeye.ready {
+    animation: none;
+  }
+}

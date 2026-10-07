@@ -185,6 +185,8 @@ export class Hunt {
   hitstop = 0;
   /** Player assist option: loose automatically the moment the draw is full (always perfect). */
   assistLoose = false;
+  /** Hold to fire: holding keeps drawing and looses each arrow at the end of the window. */
+  holdFire = false;
   god = false;
   freezeSpawns = false;
   slowMotion = false;
@@ -538,8 +540,15 @@ export class Hunt {
           this.emit('bow.window');
           this.burst(p.x, p.y, 8, 2);
         }
-        const auto = this.assistLoose ? profile.full : profile.auto;
-        if (p.draw >= auto && (this.assistLoose || (T.autoLoose && this.bow.id !== 'letoff'))) {
+        const auto = this.assistLoose
+          ? profile.full
+          : this.holdFire
+            ? profile.full + profile.window
+            : profile.auto;
+        if (
+          p.draw >= auto &&
+          (this.assistLoose || ((T.autoLoose || this.holdFire) && this.bow.id !== 'letoff'))
+        ) {
           loose(this, this.assistLoose, p.aim);
           p.draw = 0;
         }

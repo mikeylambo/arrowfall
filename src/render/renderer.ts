@@ -243,6 +243,45 @@ export class View {
       s.scale.set(o.kind ? o.r / 24 : o.r / 22);
       this.coverSprites.push(s);
     }
+    // The Hollow's edge: a dense treeline over a dark band, so the world boundary reads as
+    // forest you cannot enter instead of an invisible wall.
+    if (!camp) {
+      const edge = new Graphics(),
+        W = T.worldWidth,
+        H = T.worldHeight,
+        band = 900;
+      edge
+        .rect(-band, -band, W + band * 2, band)
+        .rect(-band, H, W + band * 2, band)
+        .rect(-band, 0, band, H)
+        .rect(W, 0, band, H)
+        .fill({ color: tint(PALETTE.background), alpha: 0.92 });
+      this.cover.addChild(edge);
+      const jitter = (i: number) => {
+        const v = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+        return v - Math.floor(v);
+      };
+      let i = 0;
+      const tree = (x: number, y: number, scale: number) => {
+        const s = this.sprite(this.art.tree, this.cover);
+        s.position.set(x + (jitter(i++) - 0.5) * 50, y + (jitter(i++) - 0.5) * 50);
+        s.scale.set(scale * (0.85 + jitter(i++) * 0.35));
+        s.rotation = jitter(i++) * Math.PI * 2;
+        this.coverSprites.push(s);
+      };
+      for (let row = 0; row < 2; row++) {
+        const out = 30 + row * 120,
+          scale = 2.6 + row * 0.6;
+        for (let x = -out; x <= W + out; x += 140) {
+          tree(x, -out, scale);
+          tree(x, H + out, scale);
+        }
+        for (let y = 140 - out; y <= H + out - 140; y += 140) {
+          tree(-out, y, scale);
+          tree(W + out, y, scale);
+        }
+      }
+    }
     this.landmarks.clear();
     for (const l of g.world.landmarks) {
       this.landmarks.circle(l.x, l.y, l.name === 'Moonwell Clearing' ? 260 : 130).stroke({

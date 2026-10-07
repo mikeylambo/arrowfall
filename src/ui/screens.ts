@@ -93,7 +93,7 @@ export function fingerprint(record: RunRecord) {
   ctx.fillText(`${record.outcome} · ${fmt(record.time)} · ${record.kills} hunted`, 300, 76);
   const point = (i: number, r: number) => ({
     x: 300 + Math.cos((i * Math.PI) / 3 - Math.PI / 2) * r,
-    y: 270 + Math.sin((i * Math.PI) / 3 - Math.PI / 2) * r,
+    y: 292 + Math.sin((i * Math.PI) / 3 - Math.PI / 2) * r,
   });
   for (let ring = 1; ring <= 4; ring++) {
     ctx.beginPath();
@@ -118,8 +118,11 @@ export function fingerprint(record: RunRecord) {
   ctx.strokeStyle = '#c6b2ff';
   ctx.lineWidth = 2;
   ctx.stroke();
+  // Labels sit just outside the outer ring, clear of the title block above.
+  ctx.textBaseline = 'middle';
+  ctx.font = '600 13px system-ui';
   labels.forEach((label, i) => {
-    const p = point(i, 190);
+    const p = point(i, 176);
     ctx.fillStyle = '#dbeaff';
     ctx.fillText(label, p.x, p.y);
   });

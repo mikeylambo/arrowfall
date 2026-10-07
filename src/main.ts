@@ -45,8 +45,11 @@ let game: Hunt | null = null,
   uiScreen = 'title',
   pauseDeferred = false,
   seedOverride: number | null = null;
+const touchDevice = matchMedia('(pointer: coarse)').matches;
 let options = {
   autoLoose: false,
+  // Touch players hold to fire by default; on PC it is an option (tap/hold-release otherwise).
+  holdFire: touchDevice,
   colorblind: false,
   bands: true,
   numbers: false,
@@ -139,7 +142,10 @@ function saveOptions() {
   document
     .querySelectorAll<HTMLElement>('.slu-panel')
     .forEach((el) => (el.style.zoom = String(options.uiScale)));
-  if (game) game.assistLoose = options.autoLoose;
+  if (game) {
+    game.assistLoose = options.autoLoose;
+    game.holdFire = options.holdFire;
+  }
   document.documentElement.style.fontSize = 16 * options.uiScale + 'px';
 }
 function begin(next: string) {
@@ -153,6 +159,7 @@ function begin(next: string) {
       : Math.floor(Math.random() * 4294967296));
   game = new Hunt(seed, profile, selected, phase, next === 'range');
   game.assistLoose = options.autoLoose;
+  game.holdFire = options.holdFire;
   if (next === 'camp') {
     game.scene = 'camp';
     game.freezeSpawns = true;
@@ -272,6 +279,13 @@ function settings() {
     'options',
     'Options',
     [
+      {
+        id: 'option:holdFire',
+        label: `Fire Mode · ${options.holdFire ? 'Hold to Fire' : 'Release to Fire'}`,
+        description: options.holdFire
+          ? 'Hold to keep shooting; let go in the window for a perfect'
+          : 'Each arrow is drawn and released by hand',
+      },
       {
         id: 'option:autoLoose',
         label: `Auto-Loose · ${options.autoLoose ? 'On' : 'Off'}`,
@@ -473,7 +487,17 @@ app.flow.onActivate = (screen, id) => {
   }
   if (screen === 'options') {
     const key = id.slice(7);
-    if (['autoLoose', 'toggle', 'colorblind', 'bands', 'numbers', 'reducedMotion'].includes(key)) {
+    if (
+      [
+        'autoLoose',
+        'holdFire',
+        'toggle',
+        'colorblind',
+        'bands',
+        'numbers',
+        'reducedMotion',
+      ].includes(key)
+    ) {
       const k = key as 'autoLoose';
       options[k] = !options[k];
     }
@@ -805,14 +829,21 @@ function tick(now: number) {
       el.classList.toggle('near', Math.hypot(s.x - game.player.x, s.y - game.player.y) < 110);
     }
     if (uiScreen === 'gameplay-placeholder')
-      $('hint').textContent = 'WASD to walk · F at a station';
+      $('hint').textContent = controls.touching
+        ? 'Drag on the left to walk · tap a station'
+        : 'WASD to walk · F at a station';
     else $('hint').textContent = '';
   }
   if (game && scene !== 'camp') hud(g);
+  controls.touch.setActive(
+    controls.touching && !!game && uiScreen === 'gameplay-placeholder',
+    !!game && game.player.focus >= 100,
+  );
   view.render(g, dt);
   for (const event of g.events) if (!event.id.startsWith('number.')) audio.playSfx(event.id);
   g.events.length = 0;
-  if (app.shell.session.phase === 'playing') audio.tick(g.time, g.player.draw);
+  if (app.shell.session.phase === 'playing')
+    audio.tick(g.time, g.player.draw, uiScreen !== 'gameplay-placeholder');
   $('perf').textContent = showPerf
     ? `${view.fps.toFixed(1)} FPS · ${(1000 / view.fps).toFixed(2)} ms\n${g.enemies.count} enemies · ${g.arrows.count} arrows\n${g.threats.count} threats · ${g.particles.count} particles\nPerfect ${g.perfects}/${g.shots} · cap ${g.cap()}\n${Object.entries(
         g.damageSources,

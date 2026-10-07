@@ -126,7 +126,8 @@ export class Synth implements AudioSystem {
   playMusic(id: string) {
     this.cue = id;
   }
-  tick(time: number, drawing: number) {
+  /** Ambient score. `quiet` (cards, pause) keeps only the pad: no pulse, no draw tone. */
+  tick(time: number, drawing: number, quiet = false) {
     if (!this.context) return;
     const now = this.context.currentTime;
     if (now >= this.nextBeat) {
@@ -143,6 +144,7 @@ export class Synth implements AudioSystem {
       const minor = time >= 600;
       const notes = minor ? [73.42, 87.31, 110, 130.81] : [73.42, 98, 110, 146.83];
       for (const f of notes) this.tone(f, 2.5, 'sine', 0.028, 'music');
+      if (quiet) return;
       if (time > 120) this.tone(49, 0.2, 'triangle', 0.08, 'music');
       if (drawing > 0) this.tone(80 + drawing * 180, 0.08, 'triangle', 0.025);
     }
