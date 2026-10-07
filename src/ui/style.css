@@ -122,31 +122,6 @@ button {
   margin: auto;
   text-align: center;
 }
-#ui [data-screen-id='levelup'] .slu-panel {
-  max-width: 1100px;
-}
-#ui [data-screen-id='levelup'] .slu-choices {
-  grid-template-columns: repeat(3, 1fr);
-}
-#ui [data-screen-id='levelup'] .slu-choice {
-  min-height: 190px;
-  align-self: stretch;
-  border-top: 3px solid var(--violet);
-  padding: 28px 22px;
-}
-#ui [data-screen-id='levelup'] .slu-choice-desc {
-  margin-top: 24px;
-}
-#ui [data-screen-id='levelup'] .slu-choice[data-choice-id^='reroll'],
-#ui [data-screen-id='levelup'] .slu-choice[data-choice-id^='skip'],
-#ui [data-screen-id='levelup'] .slu-choice[data-choice-id^='banish'] {
-  min-height: auto;
-  padding: 12px;
-  border-top-width: 1px;
-}
-#ui [data-screen-id='levelup'] .slu-choice-label {
-  font: 24px Georgia;
-}
 #hud {
   position: fixed;
   inset: 0;
@@ -370,12 +345,6 @@ button {
   white-space: pre;
   pointer-events: none;
 }
-.fingerprint {
-  display: block;
-  width: 300px;
-  max-width: 100%;
-  margin: 15px auto;
-}
 .footer-mark {
   position: fixed;
   bottom: 20px;
@@ -416,16 +385,6 @@ button {
   }
   #hud {
     padding: 18px;
-  }
-  #ui [data-screen-id='levelup'] .slu-choices {
-    grid-template-columns: 1fr;
-  }
-  #ui [data-screen-id='levelup'] .slu-choice {
-    min-height: 100px;
-    padding: 16px;
-  }
-  #ui [data-screen-id='levelup'] .slu-choice-desc {
-    margin-top: 8px;
   }
   .moon-clock {
     top: 15px !important;
@@ -654,4 +613,499 @@ html.touch #touch.active {
       opacity: 1;
     }
   }
+}
+
+/* ---------- Level-up cards ---------- */
+#ui [data-screen-id='levelup'] {
+  --common: #b9c6d8;
+  --uncommon: #8fc0ff;
+  --rare: #9b6bff;
+  --legendary: #e6d7ff;
+}
+#ui [data-screen-id='levelup'] .slu-panel {
+  max-width: 1080px;
+  background: transparent !important;
+  border: 0;
+  box-shadow: none;
+  padding: 24px;
+  overflow: visible;
+}
+#ui [data-screen-id='levelup'] .slu-header {
+  text-align: center;
+}
+#ui [data-screen-id='levelup'] .slu-header h1 {
+  font-size: clamp(30px, 4.4vw, 52px);
+  text-shadow: 0 0 40px rgba(155, 107, 255, 0.45);
+  margin-bottom: 6px;
+}
+#ui [data-screen-id='levelup'] .slu-header p {
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #c6b2ff;
+  margin-bottom: 28px;
+}
+#ui [data-screen-id='levelup'] .slu-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  perspective: 900px;
+}
+#ui [data-screen-id='levelup'] .slu-choice[data-rarity] {
+  --tone: var(--common);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  min-height: 330px;
+  padding: 18px 20px 24px;
+  border: 1px solid color-mix(in srgb, var(--tone) 38%, transparent);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      120% 70% at 50% 0%,
+      color-mix(in srgb, var(--tone) 16%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(180deg, #111a2e, #0a1020);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--tone) 30%, transparent),
+    0 18px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  animation: card-deal 0.5s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+  animation-delay: calc(var(--deal) * 80ms);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+#ui [data-screen-id='levelup'] .slu-choice[data-rarity='uncommon'] {
+  --tone: var(--uncommon);
+}
+#ui [data-screen-id='levelup'] .slu-choice[data-rarity='rare'] {
+  --tone: var(--rare);
+}
+#ui [data-screen-id='levelup'] .slu-choice[data-rarity='legendary'] {
+  --tone: var(--legendary);
+  border-color: transparent;
+  background:
+    linear-gradient(180deg, #161433, #0b0c22) padding-box,
+    linear-gradient(135deg, #ffffff, #9b6bff 40%, #c4d4ff 70%, #ffffff) border-box;
+  border: 1.5px solid transparent;
+}
+#ui [data-screen-id='levelup'] .slu-choice[data-rarity='legendary']::after {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.16) 50%,
+    transparent 58%
+  );
+  animation: card-sheen 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+#ui [data-screen-id='levelup'] .slu-choice[data-rarity]:hover,
+#ui [data-screen-id='levelup'] .slu-choice[data-rarity][data-focused='true'] {
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--tone);
+  background-color: transparent;
+  box-shadow:
+    inset 0 1px 0 var(--tone),
+    0 0 0 1px color-mix(in srgb, var(--tone) 50%, transparent),
+    0 24px 60px color-mix(in srgb, var(--tone) 28%, transparent);
+}
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+.card-top kbd {
+  font:
+    600 11px Inter,
+    system-ui,
+    sans-serif;
+  color: #8fa3bd;
+  border: 1px solid #52688466;
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+.card-rarity {
+  margin-top: auto;
+  padding-top: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--tone);
+}
+.card-ribbon {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #0a1020;
+  background: var(--tone);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.card-icon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin: 14px 0 6px;
+  border-radius: 50%;
+  color: var(--tone);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--tone) 22%, transparent),
+    transparent 70%
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 40%, transparent);
+}
+.card-icon svg {
+  width: 38px;
+  height: 38px;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--tone) 60%, transparent));
+}
+#ui .card-name.slu-choice-label {
+  font:
+    400 23px/1.15 Georgia,
+    serif;
+  letter-spacing: 0.01em;
+  color: #f2f6ff;
+}
+.card-kind {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #8fa3bd;
+}
+.card-pips {
+  display: flex;
+  gap: 5px;
+  margin: 4px 0 2px;
+}
+.card-pips i {
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+  background: #24324a;
+}
+.card-pips i.had {
+  background: color-mix(in srgb, var(--tone) 55%, #24324a);
+}
+.card-pips i.next {
+  background: var(--tone);
+  box-shadow: 0 0 8px var(--tone);
+}
+#ui .card-effect.slu-choice-desc {
+  margin-top: 6px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #c3d0e2;
+}
+.card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+#ui .card-actions .slu-choice {
+  padding: 8px 18px;
+  border-radius: 999px;
+  min-height: 0;
+}
+#ui .card-actions .slu-choice-label {
+  font-size: 13px;
+}
+.card-build {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+}
+.card-build span {
+  font-size: 11px;
+  color: #8fa3bd;
+  border: 1px solid #52688444;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.card-build b {
+  color: #dbeaff;
+  font-weight: 600;
+}
+@keyframes card-deal {
+  from {
+    opacity: 0;
+    transform: translateY(46px) rotateX(18deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes card-sheen {
+  0% {
+    transform: translateX(-60%);
+  }
+  60%,
+  100% {
+    transform: translateX(60%);
+  }
+}
+#ui [data-screen-id='levelup'].calm .slu-choice[data-rarity],
+#ui [data-screen-id='levelup'].calm .slu-choice[data-rarity]::after {
+  animation: none;
+}
+@media (max-width: 760px), (max-height: 520px) {
+  #ui [data-screen-id='levelup'] .slu-panel {
+    padding: 8px;
+  }
+  #ui [data-screen-id='levelup'] .slu-choices {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  #ui [data-screen-id='levelup'] .slu-choice[data-rarity] {
+    min-height: 0;
+    padding: 12px 12px 16px;
+    gap: 4px;
+  }
+  .card-icon {
+    width: 52px;
+    height: 52px;
+    margin: 4px 0 2px;
+  }
+  .card-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+  #ui .card-name.slu-choice-label {
+    font-size: 18px;
+  }
+  #ui .card-effect.slu-choice-desc {
+    font-size: 13px;
+  }
+  .card-build {
+    display: none;
+  }
+}
+
+/* ---------- Results ---------- */
+#ui [data-screen-id='results'] .slu-panel {
+  max-width: 900px;
+}
+#ui [data-screen-id='results'] .slu-header h1 {
+  font-size: clamp(36px, 5.5vw, 64px);
+  margin-bottom: 4px;
+}
+.results-body {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 24px;
+  align-items: center;
+  margin: 18px 0 26px;
+}
+.results-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.results-stats .stat {
+  padding: 14px 12px;
+  border: 1px solid #52688433;
+  border-radius: 10px;
+  background: #0d1528;
+}
+.results-stats .stat b {
+  display: block;
+  font:
+    400 26px Georgia,
+    serif;
+  color: #f2f6ff;
+}
+.results-stats .stat span {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #8fa3bd;
+}
+.results-evos {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.results-evos span {
+  font-size: 12px;
+  color: #e6d7ff;
+  border: 1px solid #9b6bff66;
+  background: #9b6bff1a;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.results-evos em {
+  font-size: 12px;
+  color: #6f829c;
+}
+.fingerprint {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+  border-radius: 10px;
+}
+#ui [data-screen-id='results'] .slu-choices {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 10px;
+}
+#ui [data-screen-id='results'] .slu-choice {
+  text-align: center;
+}
+#ui [data-screen-id='results'] .slu-choice:first-child {
+  border-color: #c6b2ff88;
+  background: #2a1f4a88;
+}
+@media (max-width: 760px) {
+  .results-body {
+    grid-template-columns: 1fr;
+  }
+  #ui [data-screen-id='results'] .slu-choices {
+    grid-template-columns: 1fr;
+  }
+}
+/* Short screens (phones in landscape): compact cards and results that fit without scrolling. */
+@media (max-height: 520px) {
+  #ui [data-screen-id='levelup'] .slu-panel {
+    overflow: auto;
+    max-height: 100vh;
+    padding: 6px 8px;
+  }
+  #ui [data-screen-id='levelup'] .slu-header h1 {
+    font-size: 26px;
+    margin: 0;
+  }
+  #ui [data-screen-id='levelup'] .slu-header p {
+    margin-bottom: 10px;
+  }
+  .card-icon,
+  .card-kind,
+  .card-top kbd {
+    display: none;
+  }
+  .card-top {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+  }
+  #ui [data-screen-id='levelup'] .slu-choice[data-rarity] {
+    padding: 14px 12px 10px;
+  }
+  .card-rarity {
+    padding-top: 6px;
+  }
+  .card-actions {
+    margin-top: 10px;
+  }
+  #ui [data-screen-id='results'] .slu-panel {
+    padding: 18px 22px;
+    max-height: 100vh;
+  }
+  #ui [data-screen-id='results'] .slu-header h1 {
+    font-size: 30px;
+  }
+  .results-body {
+    grid-template-columns: 1.4fr 1fr;
+    margin: 8px 0 12px;
+    gap: 14px;
+  }
+  .results-stats .stat {
+    padding: 8px 10px;
+  }
+  .results-stats .stat b {
+    font-size: 20px;
+  }
+  .fingerprint {
+    max-width: 200px;
+  }
+  #ui [data-screen-id='results'] .slu-choices {
+    grid-template-columns: 1.4fr 1fr 1fr;
+  }
+}
+
+/* ---------- HUD polish ---------- */
+.health .bar {
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #dbeaff14;
+  box-shadow: inset 0 0 0 1px #dbeaff1f;
+}
+.health .bar i {
+  border-radius: 3px;
+  background: linear-gradient(90deg, #c4d4ff, #ffffff);
+  transition: width 0.2s ease-out;
+}
+.health .bar.low i {
+  background: linear-gradient(90deg, #c8323c, #ff6670);
+  box-shadow: 0 0 14px #ff667088;
+  animation: hp-low 0.9s ease-in-out infinite;
+}
+@keyframes hp-low {
+  50% {
+    opacity: 0.6;
+  }
+}
+.xp {
+  height: 5px;
+  background: #0a1020cc;
+  box-shadow: 0 -1px 0 #9b6bff22;
+}
+.xp i {
+  background: linear-gradient(90deg, #6e4dce, #9b6bff 60%, #e6d7ff);
+  box-shadow:
+    0 0 14px #9b6bffaa,
+    0 0 4px #e6d7ff;
+  transition: width 0.25s ease-out;
+}
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1;
+}
+.stats .lv {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font:
+    400 17px Georgia,
+    serif;
+  color: #fff;
+  border: 1.5px solid #9b6bffaa;
+  background: radial-gradient(circle, #9b6bff33, #0a1020);
+  box-shadow: 0 0 16px #9b6bff44;
+}
+.stats span {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #c6b2ff;
+}
+.stats em {
+  font-style: normal;
+  font-size: 12px;
+  color: #8fa3bd;
+  margin-left: 6px;
 }

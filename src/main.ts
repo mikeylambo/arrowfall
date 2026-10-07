@@ -25,6 +25,7 @@ import { STATIONS } from './data/world';
 import { xpNeeded } from './data/tuning';
 import { loadProfile, saveProfile, bankRun, boonCost } from './sim/profile';
 import { fmt, bowChoices, offerChoices, altarChoices, logChoices, fingerprint } from './ui/screens';
+import { decorateLevelUp, decorateResults } from './ui/cards';
 import type { Profile, RunRecord } from './sim/types';
 const $ = (id: string) => document.getElementById(id)!;
 const profileStore = new SaveManager<Profile>(new BrowserStorage('arrowfall'), 'hunter-profile', 2);
@@ -328,14 +329,8 @@ function levelUp() {
   if (game.rerolls) choices.push({ id: 'reroll', label: `Reroll · ${game.rerolls}` });
   if (game.skips) choices.push({ id: 'skip', label: `Skip · ${game.skips}` });
   if (game.banishes) choices.push({ id: 'banish', label: `Banish First Card · ${game.banishes}` });
-  show(
-    'levelup',
-    'Moonlight Answers',
-    choices,
-    `Level ${game.level} · ${Object.entries(game.ranks)
-      .map(([id, rank]) => (UPGRADES.find((u) => u.id === id)?.name ?? id) + ' ' + rank)
-      .join(' · ')}`,
-  );
+  show('levelup', 'Moonlight Answers', choices, `Level ${game.level} · choose one`);
+  decorateLevelUp($('ui'), game, view.reducedMotion);
 }
 function endRun() {
   if (!game || savedRun) return;
@@ -377,11 +372,21 @@ function endRun() {
       { id: 'camp', label: 'Return to Camp' },
       { id: 'fingerprint', label: 'Share Fingerprint' },
     ],
-    `${fmt(g.time)} survived · ${g.kills} hunted · ${Math.round((g.perfects / Math.max(1, g.shots)) * 100)}% perfect\n${g.earned} Moonsilver · ${record.evolutions.map((id) => EVOLUTIONS.find((e) => e.id === id)?.name).join(' · ') || 'No evolutions'}`,
+    `${fmt(g.time)} survived · ${g.kills} hunted · ${Math.round((g.perfects / Math.max(1, g.shots)) * 100)}% perfect`,
   );
-  const canvas = fingerprint(record);
-  canvas.className = 'fingerprint';
-  document.querySelector('.slu-header')?.append(canvas);
+  decorateResults(
+    $('ui'),
+    [
+      { label: 'Survived', value: fmt(g.time) },
+      { label: 'Hunted', value: String(g.kills) },
+      { label: 'Perfect', value: Math.round((g.perfects / Math.max(1, g.shots)) * 100) + '%' },
+      { label: 'Level', value: String(g.level) },
+      { label: 'Best streak', value: String(g.maxStreak) },
+      { label: 'Moonsilver', value: '+' + g.earned },
+    ],
+    record.evolutions.map((id) => EVOLUTIONS.find((e) => e.id === id)?.name ?? id),
+    fingerprint(record),
+  );
 }
 app.flow.onActivate = (screen, id) => {
   audio.unlock();
@@ -721,6 +726,7 @@ function hud(g: Hunt) {
   const p = g.player;
   $('hp').textContent = String(Math.max(0, Math.ceil(p.hp)));
   $('hp-fill').style.width = (p.hp / p.maxHp) * 100 + '%';
+  $('hp-fill').parentElement!.classList.toggle('low', p.hp / p.maxHp < 0.3);
   $('time').textContent = fmt(g.time);
   $('night').textContent =
     g.time >= 1140
@@ -736,7 +742,7 @@ function hud(g: Hunt) {
               : 'MOONRISE';
   $('moon').style.color = g.time >= 600 || phase === 3 ? PALETTE.threat.rim : PALETTE.silver;
   // Draw window, Focus and dodge recovery are shown on the hunter (render/diegetic.ts).
-  $('stats').innerHTML = `<b>LV ${g.level}</b> · ${g.kills}`;
+  $('stats').innerHTML = `<b class="lv">${g.level}</b><span>Level</span><em>${g.kills} hunted</em>`;
   $('controls').classList.toggle('faded', scene === 'hunt' && g.time > 20);
   $('xp-fill').style.width = (g.xp / xpNeeded(g.level)) * 100 + '%';
   $('inventory').innerHTML = `${['moonraven', 'thornsnare', 'lantern']
