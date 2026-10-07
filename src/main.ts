@@ -25,8 +25,9 @@ import { STATIONS } from './data/world';
 import { xpNeeded } from './data/tuning';
 import { loadProfile, saveProfile, bankRun, boonCost } from './sim/profile';
 import { fmt, bowChoices, offerChoices, altarChoices, logChoices, fingerprint } from './ui/screens';
-import { decorateLevelUp, decorateResults } from './ui/cards';
+import { decorateLevelUp, decorateResults, type Recap } from './ui/cards';
 import { Coach } from './ui/coach';
+import { decorateMenus } from './ui/menus';
 import { TOOLS } from './data/tools';
 import type { Profile, RunRecord } from './sim/types';
 const $ = (id: string) => document.getElementById(id)!;
@@ -81,6 +82,7 @@ view.numbers = options.numbers;
 view.shake = options.shake;
 view.reducedMotion = options.reducedMotion;
 await view.init($('game-canvas') as HTMLCanvasElement);
+decorateMenus($('ui'));
 /** First-hunt lessons; created before any scene can begin. */
 const coach = new Coach(
   () => audio.playSfx('coach.step'),
@@ -408,7 +410,45 @@ function endRun() {
     ],
     record.evolutions.map((id) => EVOLUTIONS.find((e) => e.id === id)?.name ?? id),
     fingerprint(record),
+    g.outcome === 'The Hunter Falls' ? recapFor(g) : undefined,
   );
+}
+/** Death recap: what killed the hunter, one targeted tip, and how close the next goal was. */
+function recapFor(g: Hunt): Recap {
+  const killer = g.killedBy || 'The Hollowmoor',
+    perfect = g.perfects / Math.max(1, g.shots),
+    dodgeKey = controls.touching ? 'tap Dodge' : controls.usingPad ? 'press A' : 'press Space';
+  const tip = /charge/.test(killer)
+    ? `Charges draw a red line first. Step off it, or ${dodgeKey} to roll straight through.`
+    : /bolt/.test(killer)
+      ? 'Bolts fly where you stand when they are loosed: keep moving sideways, or dodge as they fire.'
+      : /slam|eruption/.test(killer)
+        ? 'Red circles are ground strikes. Step out before the ring fills; a Barrow Worm erupts beneath you.'
+        : perfect < 0.15
+          ? 'Release at the chime: perfect arrows hit harder and fill Focus for Deadeye.'
+          : g.kills > 0 && g.player.focus >= 100
+            ? 'You died with Deadeye ready. Spend Focus early: it clears a crowd and buys space.'
+            : 'Keep them at range: arrows in the sweet-spot band hit harder, so most foes fall before they reach you.';
+  const previous = profile.runs.slice(1).reduce((best, r) => Math.max(best, r.time), 0),
+    next = BOSSES.find((b) => b.time > g.time);
+  const nudge =
+    g.time > previous && previous > 0
+      ? `New personal best · ${fmt(g.time)} (was ${fmt(previous)})`
+      : next && next.time - g.time < 90
+        ? `${next.name} was ${fmt(next.time - g.time)} away.`
+        : previous > 0
+          ? `Your best is ${fmt(previous)} · ${fmt(previous - g.time)} to beat it.`
+          : next
+            ? `${next.name} arrives at ${fmt(next.time)}.`
+            : 'One more hunt.';
+  return {
+    killedBy: killer,
+    time: g.time,
+    hits: g.recentHits.slice(),
+    sources: Object.entries(g.damageTaken).sort((a, b) => b[1] - a[1]),
+    tip,
+    nudge,
+  };
 }
 app.flow.onActivate = (screen, id) => {
   audio.unlock();

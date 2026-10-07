@@ -5,6 +5,18 @@ import { BOSSES } from '../data/bosses';
 import { T, distance, len } from '../data/tuning';
 import { blockedMove, type Cover } from './world';
 import { damageEnemy } from './combat';
+
+/** Who dealt a hit, for the death recap: boss name, or "Elite Moonhound" and the like. */
+export function attacker(g: Hunt, e: Enemy | undefined, how = '') {
+  if (!e) return 'The Hollowmoor';
+  const name =
+    e.boss >= 0 ? BOSSES[e.boss].name : (e.elite >= 0 ? 'Elite ' : '') + ENEMIES[e.kind].name;
+  return how ? `${name} ${how}` : name;
+}
+function owner(g: Hunt, id: number) {
+  for (const e of g.enemies.items) if (e.id === id) return e;
+  return undefined;
+}
 const harvestTargets: Enemy[] = [];
 const threatCover: Cover[] = [];
 const snareTargets: Enemy[] = [];
@@ -200,7 +212,7 @@ export function updateEnemies(g: Hunt, dt: number) {
             e.state = 2;
             e.clock = 1.1;
             g.burst(e.x, e.y, 20, 1);
-            if (d < 80) g.hurt(e.damage);
+            if (d < 80) g.hurt(e.damage, attacker(g, e, 'eruption'));
           }
         } else if (e.state === 2) {
           move = false;
@@ -235,7 +247,7 @@ export function updateEnemies(g: Hunt, dt: number) {
           e.clock = 0.6;
           telegraph(g, e, 2, 0.6, e.r + 22);
         } else if ((e.state === 3 && e.clock <= 0) || e.state === 2) {
-          g.hurt(e.damage);
+          g.hurt(e.damage, attacker(g, e));
           if (e.elite === 3) e.hp = Math.min(e.maxHp, e.hp + e.damage * 0.25);
           e.state = 0;
           e.clock = 1;
@@ -251,7 +263,7 @@ export function updateThreats(g: Hunt, dt: number) {
         t.x += t.vx * dt;
         t.y += t.vy * dt;
         if (distance(t, g.player) < t.r + 16) {
-          g.hurt(t.damage);
+          g.hurt(t.damage, attacker(g, owner(g, t.owner), 'bolt'));
           t.active = false;
         }
         const found = g.world.hash.query(t.x, t.y, 50, threatCover);
@@ -289,7 +301,8 @@ export function updateThreats(g: Hunt, dt: number) {
       }
       if (t.clock >= t.duration) {
         if (t.kind === 2) {
-          if (distance(t, g.player) < t.r + 16) g.hurt(t.damage);
+          if (distance(t, g.player) < t.r + 16)
+            g.hurt(t.damage, attacker(g, owner(g, t.owner), 'slam'));
           g.burst(t.x, t.y, 20, 1);
         }
         if (t.kind === 1) {
@@ -297,7 +310,8 @@ export function updateThreats(g: Hunt, dt: number) {
             dy = g.player.y - t.y,
             along = dx * Math.cos(t.angle) + dy * Math.sin(t.angle),
             across = Math.abs(-dx * Math.sin(t.angle) + dy * Math.cos(t.angle));
-          if (along >= 0 && along < t.length && across < t.r + 16) g.hurt(t.damage);
+          if (along >= 0 && along < t.length && across < t.r + 16)
+            g.hurt(t.damage, attacker(g, owner(g, t.owner), 'charge'));
           g.burst(
             t.x + Math.cos(t.angle) * t.length * 0.5,
             t.y + Math.sin(t.angle) * t.length * 0.5,
@@ -430,5 +444,5 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
       e.y += (dy / (d || 1)) * (d > 450 ? 70 : -40) * dt;
     }
   }
-  if (d < e.r + 16 && e.state === 2) g.hurt(e.damage);
+  if (d < e.r + 16 && e.state === 2) g.hurt(e.damage, attacker(g, e, 'charge'));
 }

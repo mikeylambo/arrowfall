@@ -132,6 +132,10 @@ export class Hunt {
   /** Active enemy count, refreshed at the start of each step. */
   crowd = 0;
   readonly timeline: string[] = [];
+  /** Death recap: damage taken by source, the latest hits, and the fatal source. */
+  readonly damageTaken: Record<string, number> = {};
+  readonly recentHits: { time: number; source: string; amount: number; hp: number }[] = [];
+  killedBy = '';
   readonly damageSources: Record<string, number> = {};
   challenge = '';
   challengeStart = 0;
@@ -763,10 +767,15 @@ export class Hunt {
       if (this.eventTimer <= 0) this.event = -1;
     }
   }
-  hurt(amount: number) {
+  hurt(amount: number, source = 'The Hollowmoor') {
     const p = this.player;
     if (this.god || p.invuln > 0 || p.dodge > 0 || this.cinematic > 0) return;
     p.hp -= amount;
+    // Death recap: damage taken by source, and the last few hits in order.
+    this.damageTaken[source] = (this.damageTaken[source] || 0) + amount;
+    this.recentHits.push({ time: this.time, source, amount, hp: Math.max(0, p.hp) });
+    if (this.recentHits.length > 6) this.recentHits.shift();
+    if (p.hp <= 0) this.killedBy = source;
     p.invuln = T.invulnerability;
     this.shake = T.maxShake;
     this.emit('player.hurt');

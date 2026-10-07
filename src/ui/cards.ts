@@ -176,10 +176,12 @@ export function decorateResults(
   stats: { label: string; value: string }[],
   evolutions: string[],
   fingerprint: HTMLCanvasElement,
+  recap?: Recap,
 ) {
   const screen = root.querySelector<HTMLElement>('[data-screen-id="results"]');
   if (!screen) return;
   const header = screen.querySelector('.slu-header')!;
+  if (recap) header.after(recapPanel(recap));
   header.querySelector('p')?.remove();
   const body = document.createElement('div');
   body.className = 'results-body';
@@ -195,4 +197,48 @@ export function decorateResults(
   fingerprint.className = 'fingerprint';
   body.append(fingerprint);
   header.after(body);
+}
+
+export interface Recap {
+  killedBy: string;
+  time: number;
+  hits: { time: number; source: string; amount: number; hp: number }[];
+  sources: [string, number][];
+  tip: string;
+  /** "You were 0:17 from The Black Shuck", "New personal best", ... */
+  nudge: string;
+}
+const clock = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+/** Death recap: the fatal blow, the last hits, who hurt most, one tip and a reason to go again. */
+function recapPanel(r: Recap) {
+  const el = document.createElement('div');
+  el.className = 'recap';
+  const top = Math.max(1, ...r.sources.map(([, d]) => d));
+  el.innerHTML = `
+    <p class="recap-killer">Slain by <b>${escape(r.killedBy)}</b> at ${clock(r.time)}</p>
+    <div class="recap-grid">
+      <div>
+        <h3>Final blows</h3>
+        <ol class="recap-hits">${r.hits
+          .slice(-4)
+          .map(
+            (h) =>
+              `<li><time>${clock(h.time)}</time><span>${escape(h.source)}</span><b>−${Math.round(h.amount)}</b><i style="width:${Math.max(2, h.hp)}%"></i></li>`,
+          )
+          .join('')}</ol>
+      </div>
+      <div>
+        <h3>Hurt most by</h3>
+        <ul class="recap-sources">${r.sources
+          .slice(0, 3)
+          .map(
+            ([name, d]) =>
+              `<li><span>${escape(name)}</span><b>${Math.round(d)}</b><i style="width:${(d / top) * 100}%"></i></li>`,
+          )
+          .join('')}</ul>
+      </div>
+    </div>
+    <p class="recap-tip"><b>Hunter's note</b> ${escape(r.tip)}</p>
+    <p class="recap-nudge">${escape(r.nudge)}</p>`;
+  return el;
 }
