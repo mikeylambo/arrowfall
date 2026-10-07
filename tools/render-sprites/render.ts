@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { PROCEDURAL, rigid } from './procedural';
+import { PROCEDURAL, rigid, type Legs } from './procedural';
 
 export interface ClipJob {
   /** Clip name in the manifest, e.g. 'idle'. */
@@ -71,6 +71,8 @@ export interface SpriteJob {
   procedural?: string;
   /** Unrigged model driven by renderer-side motion (procedural.ts RIGID). */
   rigid?: string;
+  /** Leg columns for a procedural gallop on an unrigged quadruped (procedural.ts legRig). */
+  legs?: Legs;
   /** Antler crown on the head bone (boss weak point), in the given colour. */
   crown?: { color: string; size: number };
   bow?: BowJob;
@@ -397,7 +399,14 @@ export async function renderJob(job: SpriteJob) {
   scene.add(moon);
 
   const rim = new THREE.Color(job.rim);
-  const loaded = new Map<string, { root: THREE.Object3D; clips: THREE.AnimationClip[] }>();
+  const loaded = new Map<
+    string,
+    {
+      root: THREE.Object3D;
+      clips: THREE.AnimationClip[];
+      pose?: (clip: string, t: number) => void;
+    }
+  >();
   const sourceFor = async (url?: string) => {
     const key = job.procedural ?? (job.test ? 'test' : url!);
     if (!loaded.has(key)) {
@@ -420,7 +429,7 @@ export async function renderJob(job: SpriteJob) {
       src.root.scale.setScalar(k);
       const c = box.getCenter(new THREE.Vector3());
       src.root.position.set(-c.x * k, -box.min.y * k, -c.z * k);
-      loaded.set(key, job.rigid ? rigid(src, job.rigid, job.modelHeight) : src);
+      loaded.set(key, job.rigid ? rigid(src, job.rigid, job.modelHeight, job.legs) : src);
     }
     return loaded.get(key)!;
   };
@@ -507,6 +516,7 @@ export async function renderJob(job: SpriteJob) {
             ? (f / clipJob.frames) * span
             : (f / Math.max(1, clipJob.frames - 1)) * span);
         mixer.setTime(t);
+        src.pose?.(clipJob.name, t);
         if (hips && hipRest) {
           hips.position.x = hipRest.x;
           hips.position.z = hipRest.z;

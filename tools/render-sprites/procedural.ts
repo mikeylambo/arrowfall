@@ -175,7 +175,25 @@ export const PROCEDURAL: Record<
  * origin is at the feet, and these clips bob, pitch and squash it. Cheap, and at sprite size a
  * gallop read comes almost entirely from the bounce and lean. Pitch is about X; +x leans forward.
  */
-type Motion = { root: THREE.Object3D; clips: THREE.AnimationClip[] };
+type Motion = {
+  root: THREE.Object3D;
+  clips: THREE.AnimationClip[];
+  /** Per-frame pose hook for deformation the clips cannot express (clip name, clip time). */
+  pose?: (clip: string, t: number) => void;
+};
+/**
+ * Leg columns of an unrigged quadruped, in the model's own geometry units: the hip line as a
+ * fraction of height, where the swing fades in below it, and the z span and hip z of each pair.
+ * `split` is the x that divides left legs from right.
+ */
+export interface Legs {
+  hip: number;
+  fade: number;
+  split: number;
+  front: [number, number, number];
+  back: [number, number, number];
+  amp: number;
+}
 const smooth = (k: number) => k * k * (3 - 2 * k);
 function rigidClip(
   name: string,
@@ -291,11 +309,129 @@ export const RIGID: Record<string, (h: number) => THREE.AnimationClip[]> = {
 };
 
 /** Wrap a loaded static model so RIGID clips can drive it. */
-export function rigid(src: Motion, motion: string, height: number): Motion {
+export function rigid(src: Motion, motion: string, height: number, legs?: Legs): Motion {
   const root = new THREE.Group(),
     body = new THREE.Group();
   body.name = 'body';
   body.add(src.root);
   root.add(body);
-  return { root, clips: RIGID[motion](height) };
+  return { root, clips: RIGID[motion](height), pose: legs ? legRig(src.root, legs) : undefined };
+}
+
+/**
+ * Procedural leg swing for a static mesh: each vertex in a leg column rotates about its pair's
+ * hip line (an x axis), blended in below the hip so the shoulder flexes rather than tears, and
+ * blended left to right across `split` so the chest never shears. Positions and normals are
+ * rewritten from a rest copy every frame.
+ */
+function legRig(model: THREE.Object3D, legs: Legs) {
+  const meshes: {
+    position: THREE.BufferAttribute;
+    normal: THREE.BufferAttribute | null;
+    rest: Float32Array;
+    restN: Float32Array | null;
+    pair: Int8Array;
+    side: Float32Array;
+    weight: Float32Array;
+  }[] = [];
+  // Bounds in raw geometry units (the model root is already scaled, the geometry is not).
+  const box = new THREE.Box3();
+  model.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.geometry.computeBoundingBox();
+    box.union(mesh.geometry.boundingBox!);
+  });
+  const y0 = box.min.y,
+    H = box.max.y - box.min.y;
+  model.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.frustumCulled = false;
+    const g = mesh.geometry,
+      position = g.getAttribute('position') as THREE.BufferAttribute,
+      normal = (g.getAttribute('normal') as THREE.BufferAttribute) ?? null,
+      n = position.count,
+      pair = new Int8Array(n),
+      side = new Float32Array(n),
+      weight = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = position.getX(i),
+        y = (position.getY(i) - y0) / H,
+        z = position.getZ(i);
+      const p =
+        z >= legs.front[0] && z <= legs.front[1]
+          ? 1
+          : z >= legs.back[0] && z <= legs.back[1]
+            ? 2
+            : 0;
+      if (!p || y > legs.hip) continue;
+      pair[i] = p;
+      weight[i] = Math.min(1, (legs.hip - y) / legs.fade);
+      side[i] = Math.min(1, Math.max(0, (x - legs.split + 0.06) / 0.12));
+    }
+    meshes.push({
+      position,
+      normal,
+      rest: new Float32Array(position.array as Float32Array),
+      restN: normal ? new Float32Array(normal.array as Float32Array) : null,
+      pair,
+      side,
+      weight,
+    });
+  });
+  const hipY = y0 + legs.hip * H;
+  /** Swing angles (radians, + = foot forward) for [front-left, front-right, back-left, back-right]. */
+  const angles = (clip: string, t: number): number[] => {
+    const a = legs.amp;
+    if (clip === 'attack') {
+      // Crouch: feet gather under the body; spring: front reach forward, hind kick back.
+      const k = t / 0.6,
+        crouch = Math.min(1, k / 0.75),
+        spring = Math.max(0, (k - 0.75) / 0.25);
+      const f = -0.25 * crouch * (1 - spring) + 1.1 * a * spring,
+        b = 0.25 * crouch * (1 - spring) - 1.1 * a * spring;
+      return [f, f * 0.9, b, b * 0.9];
+    }
+    // Rotary gallop: fore pair and hind pair half a stride apart, each pair slightly staggered.
+    const w = (t / 0.5) * Math.PI * 2;
+    return [
+      a * Math.sin(w),
+      a * Math.sin(w + 0.45),
+      a * Math.sin(w + Math.PI),
+      a * Math.sin(w + Math.PI + 0.45),
+    ];
+  };
+  return (clip: string, t: number) => {
+    const [fl, fr, bl, br] = angles(clip, t);
+    for (const m of meshes) {
+      const out = m.position.array as Float32Array,
+        outN = m.normal ? (m.normal.array as Float32Array) : null;
+      out.set(m.rest);
+      if (outN && m.restN) outN.set(m.restN);
+      for (let i = 0; i < m.pair.length; i++) {
+        const p = m.pair[i];
+        if (!p) continue;
+        const s = m.side[i],
+          theta = (p === 1 ? fl + (fr - fl) * s : bl + (br - bl) * s) * m.weight[i],
+          // Rotating about +x moves a point below the hip backward for +angle, so negate.
+          c = Math.cos(-theta),
+          sn = Math.sin(-theta),
+          pz = p === 1 ? legs.front[2] : legs.back[2],
+          j = i * 3,
+          dy = m.rest[j + 1] - hipY,
+          dz = m.rest[j + 2] - pz;
+        out[j + 1] = hipY + dy * c - dz * sn;
+        out[j + 2] = pz + dy * sn + dz * c;
+        if (outN && m.restN) {
+          const ny = m.restN[j + 1],
+            nz = m.restN[j + 2];
+          outN[j + 1] = ny * c - nz * sn;
+          outN[j + 2] = ny * sn + nz * c;
+        }
+      }
+      m.position.needsUpdate = true;
+      if (m.normal) m.normal.needsUpdate = true;
+    }
+  };
 }

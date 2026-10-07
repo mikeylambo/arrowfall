@@ -461,6 +461,14 @@
           "multi-image-to-3d": "01a11395-d20c-7532-a61c-20e43ecb65be"
         },
         "note": "Model only (no remesh or rig); motion is renderer-side (procedural.ts RIGID)."
+      },
+      "legs": {
+        "hip": 0.42,
+        "fade": 0.12,
+        "split": 0.07,
+        "front": [0.12, 0.72, 0.42],
+        "back": [-0.68, -0.12, -0.45],
+        "amp": 0.55
       }
     },
     {
@@ -530,6 +538,14 @@
       ],
       "source": {
         "note": "Reuses the Moonhound model (no Meshy credits): darker albedo, red ink, 2x scale."
+      },
+      "legs": {
+        "hip": 0.42,
+        "fade": 0.12,
+        "split": 0.07,
+        "front": [0.12, 0.72, 0.42],
+        "back": [-0.68, -0.12, -0.45],
+        "amp": 0.55
       }
     },
     {
