@@ -16,6 +16,10 @@ const bossHud=document.querySelector("#boss-hud");
 const meta = JSON.parse(localStorage.getItem("arrowfall-meta") || '{"runs":0,"wins":0,"kills":0,"bestTime":0,"bestKills":0}');
 
 const TAU = Math.PI * 2;
+// Perfect Draw window, in seconds of hold time. Full draw lands at DRAW_TIME.
+const DRAW_TIME = .72, PERFECT_START = .66, PERFECT_END = .86;
+const DEBUG = import.meta.env?.DEV || new URLSearchParams(location.search).has("debug");
+const RUN_LOG_KEY = "arrowfall-runs";
 const keys = new Set();
 const mouse = { x: innerWidth / 2, y: innerHeight / 2, down: false };
 
@@ -29,20 +33,20 @@ let upgrades = [
   {id:"pierce",name:"PIERCER",desc:"+1 arrow penetration.",apply:p=>p.pierce+=1},
   {id:"crit",name:"EAGLE EYE",desc:"+9% critical chance.",apply:p=>p.critChance+=.09},
   {id:"range",name:"LONGSHAFT",desc:"+22% arrow range.",apply:p=>p.range*=1.22},
-  {id:"barbed",name:"BARBED ARROW",desc:"Arrows cause bleed.",apply:p=>p.bleed=true},
-  {id:"wind",name:"WINDSTEP",desc:"Firing boosts movement briefly.",apply:p=>p.windstep=true},
+  {id:"barbed",name:"BARBED ARROW",desc:"Arrows cause bleed.",once:true,apply:p=>p.bleed=true},
+  {id:"wind",name:"WINDSTEP",desc:"Firing boosts movement briefly.",once:true,apply:p=>p.windstep=true},
   {id:"multi",name:"FLETCHER'S CRAFT",desc:"+1 arrow per shot.",apply:p=>p.multi+=1},
-  {id:"ember",name:"EMBER ARROW",desc:"Arrows ignite targets.",apply:p=>p.ember=true},
-  {id:"frost",name:"FROST ARROW",desc:"Arrows slow targets.",apply:p=>p.frost=true},
-  {id:"storm",name:"STORM ARROW",desc:"Hits can chain lightning.",apply:p=>p.storm=true},
-  {id:"venom",name:"VENOM ARROW",desc:"Hits poison targets.",apply:p=>p.venom=true},
-  {id:"broad",name:"BROADShaft",desc:"+40% arrow hitbox.",apply:p=>p.arrowSize*=1.4},
-  {id:"executioner",name:"EXECUTIONER",desc:"+50% damage to enemies below 20% health.",apply:p=>p.executioner=true},
-  {id:"predator",name:"PREDATOR",desc:"Kills briefly increase movement speed.",apply:p=>p.predator=true},
-  {id:"chain",name:"CHAIN KILL",desc:"Consecutive kills build damage.",apply:p=>p.chain=true},
-  {id:"mark",name:"HUNTER'S MARK",desc:"Marked enemies take +30% damage.",apply:p=>p.mark=true},
-  {id:"phantom",name:"PHANTOM STEP",desc:"Dash creates a spectral arrow.",apply:p=>p.phantom=true},
-  {id:"heaven",name:"HEAVEN'S CALL",desc:"Perfect Draws rain arrows.",apply:p=>p.heaven=true}
+  {id:"ember",name:"EMBER ARROW",desc:"Arrows ignite targets.",once:true,apply:p=>p.ember=true},
+  {id:"frost",name:"FROST ARROW",desc:"Arrows slow targets.",once:true,apply:p=>p.frost=true},
+  {id:"storm",name:"STORM ARROW",desc:"Hits can chain lightning.",once:true,apply:p=>p.storm=true},
+  {id:"venom",name:"VENOM ARROW",desc:"Hits poison targets.",once:true,apply:p=>p.venom=true},
+  {id:"broad",name:"BROADSHAFT",desc:"+40% arrow hitbox.",apply:p=>p.arrowSize*=1.4},
+  {id:"executioner",name:"EXECUTIONER",desc:"+50% damage to enemies below 20% health.",once:true,apply:p=>p.executioner=true},
+  {id:"predator",name:"PREDATOR",desc:"Kills briefly increase movement speed.",once:true,apply:p=>p.predator=true},
+  {id:"chain",name:"CHAIN KILL",desc:"Rapid kills build damage.",once:true,apply:p=>p.chain=true},
+  {id:"mark",name:"HUNTER'S MARK",desc:"Marked enemies take +30% damage.",once:true,apply:p=>p.mark=true},
+  {id:"phantom",name:"PHANTOM STEP",desc:"Dash creates a spectral arrow.",once:true,apply:p=>p.phantom=true},
+  {id:"heaven",name:"HEAVEN'S CALL",desc:"Perfect Draws rain arrows.",once:true,apply:p=>p.heaven=true}
 ];
 
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
@@ -66,11 +70,12 @@ function start(){
   titleScreen.classList.remove("active"); titleScreen.classList.add("hidden");
   results.classList.add("hidden"); levelup.classList.add("hidden"); hud.classList.remove("hidden"); bossHud.classList.add("hidden");
   world = {
-    time:0, kills:0, arrows:[], arrowCount:0, crits:0, xp:0, level:1, nextXp:10, paused:false,
-    shake:0, flash:0, spawnClock:0, enemyId:0,
-    player:{x:innerWidth/2,y:innerHeight/2,r:15,speed:235,aim:0,hp:100,fireRate:3.1,shotClock:0,draw:0,drawDamage:30,
-       pierce:0,critChance:.05,range:620,bleed:false,windstep:false,multi:0,ember:false,frost:false,storm:false,venom:false,arrowSize:1,executioner:false,predator:false,chain:false,mark:false,phantom:false,heaven:false,chainCount:0,windTimer:0,dash:0,dashCooldown:0,dashX:0,dashY:0},
-    enemies:[], enemyArrows:[], particles:[], rings:[], trails:[], boss:null, bossSpawned:false, evolutions:new Set(), evolutionLog:[]
+    time:0, kills:0, arrows:[], arrowCount:0, crits:0, perfects:0, xp:0, level:1, nextXp:10, paused:false,
+    shake:0, flash:0, spawnClock:0, formationClock:150+Math.random()*20, enemyId:0, pendingRain:[],
+    player:{x:innerWidth/2,y:innerHeight/2,r:15,speed:235,aim:0,hp:100,fireRate:3.1,shotClock:0,draw:0,drawTime:0,drawDamage:30,
+       pierce:0,critChance:.05,range:620,bleed:false,windstep:false,multi:0,ember:false,frost:false,storm:false,venom:false,arrowSize:1,executioner:false,predator:false,chain:false,mark:false,phantom:false,heaven:false,chainCount:0,chainTimer:0,predatorTimer:0,invuln:0,windTimer:0,dash:0,dashCooldown:0,dashX:0,dashY:0},
+    enemies:[], enemyArrows:[], particles:[], rings:[], trails:[], boss:null, bossSpawned:false, evolutions:new Set(), evolutionLog:[],
+    taken:[], lastHitBy:null, snapshots:[], debugUsed:false
   };
   last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
 }
@@ -126,8 +131,9 @@ function spawnFormation(kind){
 
 function fireArrow(){
   const p=world.player, charge=clamp(p.draw,0,1);
-  const perfect=charge>.88;
+  const perfect=p.drawTime>=PERFECT_START && p.drawTime<=PERFECT_END;
   const crit=perfect || Math.random()<p.critChance;
+  if(perfect){world.perfects++; world.rings.push({x:p.x,y:p.y,r:p.r+6,life:.3,max:.3,perfect:true});}
   const speed=perfect?920:720+charge*180;
   const chainMult=p.chain?1+Math.min(p.chainCount,10)*.04:1;
   const damage=p.drawDamage*(.72+charge*.65)*(crit?(p.critDamage||2.15):1)*chainMult;
@@ -144,11 +150,23 @@ function fireArrow(){
   if(p.windstep){p.dashX=Math.cos(p.aim);p.dashY=Math.sin(p.aim); p.windTimer=.25;}
   p.shotClock=1/p.fireRate;
   if(perfect && p.heaven) rainArrows(p.x+Math.cos(p.aim)*260,p.y+Math.sin(p.aim)*260,4);
-  p.draw=0;
+  p.draw=0; p.drawTime=0;
 }
 
+// Queued on the world (not setTimeout) so the volley respects pause and level-up.
 function rainArrows(x,y,n=4){
-  for(let i=0;i<n;i++) setTimeout(()=>{if(!world||state!=="playing")return; const ox=x+(Math.random()-.5)*180,oy=y+(Math.random()-.5)*180; world.arrows.push({x:ox,y:oy-280,vx:0,vy:520,life:.65,damage:world.player.drawDamage*1.4,pierce:1,hit:new Set(),crit:true,angle:Math.PI/2,r:4}); burst(ox,oy,5,1.1);},i*70);
+  for(let i=0;i<n;i++) world.pendingRain.push({x,y,delay:i*.07});
+}
+function updateRain(dt){
+  const w=world;
+  for(const r of w.pendingRain){
+    r.delay-=dt;
+    if(r.delay>0) continue;
+    const ox=r.x+(Math.random()-.5)*180,oy=r.y+(Math.random()-.5)*180;
+    w.arrows.push({x:ox,y:oy-280,vx:0,vy:520,life:.65,damage:w.player.drawDamage*1.4,pierce:1,hit:new Set(),crit:true,angle:Math.PI/2,r:4});
+    burst(ox,oy,5,1.1);
+  }
+  w.pendingRain=w.pendingRain.filter(r=>r.delay>0);
 }
 function dash(){
   const p=world.player;
@@ -157,7 +175,7 @@ function dash(){
   const dy=(keys.has("KeyS")?1:0)-(keys.has("KeyW")?1:0);
   const len=Math.hypot(dx,dy)||1;
   p.dashX=dx/len || Math.cos(p.aim); p.dashY=dy/len || Math.sin(p.aim);
-  p.dash=.14; p.dashCooldown=1.15;
+  p.dash=.14; p.dashCooldown=1.15; p.invuln=Math.max(p.invuln,.24);
   burst(p.x,p.y,14,1.1);
   if(p.phantom){ for(let i=0;i<2+(p.phantomPower?1:0);i++){ const aa=p.aim+(i-1)*.12; world.arrows.push({x:p.x,y:p.y,vx:Math.cos(aa)*820,vy:Math.sin(aa)*820,life:.72,damage:p.drawDamage*.65,pierce:p.pierce,hit:new Set(),crit:false,angle:aa,r:3*p.arrowSize,elemental:true,phantom:true}); } }
 }
@@ -167,9 +185,25 @@ function burst(x,y,n,power=1){
     world.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.35,max:.7,r:1+Math.random()*2});}
 }
 
+function onKill(e){
+  if(e.dead) return;
+  const w=world,p=w.player;
+  e.dead=true; w.kills++;
+  if(p.chain){p.chainCount=Math.min(20,p.chainCount+1);p.chainTimer=2.5;}
+  if(p.predator) p.predatorTimer=1.6;
+  gainXp(e.xp||1); burst(e.x,e.y,12,1.4);
+}
+
+function hurtPlayer(amount,source){
+  const p=world.player;
+  if(p.invuln>0) return false;
+  p.hp-=amount; world.lastHitBy=source;
+  return true;
+}
+
 function gainXp(n){
   world.xp+=n;
-  if(world.xp>=world.nextXp){
+  if(world.xp>=world.nextXp && state==="playing"){
     world.xp-=world.nextXp; world.level++; world.nextXp=Math.floor(world.nextXp*1.22+3);
     openLevelUp();
   }
@@ -177,11 +211,12 @@ function gainXp(n){
 
 function checkEvolutions(){
   const p=world.player;
-  const evo=(id,name,fn)=>{if(world.evolutions.has(id))return;world.evolutions.add(id);fn();world.evolutionLog.push(name);world.flash=.35;world.shake=12;burst(p.x,p.y,32,2.5);};
-  if(p.multi>=1 && p.fireRate>=3.5) evo("barrage","BARRAGE",()=>{p.multi+=2;p.fireRate*=1.18;});
+  const evo=(id,name,fn)=>{if(world.evolutions.has(id))return;world.evolutions.add(id);fn();world.evolutionLog.push(name);world.flash=.35;world.shake=12;burst(p.x,p.y,32,2.5);showEvolution(name);};
+  // Thresholds need 2+ deliberate picks each, so evolutions feel earned rather than incidental.
+  if(p.multi>=2 && p.fireRate>=4.1) evo("barrage","BARRAGE",()=>{p.multi+=2;p.fireRate*=1.18;});
   if(p.pierce>=2 && p.range>=800 && p.drawDamage>=40) evo("worldpiercer","WORLDPIERCER",()=>{p.pierce=99;p.drawDamage*=1.35;p.range=1100;});
-  if(p.critChance>=.23 && p.range>=750) evo("deadshot","DEADSHOT",()=>{p.critChance=1;p.drawDamage*=1.2;});
-  if(p.ember && p.critChance>=.14) evo("hellfire","HELLFIRE",()=>{p.ember=true;p.critDamage=3.2;});
+  if(p.critChance>=.32 && p.range>=750) evo("deadshot","DEADSHOT",()=>{p.critChance+=.25;p.critDamage=Math.max(p.critDamage||2.15,2.6);p.drawDamage*=1.2;});
+  if(p.ember && p.critChance>=.14) evo("hellfire","HELLFIRE",()=>{p.ember=true;p.critDamage=Math.max(p.critDamage||2.15,3.2);});
   if(p.storm && p.multi>=1) evo("thunderstorm","THUNDERSTORM",()=>{p.storm=true;p.stormPower=2.5;});
   if(p.phantom && p.windstep) evo("phantomhunt","PHANTOM HUNT",()=>{p.multi+=1;p.phantomPower=3;});
 }
@@ -189,13 +224,24 @@ function openLevelUp(){
   state="levelup"; levelup.classList.remove("hidden");
   upgradeCards.innerHTML="";
   buildReadout.innerHTML=["LEVEL "+world.level,"ARROWS ×"+(1+world.player.multi),"PIERCE "+world.player.pierce,"CRIT "+Math.round(world.player.critChance*100)+"%"].map(x=>"<span>"+x+"</span>").join("")+(world.evolutions.size?Array.from(world.evolutions).map(x=>"<span class=\"evo\">"+x.toUpperCase()+"</span>").join(""):"");
-  const choices=[...upgrades].sort(()=>Math.random()-.5).slice(0,3);
+  const available=upgrades.filter(u=>!(u.once && world.taken.includes(u.id)));
+  const choices=[...available].sort(()=>Math.random()-.5).slice(0,3);
   for(const u of choices){
     const el=document.createElement("button"); el.className="card";
     el.innerHTML=`<b>${u.name}</b><span>${u.desc}</span>`;
-    el.onclick=()=>{u.apply(world.player); levelup.classList.add("hidden"); checkEvolutions(); state="playing";};
+    el.onclick=()=>{
+      u.apply(world.player); world.taken.push(u.id);
+      levelup.classList.add("hidden"); checkEvolutions(); state="playing";
+      gainXp(0); // chain into the next level-up if several were banked at once
+    };
     upgradeCards.appendChild(el);
   }
+}
+
+function showEvolution(name){
+  const t=document.createElement("div"); t.className="evolution-toast";
+  t.textContent="EVOLUTION — "+name;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
 }
 
 function update(dt){
@@ -203,32 +249,42 @@ function update(dt){
   w.time+=dt; p.aim=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   p.shotClock=Math.max(0,p.shotClock-dt); p.dashCooldown=Math.max(0,p.dashCooldown-dt);
   if(p.windTimer) p.windTimer=Math.max(0,p.windTimer-dt);
+  p.invuln=Math.max(0,p.invuln-dt);
+  if(p.predatorTimer) p.predatorTimer=Math.max(0,p.predatorTimer-dt);
+  if(p.chainTimer){p.chainTimer=Math.max(0,p.chainTimer-dt); if(!p.chainTimer)p.chainCount=0;}
   let mx=(keys.has("KeyD")?1:0)-(keys.has("KeyA")?1:0);
   let my=(keys.has("KeyS")?1:0)-(keys.has("KeyW")?1:0);
   const len=Math.hypot(mx,my)||1;
   if(p.dash>0){p.dash-=dt; p.x+=p.dashX*720*dt; p.y+=p.dashY*720*dt;}
   else {
-    let sp=p.speed*(p.windTimer>0?1.35:1);
+    let sp=p.speed*(p.windTimer>0?1.35:1)*(p.predatorTimer>0?1.25:1);
     p.x+=mx/len*sp*dt; p.y+=my/len*sp*dt;
   }
   p.x=clamp(p.x,30,innerWidth-30); p.y=clamp(p.y,30,innerHeight-30);
 
   if(mouse.down && p.shotClock<=0){
-    p.draw=clamp(p.draw+dt/0.72,0,1);
-    if(p.draw>=1) p.shotClock=0;
+    p.drawTime+=dt;
+    p.draw=clamp(p.drawTime/DRAW_TIME,0,1);
   }
   if(!mouse.down && p.draw>0){ fireArrow(); }
-  w.spawnClock-=dt;
+  updateRain(dt);
+  w.spawnClock-=dt; w.formationClock-=dt;
   if(w.time>=1140 && !w.bossSpawned){ spawnBoss(); w.bossSpawned=true; }
-  const targetRate=Math.max(.075,1.65-w.time*.075);
+  // Spawning is governed by maxActive; the interval floor just smooths refills.
+  const targetRate=Math.max(.22,1.65-w.time*.075);
+  const maxActive=Math.floor(12+Math.min(168,w.time*0.15));
   if(w.spawnClock<=0){
-    const maxActive=Math.floor(12+Math.min(168,w.time*0.15));
     const eliteChance=Math.min(.16,Math.max(0,(w.time-150)/900));
     if(w.enemies.length<maxActive) spawnEnemy(null,Math.random()<eliteChance);
     if(w.time>90&&w.enemies.length<maxActive&&Math.random()<.08)spawnEnemy(null,Math.random()<.25);
-    if(w.time>150&&Math.random()<.055)spawnFormation(pick(["crescent","funnel","spear","ring","crossfire","pursuit"]));
     w.spawnClock=targetRate;
   }
+  // Formations are set pieces on their own clock, and only when there's room for them.
+  if(w.formationClock<=0){
+    if(w.enemies.length+10<=maxActive+8) spawnFormation(pick(["crescent","funnel","spear","ring","crossfire","pursuit"]));
+    w.formationClock=Math.max(14,32-w.time/60)+Math.random()*8;
+  }
+  if(Math.floor(w.time/60)!==Math.floor((w.time-dt)/60)) w.snapshots.push({t:Math.round(w.time),level:w.level,hp:Math.round(p.hp),kills:w.kills,enemies:w.enemies.length});
   if(Math.floor(w.time/60)!==Math.floor((w.time-dt)/60)&&w.time>180){
     const event=pick(["migration","hunt","bloodmoon","quiet"]);w.event=event;w.eventTimer=event==="quiet"?18:12;
     if(event==="migration")spawnFormation("pursuit");
@@ -243,7 +299,8 @@ function update(dt){
     a.r = a.r ?? 2;
     a.x+=a.vx*dt;a.y+=a.vy*dt;a.life-=dt;
     for(const e of w.enemies){
-      if(a.hit.has(e.id)) continue;
+      if(a.life<=0) break;
+      if(e.dead || e.burrowing>0 || a.hit.has(e.id)) continue;
       if(Math.hypot(a.x-e.x,a.y-e.y)<a.r+e.r+4){
         a.hit.add(e.id);
         let mult=1;
@@ -257,7 +314,7 @@ function update(dt){
         if(p.bleed)e.bleed=.9; applyArrowElement(e);
         burst(e.x,e.y,a.crit?8:4,a.crit?1.5:.7);
         w.shake=Math.max(w.shake,a.crit?5:2);
-        if(e.hp<=0){w.kills++;p.chainCount=p.chain?Math.min(20,p.chainCount+1):0;if(p.predator)p.speed=Math.min(380,p.speed+5);gainXp(e.xp||1); burst(e.x,e.y,12,1.4);}
+        if(e.hp<=0) onKill(e);
         else if(a.pierce<=0){a.life=0;} else a.pierce--;
       }
     }
@@ -265,7 +322,7 @@ function update(dt){
   w.arrows=w.arrows.filter(a=>a.life>0 && a.x>-80&&a.x<innerWidth+80&&a.y>-80&&a.y<innerHeight+80);
   for(const b of w.enemyArrows){
     b.x+=b.vx*dt; b.y+=b.vy*dt; b.life-=dt;
-    if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){ p.hp-=18; b.life=0; w.flash=Math.max(w.flash,.22); burst(p.x,p.y,8,1.2); }
+    if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r && hurtPlayer(18,b.source||"arrow")){ b.life=0; p.invuln=.35; w.flash=Math.max(w.flash,.22); burst(p.x,p.y,8,1.2); }
   }
   w.enemyArrows=w.enemyArrows.filter(b=>b.life>0 && b.x>-80&&b.x<innerWidth+80&&b.y>-80&&b.y<innerHeight+80);
   if(w.boss){
@@ -276,17 +333,23 @@ function update(dt){
     if(b.phase===3){b.charge+=dt;if(b.charge>.9){fireBossArrow();b.charge=0;b.shotClock=.72;}}
     else if(b.shotClock<=0){fireBossArrow();b.shotClock=Math.max(.42,(b.phase===2?.82:1.2)-w.time/2200);}
     if(b.hitFlash)b.hitFlash-=dt;
-    if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r+4){p.hp-=24*dt;w.flash=Math.max(w.flash,.18);}
+    if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r+4 && hurtPlayer(24*dt,"THE HUNTMASTER")){w.flash=Math.max(w.flash,.18);}
   }
   if(w.boss){
     for(const a of w.arrows){
-      if(Math.hypot(a.x-w.boss.x,a.y-w.boss.y)<a.r+w.boss.r){
+      if(a.life>0 && Math.hypot(a.x-w.boss.x,a.y-w.boss.y)<a.r+w.boss.r){
         w.boss.hp-=a.damage*(w.boss.phase===3?1.2:1); w.boss.hitFlash=.08; a.life=0;
         burst(w.boss.x,w.boss.y,a.crit?8:4,a.crit?1.4:.7); w.shake=Math.max(w.shake,a.crit?5:2);
       }
     }
   }
   for(const e of w.enemies){
+    if(e.burrowing>0){
+      // Submerged: untouchable, telegraphed by a ring at the exit point (see drawBurrowWarning).
+      e.burrowing-=dt;
+      if(e.burrowing<=0){e.x=e.burrowX;e.y=e.burrowY;burst(e.x,e.y,14,1.3);w.shake=Math.max(w.shake,3);}
+      continue;
+    }
     const a=Math.atan2(p.y-e.y,p.x-e.x);
     const sp=e.speed*(e.type==="wolf"?1.12:1)*(e.slow?0.55:1);
     e.x+=Math.cos(a)*sp*dt;e.y+=Math.sin(a)*sp*dt;
@@ -296,24 +359,34 @@ function update(dt){
     if(e.burn){e.burn-=dt;e.hp-=11*dt;}
     if(e.poison){e.poison-=dt;e.hp-=8*dt;}
     if(e.slow)e.slow=Math.max(0,e.slow-dt);
-    if(e.type==="hunter"&&e.shotClock<=0){const aa=Math.atan2(p.y-e.y,p.x-e.x);w.enemyArrows.push({x:e.x,y:e.y,vx:Math.cos(aa)*300,vy:Math.sin(aa)*300,life:3,r:5});e.shotClock=2.1;}
-    if(e.type==="burrower"&&Math.random()<dt*.22){e.x=p.x+(Math.random()-.5)*260;e.y=p.y+(Math.random()-.5)*260;}
+    if(e.type==="hunter"&&e.shotClock<=0){const aa=Math.atan2(p.y-e.y,p.x-e.x);w.enemyArrows.push({x:e.x,y:e.y,vx:Math.cos(aa)*300,vy:Math.sin(aa)*300,life:3,r:5,source:"HUNTER"});e.shotClock=2.1;}
+    if(e.type==="burrower"){
+      e.burrowCd=(e.burrowCd??3+Math.random()*3)-dt;
+      if(e.burrowCd<=0){
+        const ba=Math.random()*TAU,bd=150+Math.random()*80;
+        e.burrowX=clamp(p.x+Math.cos(ba)*bd,30,innerWidth-30); e.burrowY=clamp(p.y+Math.sin(ba)*bd,30,innerHeight-30);
+        e.burrowing=.9; e.burrowCd=4+Math.random()*3; burst(e.x,e.y,10,1);
+        continue;
+      }
+    }
     e.shotClock-=dt;
     if(e.marked)e.marked=Math.max(0,e.marked-dt);
 
     if(e.hitFlash)e.hitFlash-=dt;
-    if(Math.hypot(e.x-p.x,e.y-p.y)<e.r+p.r){
-      p.hp-=e.damage*dt; w.flash=Math.max(w.flash,.18);
+    if(Math.hypot(e.x-p.x,e.y-p.y)<e.r+p.r && hurtPlayer(e.damage*dt,(e.elite?e.eliteType.toUpperCase()+" ":"")+e.type.toUpperCase())){
+      w.flash=Math.max(w.flash,.18);
     }
   }
-  w.enemies=w.enemies.filter(e=>e.hp>0);
+  // Damage-over-time and chain lightning kills get credited here.
+  for(const e of w.enemies) if(e.hp<=0) onKill(e);
+  w.enemies=w.enemies.filter(e=>!e.dead);
   for(const r of w.rings){r.life-=dt;r.r+=120*dt;} w.rings=w.rings.filter(r=>r.life>0);
   for(const q of w.particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.96;q.vy*=.96;q.life-=dt;}
   w.particles=w.particles.filter(q=>q.life>0);
   w.shake=Math.max(0,w.shake-dt*18); w.flash=Math.max(0,w.flash-dt);
-  if(p.hp<=0) finish(false);
-  if(w.boss && w.boss.hp<=0) finish(true);
-  if(w.time>=1230) finish(false);
+  if(p.hp<=0) finish(false, w.lastHitBy||"unknown");
+  else if(w.boss && w.boss.hp<=0) finish(true, null);
+  else if(w.time>=1230) finish(false, "time");
   hudUpdate();
 }
 
@@ -330,27 +403,51 @@ function fireBossArrow(){
   const a=Math.atan2(p.y-b.y,p.x-b.x);
   for(let i=-1;i<=1;i++){
     const aa=a+i*.12;
-    world.enemyArrows.push({x:b.x,y:b.y,vx:Math.cos(aa)*360,vy:Math.sin(aa)*360,life:3,r:6});
+    world.enemyArrows.push({x:b.x,y:b.y,vx:Math.cos(aa)*360,vy:Math.sin(aa)*360,life:3,r:6,source:"THE HUNTMASTER"});
   }
 }
 
 function saveMeta(){localStorage.setItem("arrowfall-meta",JSON.stringify(meta));}
-function finish(win){
+function finish(win,cause){
   if(state==="results")return;
   meta.kills+=world.kills;if(win)meta.wins++;meta.bestTime=Math.max(meta.bestTime,world.time);meta.bestKills=Math.max(meta.bestKills,world.kills);saveMeta();
+  logRun(win?"victory":"death",cause);
   state="results"; results.classList.remove("hidden");
   document.querySelector("#result-title").textContent=win?"HUNT COMPLETE":"THE HUNTER FALLS";
+  document.querySelector("#result-cause").textContent=win?"THE HUNTMASTER IS SLAIN":cause==="time"?"THE HUNTMASTER ESCAPED":"FELLED BY "+String(cause).toUpperCase()+" AT "+fmt(world.time);
   document.querySelector("#result-time").textContent=fmt(world.time);
   document.querySelector("#result-kills").textContent=world.kills;
-  document.querySelector("#result-crits").textContent=world.crits;
+  document.querySelector("#result-crits").textContent=world.perfects;
   document.querySelector("#result-arrows").textContent=world.arrowCount;
+}
+
+// Local playtest telemetry: one record per run, exportable from Options.
+function loadRuns(){try{return JSON.parse(localStorage.getItem(RUN_LOG_KEY)||"[]");}catch{return [];}}
+function logRun(outcome,cause){
+  const w=world,p=w.player;
+  const runs=loadRuns();
+  runs.push({
+    date:new Date().toISOString(), outcome, cause, time:Math.round(w.time), level:w.level, kills:w.kills,
+    hp:Math.max(0,Math.round(p.hp)), arrows:w.arrowCount, perfects:w.perfects, crits:w.crits,
+    picks:w.taken, evolutions:[...w.evolutions], snapshots:w.snapshots, debugUsed:w.debugUsed
+  });
+  try{localStorage.setItem(RUN_LOG_KEY,JSON.stringify(runs.slice(-100)));}catch{}
+}
+function exportRuns(){
+  const blob=new Blob([JSON.stringify(loadRuns(),null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="arrowfall-playtest-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 function hudUpdate(){
   const w=world,p=w.player;
   document.querySelector("#timer").textContent=fmt(w.time);
   document.querySelector("#kill-count").textContent=`${w.kills} HUNTED`;
-  document.querySelector("#draw-meter i").style.width=(p.draw*100)+"%";
-  document.querySelector("#shot-state").textContent=p.draw>.88?"PERFECT DRAW":p.draw>0?"DRAWN SHOT":"QUICK SHOT";
+  const drawState=p.drawTime>PERFECT_END?"over":p.drawTime>=PERFECT_START?"perfect":p.draw>0?"drawing":"";
+  const meter=document.querySelector("#draw-meter");
+  meter.querySelector("i").style.width=(p.draw*100)+"%";
+  meter.className=drawState;
+  document.querySelector("#shot-state").textContent={over:"OVERDRAWN",perfect:"PERFECT — RELEASE",drawing:"DRAWING"}[drawState]||"QUICK SHOT";
   document.querySelector("#level").textContent=w.level;
   document.querySelector("#xp-text").textContent=`${Math.floor(w.xp)} / ${w.nextXp}`;
   document.querySelector("#xp-fill").style.width=(w.xp/w.nextXp*100)+"%";
@@ -358,6 +455,7 @@ function hudUpdate(){
   document.querySelector("#health-fill").style.width=clamp(p.hp/100,0,1)*100+"%";
   document.querySelector("#health-text").textContent=Math.max(0,Math.ceil(p.hp))+" HP";
   document.querySelector("#event-banner").textContent=w.eventTimer?({"migration":"THE MIGRATION","hunt":"THE HUNT","bloodmoon":"BLOOD MOON","quiet":"QUIET GROVE"}[w.event]||""):"";
+  if(DEBUG) document.querySelector("#hint").textContent="DEBUG  ]  +2:00   \\  BOSS   L  LEVEL   H  HEAL";
   if(w.boss){bossHud.classList.remove("hidden");document.querySelector("#boss-fill").style.width=clamp(w.boss.hp/w.boss.maxHp,0,1)*100+"%";document.querySelector("#boss-phase").textContent="PHASE "+(["I","II","III"][w.boss.phase-1]||"I");}else bossHud.classList.add("hidden");
 }
 
@@ -369,8 +467,8 @@ function draw(){
   const g=ctx.createRadialGradient(p.x,p.y,20,p.x,p.y,Math.max(innerWidth,innerHeight)*.75);
   g.addColorStop(0,"#14281d");g.addColorStop(.48,"#0a1710");g.addColorStop(1,"#030706");ctx.fillStyle=g;ctx.fillRect(-20,-20,innerWidth+40,innerHeight+40);
   drawForest();
-  for(const r of w.rings){ctx.globalAlpha=clamp(r.life/r.max,0,1);ctx.strokeStyle=r.boss?"#ff806f":"#9dffbd";ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,TAU);ctx.stroke();}ctx.globalAlpha=1;
-  for(const e of w.enemies) drawEnemy(e);
+  for(const r of w.rings){ctx.globalAlpha=clamp(r.life/r.max,0,1);ctx.strokeStyle=r.boss?"#ff806f":r.perfect?"#fff2a8":"#9dffbd";ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,TAU);ctx.stroke();}ctx.globalAlpha=1;
+  for(const e of w.enemies) e.burrowing>0?drawBurrowWarning(e):drawEnemy(e);
   for(const a of w.arrows) drawArrow(a);
   for(const b of w.enemyArrows) drawEnemyArrow(b);
   if(w.boss) drawBoss(w.boss);
@@ -394,9 +492,23 @@ function drawForest(){
 
 
 
+function drawBurrowWarning(e){
+  const t=1-clamp(e.burrowing/.9,0,1);
+  ctx.save();ctx.translate(e.burrowX,e.burrowY);
+  ctx.globalAlpha=.35+.45*t;ctx.strokeStyle="#ff9a6b";ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(0,0,e.r+18-14*t,0,TAU);ctx.stroke();
+  ctx.globalAlpha=.25*t;ctx.fillStyle="#ff9a6b";ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();
+  ctx.restore();
+}
+
 function drawPlayer(p){
+  if(p.drawTime>=PERFECT_START && p.drawTime<=PERFECT_END){
+    ctx.save();ctx.strokeStyle="#fff2a8";ctx.lineWidth=2;ctx.shadowBlur=16;ctx.shadowColor="#fff2a8";
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r+9,0,TAU);ctx.stroke();ctx.restore();
+  }
   ctx.save();
   ctx.translate(p.x,p.y);
+  if(p.invuln>0) ctx.globalAlpha=.55;
   ctx.rotate(p.aim);
   const moving = keys.has("KeyW")||keys.has("KeyA")||keys.has("KeyS")||keys.has("KeyD");
   ctx.shadowBlur=18; ctx.shadowColor="#9dffbd";
@@ -475,6 +587,7 @@ document.querySelector("#play-button").addEventListener("click",start);
 document.querySelector("#restart-button").addEventListener("click",start);
 document.querySelector("#resume-button").addEventListener("click",()=>{if(state==="paused")togglePause();});
 document.querySelector("#quit-button").addEventListener("click",()=>{
+  if(world&&(state==="paused"||state==="playing"||state==="levelup"))logRun("abandoned","quit");
   if(world){state="menu";pause.classList.add("hidden");hud.classList.add("hidden");bossHud.classList.add("hidden");results.classList.add("hidden");}
   titleScreen.classList.remove("hidden");titleScreen.classList.add("active");
 });
@@ -486,9 +599,11 @@ document.querySelectorAll(".menu-panel-btn").forEach(btn=>btn.addEventListener("
   menuPanelTitle.textContent=panel==="arsenal"?"ARSENAL":panel==="log"?"HUNTER'S LOG":"OPTIONS";
   if(panel==="arsenal") menuPanelBody.innerHTML="<div class='log-grid'><div><b>THE BOW</b><span>Quick, drawn, and perfect releases.</span></div><div><b>WINDSTEP</b><span>Fire to move with the wind.</span></div><div><b>PHANTOM STEP</b><span>Dash to send spectral arrows.</span></div><div><b>PERFECT DRAW</b><span>Release inside the bright window for a critical shot.</span></div></div>";
   else if(panel==="log") menuPanelBody.innerHTML="<div class='log-grid'>"+["CRAWLER","WOLF","BRUTE","SHIELDBEARER","WISP","HUNTER","BURROWER","MIMIC","THE HUNTMASTER","BARRAGE","WORLDPIERCER","DEADSHOT","HELLFIRE","THUNDERSTORM","PHANTOM HUNT"].map(x=>"<div><b>"+x+"</b><span>ENCOUNTERED</span></div>").join("")+"</div>";
-  else menuPanelBody.innerHTML="<div class='log-grid'><div><b>CONTROLS</b><span>WASD move • Mouse aim • Hold/release fire • Space dash • P / Esc pause.</span></div><div><b>HIGH CONTRAST</b><span><button id='contrast-toggle' class='secondary'>TOGGLE</button></span></div><div><b>PROFILE</b><span>"+meta.runs+" hunts • "+meta.wins+" victories • "+meta.kills+" total hunted</span></div></div>";
+  else menuPanelBody.innerHTML="<div class='log-grid'><div><b>CONTROLS</b><span>WASD move • Mouse aim • Hold/release fire • Space dash • P / Esc pause.</span></div><div><b>HIGH CONTRAST</b><span><button id='contrast-toggle' class='secondary'>TOGGLE</button></span></div><div><b>PROFILE</b><span>"+meta.runs+" hunts • "+meta.wins+" victories • "+meta.kills+" total hunted</span></div><div><b>PLAYTEST LOG</b><span>"+loadRuns().length+" runs recorded <button id='export-runs' class='secondary'>EXPORT</button> <button id='clear-runs' class='secondary'>CLEAR</button></span></div></div>";
   menuPanel.classList.remove("hidden");
   const contrast=document.querySelector("#contrast-toggle");
+  const exp=document.querySelector("#export-runs"); if(exp) exp.onclick=exportRuns;
+  const clr=document.querySelector("#clear-runs"); if(clr) clr.onclick=()=>{if(confirm("Clear all recorded playtest runs?")){localStorage.removeItem(RUN_LOG_KEY);btn.click();}};
   if(contrast) contrast.onclick=()=>{document.body.classList.toggle("high-contrast");localStorage.setItem("arrowfall-contrast",document.body.classList.contains("high-contrast")?"1":"0");};
 }));
 if(localStorage.getItem("arrowfall-contrast")==="1")document.body.classList.add("high-contrast");
@@ -500,9 +615,21 @@ addEventListener("keydown",e=>{
   if(["INPUT","TEXTAREA"].includes(document.activeElement?.tagName))return;
   if(e.code==="Escape"||e.code==="KeyP"){e.preventDefault();if(state==="playing"||state==="paused")togglePause();return;}
   if(e.code==="Space"){e.preventDefault();if(state==="playing")dash();return;}
+  if(DEBUG && state==="playing" && debugKey(e.code)) return;
   keys.add(e.code);
 });
 addEventListener("keyup",e=>keys.delete(e.code));
+
+// Playtest shortcuts. Active in `npm run dev` or with ?debug in the URL; flagged in the run log.
+function debugKey(code){
+  const w=world,p=w.player;
+  if(code==="BracketRight"){w.time=Math.min(1139,w.time+120);}
+  else if(code==="Backslash"){w.time=Math.max(w.time,1137);}
+  else if(code==="KeyL"){w.xp=w.nextXp;gainXp(0);}
+  else if(code==="KeyH"){p.hp=100;}
+  else return false;
+  w.debugUsed=true; return true;
+}
 
 window.addEventListener("error",e=>{
   console.error("Arrowfall runtime error:",e.error||e.message);
@@ -511,3 +638,4 @@ window.addEventListener("error",e=>{
     document.querySelector("#hint").textContent="A runtime error was caught. Reload to reset the hunt.";
   }
 });
+if(DEBUG) window.arrowfall={get world(){return world;}};
