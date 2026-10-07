@@ -26,7 +26,7 @@
     "sprites": "node tools/render-sprites/run.mjs"
   },
   "dependencies": {
-    "@slu/web-shell": "github:mikeylambo/Web-Game-Shell-v1.02#d5bdb4ae2ac09109088a5f0e524badd60996ee3b",
+    "@slu/web-shell": "file:vendor/slu-web-shell-1.1.0-d5bdb4a.tgz",
     "pixi.js": "^8.14.0"
   },
   "devDependencies": {

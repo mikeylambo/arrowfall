@@ -2,7 +2,7 @@
 
 ## Verified in this pass (stabilize + visual readability)
 
-`npm ci && npm run check` passes from a clean install against the pinned shell (`github:mikeylambo/Web-Game-Shell-v1.02#d5bdb4a`). The check runs Prettier, typecheck, lint, 27 unit/integration tests, the production build and 5 browser tests.
+`npm ci && npm run check` passes from a clean install against the vendored shell (`vendor/slu-web-shell-1.1.0-d5bdb4a.tgz`, commit `d5bdb4a`). The check runs Prettier, typecheck, lint, 27 unit/integration tests, the production build and 5 browser tests.
 
 - **Stress gate passes.** The scene holds 350 enemies and 600 live arrows. Simulation p99 is 4.6–6.7 ms against a 12 ms budget (previously 18.4 ms measured with a cold 180-frame method). The atmosphere update stays under 1 ms (measured 0.05–0.14 ms). See `TUNING_LOG.md` and `evidence/performance.json`.
 - **`T.autoLoose = false`.** The draw holds at overdraw until release. Setting it to `true` restores the auto-release. Both paths are unit-tested.

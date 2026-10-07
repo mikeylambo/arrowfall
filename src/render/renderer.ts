@@ -171,17 +171,19 @@ export class View {
     const override = new URLSearchParams(location.search).get('sprites');
     if (override !== 'off') this.hunterSheet = await loadSheet(override ?? SHEETS.hunter);
     this.diegetic.sheetBow = !!this.hunterSheet;
-    if (override !== 'off')
+    // Enemy and boss sheets (most of the ~19 MB) stream in behind the menu; each character
+    // shows its baked stand-in until its own sheet arrives.
+    if (override !== 'off') {
       for (const id of Object.values(SHEETS.enemies))
-        for (const sheetId of [id, id + '-elite']) {
-          const sheet = await loadSheet(sheetId);
-          if (sheet) this.enemySheets[sheetId] = sheet;
-        }
-    if (override !== 'off')
-      for (const [boss, id] of Object.entries(SHEETS.bosses)) {
-        const sheet = await loadSheet(id);
-        if (sheet) this.bossSheets[boss] = sheet;
-      }
+        for (const sheetId of [id, id + '-elite'])
+          void loadSheet(sheetId).then((sheet) => {
+            if (sheet) this.enemySheets[sheetId] = sheet;
+          });
+      for (const [boss, id] of Object.entries(SHEETS.bosses))
+        void loadSheet(id).then((sheet) => {
+          if (sheet) this.bossSheets[boss] = sheet;
+        });
+    }
     this.raven.texture = this.art.raven;
     this.raven.anchor.set(0.5);
     this.raven.scale.set(0.45);

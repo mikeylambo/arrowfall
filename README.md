@@ -4,7 +4,7 @@ Top-down archery survivors game rebuilt from the attached GDD using TypeScript, 
 
 ## Run the review bundle
 
-The SLU shell is pinned to a commit of the private `mikeylambo/Web-Game-Shell-v1.02` repository, so `npm ci` needs GitHub read access to it.
+The SLU shell is vendored as `vendor/slu-web-shell-1.1.0-d5bdb4a.tgz`, packed from commit `d5bdb4a` of the private `mikeylambo/Web-Game-Shell-v1.02` repository, so `npm ci` needs no GitHub access.
 
 ```bash
 cd arrowfall
