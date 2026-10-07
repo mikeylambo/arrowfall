@@ -50,6 +50,11 @@ export const T = {
   hitstopDeadeye: 0.12,
   /** Level-up surge: real seconds of slow motion before the cards, and the time scale. */
   levelSurge: 0.55,
+  /** Boss arrival and fall cinematics: real seconds and the time scale while they play. */
+  bossIntro: 2.4,
+  bossIntroScale: 0.1,
+  bossFall: 1.8,
+  bossFallScale: 0.2,
   levelSurgeScale: 0.2,
   /** Level-up shockwave: radius (px) and how far it shoves enemies outward (px). */
   levelNova: 300,

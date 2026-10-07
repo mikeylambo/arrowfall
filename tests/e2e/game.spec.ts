@@ -77,6 +77,9 @@ test('deadeye paints and releases a real volley', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 test('all four bosses spawn, take damage, change phase and die', async ({ page }) => {
+  // Each boss now plays an arrival and a fall cinematic (slow motion), which software
+  // rendering stretches several-fold.
+  test.setTimeout(300_000);
   const errors = await boot(page);
   await command(page, 'window.__ARROWFALL__.startRun()');
   await command(page, 'window.__ARROWFALL__.god()');
@@ -89,13 +92,27 @@ test('all four bosses spawn, take damage, change phase and die', async ({ page }
       .poll(() => command(page, 'window.__ARROWFALL__.state.boss?.hp'))
       .toBeGreaterThan(0);
     await command(page, 'window.__ARROWFALL__.damageBoss()');
-    await expect.poll(() => command(page, 'window.__ARROWFALL__.state.boss?.phase')).toBe(2);
+    await expect
+      .poll(() => command(page, 'window.__ARROWFALL__.state.boss?.phase'), { timeout: 60_000 })
+      .toBe(2);
     await page.screenshot({ path: `test-results/boss-${i}.png` });
     await command(page, 'window.__ARROWFALL__.killBoss()');
     await expect.poll(() => command(page, 'window.__ARROWFALL__.state.boss')).toBeNull();
+    // Relic cards (or the final victory) follow the boss's fall cinematic.
+    await expect
+      .poll(
+        () =>
+          command(
+            page,
+            'window.__ARROWFALL__.sim().offers.length > 0 || !!window.__ARROWFALL__.sim().outcome',
+          ),
+        { timeout: 60_000 },
+      )
+      .toBe(true);
     await command(page, 'window.__ARROWFALL__.choose(0)');
   }
-  await expect(page.getByText('Hunt Complete', { exact: true })).toBeVisible();
+  // Victory follows the Huntmaster's fall cinematic.
+  await expect(page.getByText('Hunt Complete', { exact: true })).toBeVisible({ timeout: 60_000 });
   expect(errors).toEqual([]);
 });
 test('evolutions are selectable and emit damage/effect evidence', async ({ page }) => {

@@ -120,7 +120,24 @@ export class Synth implements AudioSystem {
     else if (id.startsWith('enemy.hit')) {
       this.noise(0.045, 0.055);
       if (id.endsWith('armor')) this.tone(1400, 0.08, 'sine', 0.035);
-    } else if (id.includes('telegraph') || id === 'boss.intro' || id === 'formation.arrival')
+    } else if (id === 'boss.intro') {
+      // War drums under a rising drone.
+      [0, 300, 600, 760, 920].forEach((ms, i) =>
+        setTimeout(() => {
+          this.tone(i < 3 ? 55 : 73.42, 0.6, 'sine', 0.4, 'sfx', 0.45);
+          this.noise(0.12, 0.12);
+        }, ms),
+      );
+      this.tone(73.42, 2.4, 'sawtooth', 0.05, 'sfx', 2);
+      this.tone(110, 2.4, 'triangle', 0.06, 'sfx', 2);
+    } else if (id === 'boss.fall') {
+      // Collapse, then a resolving major chord.
+      this.noise(1.2, 0.35);
+      this.tone(82.41, 1.4, 'sine', 0.45, 'sfx', 0.4);
+      setTimeout(() => {
+        for (const f of [261.63, 329.63, 392, 523.25, 659.25]) this.tone(f, 2.2, 'sine', 0.06);
+      }, 500);
+    } else if (id.includes('telegraph') || id === 'formation.arrival')
       this.tone(146.83, 0.4, 'triangle', 0.15, 'sfx', 1.5);
     else if (id === 'hit.crit') {
       // A bright glassy ting, throttled so a volley of crits stays musical.
@@ -167,7 +184,7 @@ export class Synth implements AudioSystem {
     this.cue = id;
   }
   /** Ambient score. `quiet` (cards, pause) keeps only the pad: no pulse, no draw tone. */
-  tick(time: number, drawing: number, quiet = false) {
+  tick(time: number, drawing: number, quiet = false, boss = false) {
     if (!this.context) return;
     const now = this.context.currentTime;
     if (now >= this.nextBeat) {
@@ -185,7 +202,12 @@ export class Synth implements AudioSystem {
       const notes = minor ? [73.42, 87.31, 110, 130.81] : [73.42, 98, 110, 146.83];
       for (const f of notes) this.tone(f, 2.5, 'sine', 0.028, 'music');
       if (quiet) return;
-      if (time > 120) this.tone(49, 0.2, 'triangle', 0.08, 'music');
+      if (boss) {
+        // Battle pulse: a doubled heartbeat drum while a boss lives.
+        this.tone(55, 0.25, 'sine', 0.22, 'music', 0.5);
+        setTimeout(() => this.tone(55, 0.2, 'sine', 0.16, 'music', 0.5), 180);
+        this.tone(220, 0.1, 'triangle', 0.03, 'music');
+      } else if (time > 120) this.tone(49, 0.2, 'triangle', 0.08, 'music');
       if (drawing > 0) this.tone(80 + drawing * 180, 0.08, 'triangle', 0.025);
     }
   }

@@ -688,7 +688,8 @@ if (devMode) {
       if (game) {
         game.choiceGuard = 0;
         game.choose(i);
-        hideUI();
+        // Never hide the results screen: a finished hunt has nothing to choose.
+        if (!game.outcome) hideUI();
       }
     },
     damageBoss: (fraction = 0.35) => {
@@ -782,7 +783,7 @@ function hud(g: Hunt) {
     .join(
       ' · ',
     )}<br><b>${[...g.evolutions].map((id) => EVOLUTIONS.find((e) => e.id === id)?.name).join(' · ')}</b>`;
-  $('banner').textContent = g.bannerTime > 0 ? g.banner : '';
+  $('banner').textContent = g.bannerTime > 0 && g.cinematic <= 0 ? g.banner : '';
   $('boss').innerHTML = g.boss
     ? `${BOSSES[g.boss.boss].name} · ${['I', 'II', 'III'][g.boss.phase - 1]}<div class="bar"><i style="width:${(g.boss.hp / g.boss.maxHp) * 100}%"></i></div>`
     : '';
@@ -807,6 +808,22 @@ surge.id = 'surge';
 surge.innerHTML =
   '<div class="surge-flash"></div><div class="surge-text"><small>Level</small><b></b></div>';
 document.body.append(surge);
+/** Boss cinematics: letterbox bars and a title card (arrival) or a Vanquished card (fall). */
+const cine = document.createElement('div');
+cine.id = 'cine';
+cine.innerHTML =
+  '<i class="bar top"></i><i class="bar bottom"></i><div class="cine-card"><small></small><h2></h2><p></p></div>';
+document.body.append(cine);
+function bossCard(index: number, kind: 'intro' | 'fall') {
+  const b = BOSSES[index];
+  cine.querySelector('small')!.textContent = kind === 'intro' ? b.epithet : 'Vanquished';
+  cine.querySelector('h2')!.textContent = b.name;
+  cine.querySelector('p')!.textContent =
+    kind === 'intro' ? b.hint : '+50 Moonsilver · a relic awaits';
+  cine.className = '';
+  void cine.offsetWidth;
+  cine.className = 'play ' + kind;
+}
 function surgeBanner(level: number) {
   surge.querySelector('b')!.textContent = String(level);
   surge.classList.remove('play');
@@ -893,7 +910,7 @@ function tick(now: number) {
       dt,
       controls.touching ? 'touch' : controls.usingPad ? 'pad' : 'mouse',
       options.holdFire,
-      uiScreen === 'gameplay-placeholder',
+      uiScreen === 'gameplay-placeholder' && g.cinematic <= 0,
     );
   }
   view.render(g, dt);
@@ -901,10 +918,12 @@ function tick(now: number) {
     if (event.id === 'number.crit' || event.id === 'number.deadeye') audio.playSfx('hit.crit');
     else if (!event.id.startsWith('number.')) audio.playSfx(event.id);
     if (event.id === 'level.up' && scene === 'hunt') surgeBanner(event.value);
+    if (event.id === 'boss.intro' && scene === 'hunt') bossCard(event.value, 'intro');
+    if (event.id === 'boss.fall' && scene === 'hunt') bossCard(event.value, 'fall');
   }
   g.events.length = 0;
   if (app.shell.session.phase === 'playing')
-    audio.tick(g.time, g.player.draw, uiScreen !== 'gameplay-placeholder');
+    audio.tick(g.time, g.player.draw, uiScreen !== 'gameplay-placeholder', !!g.boss);
   $('perf').textContent = showPerf
     ? `${view.fps.toFixed(1)} FPS · ${(1000 / view.fps).toFixed(2)} ms\n${g.enemies.count} enemies · ${g.arrows.count} arrows\n${g.threats.count} threats · ${g.particles.count} particles\nPerfect ${g.perfects}/${g.shots} · cap ${g.cap()}\n${Object.entries(
         g.damageSources,

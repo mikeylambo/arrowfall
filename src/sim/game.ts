@@ -161,6 +161,14 @@ export class Hunt {
   pendingLevels = 0;
   /** Real seconds left in the level-up surge (slow motion); cards wait for it to end. */
   levelSurge = 0;
+  /** Boss cinematic: real seconds left, kind, and the point the camera frames. */
+  cinematic = 0;
+  cinematicKind: 'intro' | 'fall' = 'intro';
+  cinematicX = 0;
+  cinematicY = 0;
+  /** A felled boss's relic cards (or the Huntmaster's victory) wait for its fall cinematic. */
+  pendingRelic = false;
+  pendingVictory = false;
   offers: string[] = [];
   choiceGuard = 0;
   outcome = '';
@@ -351,6 +359,9 @@ export class Hunt {
     const e = this.spawn(0, this.player.x + 500, this.player.y);
     if (!e) return;
     const b = BOSSES[index];
+    // The boss arena is centred where the hunter stands when the boss arrives.
+    this.eventX = this.player.x;
+    this.eventY = this.player.y;
     e.boss = index;
     e.hp = b.hp * (this.phase >= 1 ? 1.25 : 1);
     e.maxHp = b.hp * (this.phase >= 1 ? 1.25 : 1);
@@ -361,7 +372,8 @@ export class Hunt {
     this.boss = e;
     this.bossMask |= 1 << index;
     this.announce(b.name);
-    this.emit('boss.intro');
+    this.emit('boss.intro', e.x, e.y, index);
+    if (this.scene === 'hunt') this.startCinematic('intro', e.x, e.y, T.bossIntro);
   }
   cap() {
     if (this.boss) return [20, 30, 40, 0][this.boss.boss];
@@ -447,8 +459,16 @@ export class Hunt {
       realDt *
       (this.deadeye > 0 ? T.deadeyeScale : this.enemyDeadeye > 0 ? 0.35 : 1) *
       (this.slowMotion ? 0.25 : 1) *
-      (this.levelSurge > 0 ? T.levelSurgeScale : 1);
+      (this.levelSurge > 0 ? T.levelSurgeScale : 1) *
+      (this.cinematic > 0
+        ? this.cinematicKind === 'intro'
+          ? T.bossIntroScale
+          : T.bossFallScale
+        : 1);
     this.levelSurge = Math.max(0, this.levelSurge - realDt);
+    if (this.cinematic > 0) {
+      this.cinematic = Math.max(0, this.cinematic - realDt);
+    }
     const p = this.player;
     if (this.scene === 'hunt' || this.scene === 'range') this.time += dt;
     this.moving = len(input.mx, input.my) > 0.1;
@@ -657,7 +677,22 @@ export class Hunt {
         this.announce('Second Wind');
       } else this.finish('The Hunter Falls');
     }
-    if (this.pendingLevels > 0 && this.deadeye <= 0 && this.levelSurge <= 0) {
+    if (this.cinematic <= 0 && this.pendingVictory) {
+      this.pendingVictory = false;
+      this.finish('Hunt Complete');
+      return;
+    }
+    if (this.cinematic <= 0 && this.pendingRelic) {
+      this.pendingRelic = false;
+      this.offer(true);
+      return;
+    }
+    if (
+      this.pendingLevels > 0 &&
+      this.deadeye <= 0 &&
+      this.levelSurge <= 0 &&
+      this.cinematic <= 0
+    ) {
       this.pendingLevels--;
       this.offer();
     }
@@ -730,7 +765,7 @@ export class Hunt {
   }
   hurt(amount: number) {
     const p = this.player;
-    if (this.god || p.invuln > 0 || p.dodge > 0) return;
+    if (this.god || p.invuln > 0 || p.dodge > 0 || this.cinematic > 0) return;
     p.hp -= amount;
     p.invuln = T.invulnerability;
     this.shake = T.maxShake;
@@ -774,12 +809,16 @@ export class Hunt {
       const id = BOSSES[e.boss].id;
       if (!this.profile.bosses.includes(id)) this.profile.bosses.push(id);
       this.boss = null;
+      this.emit('boss.fall', e.x, e.y, e.boss);
       this.emit('relic.open');
+      if (this.scene === 'hunt') this.startCinematic('fall', e.x, e.y, T.bossFall);
       if (e.boss === 3) {
-        this.finish('Hunt Complete');
+        if (this.cinematic > 0) this.pendingVictory = true;
+        else this.finish('Hunt Complete');
         return;
       }
-      this.offer(true);
+      if (this.cinematic > 0) this.pendingRelic = true;
+      else this.offer(true);
     }
     if (distance(e, this.player) >= this.bow.near && distance(e, this.player) <= this.bow.far)
       this.sweetKills++;
@@ -794,6 +833,13 @@ export class Hunt {
       this.emit('level.up', this.player.x, this.player.y, this.level);
       if (this.levelSurge <= 0) this.surge();
     }
+  }
+  startCinematic(kind: 'intro' | 'fall', x: number, y: number, seconds: number) {
+    this.cinematicKind = kind;
+    this.cinematicX = x;
+    this.cinematicY = y;
+    this.cinematic = seconds;
+    if (kind === 'fall') this.shake = T.maxShake;
   }
   /**
    * Level-up surge: a moonlight shockwave shoves nearby enemies outward, the hunter is briefly

@@ -1311,3 +1311,125 @@ html.touch #touch.active {
     filter: brightness(1.3);
   }
 }
+
+/* ---------- Boss cinematics ---------- */
+#cine {
+  position: fixed;
+  inset: 0;
+  z-index: 23;
+  pointer-events: none;
+}
+#cine .bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 11vh;
+  background: #020409;
+  transform: scaleY(0);
+}
+#cine .bar.top {
+  top: 0;
+  transform-origin: top;
+}
+#cine .bar.bottom {
+  bottom: 0;
+  transform-origin: bottom;
+}
+#cine .cine-card {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16vh;
+  text-align: center;
+  opacity: 0;
+}
+#cine small {
+  display: block;
+  font:
+    600 12px Inter,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: #ff8a92;
+}
+#cine h2 {
+  margin: 8px 0 6px;
+  font:
+    400 clamp(36px, 6vw, 76px) Georgia,
+    serif;
+  color: #fff;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 0 30px rgba(200, 50, 60, 0.7),
+    0 4px 24px #000;
+}
+#cine h2::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 1px;
+  margin: 10px auto 0;
+  background: linear-gradient(90deg, transparent, #ff6670, transparent);
+}
+#cine p {
+  margin: 0;
+  font-size: 14px;
+  color: #dbeaff;
+  letter-spacing: 0.04em;
+}
+#cine.fall small {
+  color: #c6b2ff;
+}
+#cine.fall h2 {
+  text-shadow:
+    0 0 30px rgba(196, 212, 255, 0.8),
+    0 4px 24px #000;
+}
+#cine.play .bar {
+  animation: cine-bars 2.8s cubic-bezier(0.3, 0.8, 0.3, 1) both;
+}
+#cine.play .cine-card {
+  animation: cine-card 3.2s ease both;
+}
+#cine.play h2::after {
+  animation: cine-rule 1.4s 0.2s ease-out forwards;
+}
+#cine.fall .bar {
+  animation-duration: 2.2s;
+}
+#cine.fall .cine-card {
+  animation-duration: 2.8s;
+}
+@keyframes cine-bars {
+  0% {
+    transform: scaleY(0);
+  }
+  15%,
+  80% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(0);
+  }
+}
+@keyframes cine-card {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(1.04);
+    letter-spacing: 0.2em;
+  }
+  18%,
+  78% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes cine-rule {
+  to {
+    width: min(420px, 70vw);
+  }
+}

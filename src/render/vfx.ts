@@ -174,6 +174,33 @@ export class Vfx {
         );
       } else if (id === 'deadeye.mark') {
         this.ring(e.x, e.y, VIOLET, 0.3, 0.9, 0.45, 1);
+      } else if (id === 'boss.fall') {
+        // A felled boss: a silver-red detonation and a fountain of embers.
+        this.budget += 90;
+        this.ring(e.x, e.y, SILVER, 1.2, 0.5, 12, 1);
+        this.ring(e.x, e.y, RED, 1, 0.4, 9, 0.9);
+        this.bloom(e.x, e.y, HOT, 1, 1.5, 6, 1);
+        this.bloom(e.x, e.y, SILVER, 0.5, 1, 3, 1);
+        for (let i = 0; i < 48; i++) {
+          const a = this.random() * Math.PI * 2,
+            v = 200 + this.random() * 700;
+          this.emit(
+            'spark',
+            e.x,
+            e.y - 40,
+            i % 3 ? HOT : SILVER,
+            0.8 + this.random() * 0.8,
+            1.8,
+            0.4,
+            1,
+            Math.cos(a) * v,
+            Math.sin(a) * v,
+          );
+        }
+      } else if (id === 'boss.intro') {
+        this.budget += 20;
+        this.ring(e.x, e.y, RED, 1.2, 0.5, 8, 0.9);
+        this.bloom(e.x, e.y, RED, 1.2, 1, 4, 0.7);
       } else if (id === 'deadeye.enter') {
         this.ring(p.x, p.y, VIOLET, 0.45, 0.3, 2.6, 0.7);
       } else if (id === 'deadeye.release') {

@@ -355,13 +355,22 @@ export class View {
     this.width = innerWidth;
     this.height = innerHeight;
     const p = g.player;
-    const targetZoom = g.boss || g.deadeye > 0 ? 0.9 : 1;
-    this.zoom += (targetZoom - this.zoom) * Math.min(1, realDt * 4);
+    // Boss cinematics frame the boss (pushed in on arrival), otherwise the camera leads the aim.
+    const cine = g.cinematic > 0,
+      targetZoom = cine
+        ? g.cinematicKind === 'intro'
+          ? 1.2
+          : 1.08
+        : g.boss || g.deadeye > 0
+          ? 0.9
+          : 1;
+    this.zoom += (targetZoom - this.zoom) * Math.min(1, realDt * (cine ? 2.5 : 4));
     const look = this.camp ? 0 : Math.min(this.width * 0.18, 120);
-    const targetX = p.x + Math.cos(p.aim) * look,
-      targetY = p.y + Math.sin(p.aim) * look;
-    this.camera.x += (targetX - this.camera.x) * Math.min(1, realDt * 8);
-    this.camera.y += (targetY - this.camera.y) * Math.min(1, realDt * 8);
+    const targetX = cine ? p.x + (g.cinematicX - p.x) * 0.8 : p.x + Math.cos(p.aim) * look,
+      targetY = cine ? p.y + (g.cinematicY - 70 - p.y) * 0.8 : p.y + Math.sin(p.aim) * look,
+      follow = Math.min(1, realDt * (cine ? 3 : 8));
+    this.camera.x += (targetX - this.camera.x) * follow;
+    this.camera.y += (targetY - this.camera.y) * follow;
     const shake = this.reducedMotion ? 0 : Math.min(g.shake, T.maxShake) * this.shake,
       sx = Math.sin(g.realTime * 89) * shake,
       sy = Math.cos(g.realTime * 113) * shake;
@@ -467,7 +476,14 @@ export class View {
           s.scale.set((e.r / UNIT) * punch);
         }
       }
-      s.alpha = e.fade > 0 ? 0.17 : e.kind === 6 && e.state === 0 ? 0.5 : Math.min(1, e.age / 0.4);
+      s.alpha =
+        e.fade > 0
+          ? 0.17
+          : e.kind === 6 && e.state === 0
+            ? 0.5
+            : e.boss >= 0
+              ? 1
+              : Math.min(1, e.age / 0.4);
       if (
         g.event === 3 &&
         Math.hypot(e.x - p.x, e.y - p.y) > 250 &&

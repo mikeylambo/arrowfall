@@ -12,6 +12,8 @@ export const BOSSES = [
   {
     id: 'shuck',
     name: 'The Black Shuck',
+    epithet: 'Hound of the Hollow Road',
+    hint: 'Perfect shots to its head deal ×1.5',
     time: 300,
     hp: 1800,
     radius: 48,
@@ -22,6 +24,8 @@ export const BOSSES = [
   {
     id: 'bramble',
     name: 'The Bramble King',
+    epithet: 'Crowned in Thorn',
+    hint: 'Only arrows through the crown cut deep',
     time: 600,
     hp: 4500,
     radius: 58,
@@ -35,6 +39,8 @@ export const BOSSES = [
   {
     id: 'hag',
     name: 'The Night Hag',
+    epithet: 'Mother of the Moon-Shadow',
+    hint: 'Strike the true Hag to break her illusions',
     time: 900,
     hp: 8500,
     radius: 42,
@@ -45,6 +51,8 @@ export const BOSSES = [
   {
     id: 'huntmaster',
     name: 'The Huntmaster',
+    epithet: 'The First Archer',
+    hint: 'Hit him mid-draw to stagger him',
     time: 1140,
     hp: 16000,
     radius: 40,
