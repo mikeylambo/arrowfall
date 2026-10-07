@@ -25,7 +25,8 @@ test('boot, real shots, pause, cards, results, camp and save', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await command(page, 'window.__ARROWFALL__.xp(12)');
-  await expect(page.getByText('Moonlight Answers')).toBeVisible();
+  // Cards follow the level-up surge (a short slow-motion beat), so allow for slow CI frames.
+  await expect(page.getByText('Moonlight Answers')).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(500);
   await page.screenshot({ path: 'test-results/levelup.png' });
   await page.locator('[data-choice-id="pick:0"]').click();

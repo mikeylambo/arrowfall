@@ -9,6 +9,7 @@ export class Synth implements AudioSystem {
   cue = 'moonrise';
   voiceCount = 0;
   nextBeat = 0;
+  lastCrit = 0;
   unlock() {
     if (!this.context) {
       this.context = new AudioContext();
@@ -116,7 +117,31 @@ export class Synth implements AudioSystem {
       if (id.endsWith('armor')) this.tone(1400, 0.08, 'sine', 0.035);
     } else if (id.includes('telegraph') || id === 'boss.intro' || id === 'formation.arrival')
       this.tone(146.83, 0.4, 'triangle', 0.15, 'sfx', 1.5);
-    else if (id === 'level.up' || id === 'evolution.unlocked' || id === 'relic.open') {
+    else if (id === 'hit.crit') {
+      // A bright glassy ting, throttled so a volley of crits stays musical.
+      const now = this.context.currentTime;
+      if (now - this.lastCrit < 0.06) return;
+      this.lastCrit = now;
+      this.tone(1975.5, 0.16, 'sine', 0.09);
+      this.tone(2959.96, 0.1, 'sine', 0.04);
+      this.noise(0.03, 0.08);
+    } else if (id === 'level.up') {
+      // Surge: a sub drop and an air swell under a rising major arpeggio, then a held chord.
+      this.tone(98, 0.9, 'sine', 0.3, 'sfx', 0.5);
+      this.noise(0.5, 0.12);
+      [392, 493.88, 587.33, 783.99, 987.77].forEach((f, i) =>
+        setTimeout(
+          () => {
+            this.tone(f, 0.55, 'triangle', 0.1);
+            this.tone(f * 2, 0.3, 'sine', 0.03);
+          },
+          60 + i * 55,
+        ),
+      );
+      setTimeout(() => {
+        for (const f of [392, 493.88, 587.33, 783.99]) this.tone(f, 1.4, 'sine', 0.05);
+      }, 340);
+    } else if (id === 'evolution.unlocked' || id === 'relic.open') {
       [293.66, 349.23, 440, 587.33].forEach((f, i) =>
         setTimeout(() => this.tone(f, 0.4, 'sine', 0.15), i * 70),
       );

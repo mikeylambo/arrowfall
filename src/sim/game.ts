@@ -159,6 +159,8 @@ export class Hunt {
   deadeye = 0;
   wasDraw = false;
   pendingLevels = 0;
+  /** Real seconds left in the level-up surge (slow motion); cards wait for it to end. */
+  levelSurge = 0;
   offers: string[] = [];
   choiceGuard = 0;
   outcome = '';
@@ -444,7 +446,9 @@ export class Hunt {
     const dt =
       realDt *
       (this.deadeye > 0 ? T.deadeyeScale : this.enemyDeadeye > 0 ? 0.35 : 1) *
-      (this.slowMotion ? 0.25 : 1);
+      (this.slowMotion ? 0.25 : 1) *
+      (this.levelSurge > 0 ? T.levelSurgeScale : 1);
+    this.levelSurge = Math.max(0, this.levelSurge - realDt);
     const p = this.player;
     if (this.scene === 'hunt' || this.scene === 'range') this.time += dt;
     this.moving = len(input.mx, input.my) > 0.1;
@@ -653,7 +657,7 @@ export class Hunt {
         this.announce('Second Wind');
       } else this.finish('The Hunter Falls');
     }
-    if (this.pendingLevels > 0 && this.deadeye <= 0) {
+    if (this.pendingLevels > 0 && this.deadeye <= 0 && this.levelSurge <= 0) {
       this.pendingLevels--;
       this.offer();
     }
@@ -787,8 +791,31 @@ export class Hunt {
       this.xp -= xpNeeded(this.level);
       this.level++;
       this.pendingLevels++;
-      this.emit('level.up');
+      this.emit('level.up', this.player.x, this.player.y, this.level);
+      if (this.levelSurge <= 0) this.surge();
     }
+  }
+  /**
+   * Level-up surge: a moonlight shockwave shoves nearby enemies outward, the hunter is briefly
+   * untouchable, and time slows for a beat before the cards arrive.
+   */
+  surge() {
+    const p = this.player;
+    this.levelSurge = this.scene === 'hunt' ? T.levelSurge : 0;
+    p.invuln = Math.max(p.invuln, 1);
+    const n = this.hash.query(p.x, p.y, T.levelNova, near);
+    for (let i = 0; i < n; i++) {
+      const e = near[i];
+      if (!e.active || e.boss >= 0) continue;
+      const dx = e.x - p.x,
+        dy = e.y - p.y,
+        d = len(dx, dy) || 1;
+      if (d > T.levelNova) continue;
+      const push = T.levelNovaPush * (1 - d / T.levelNova);
+      e.x += (dx / d) * push;
+      e.y += (dy / d) * push;
+    }
+    this.shake = Math.max(this.shake, T.maxShake * 0.6);
   }
   updatePickups(dt: number) {
     const p = this.player,

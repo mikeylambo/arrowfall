@@ -6,6 +6,7 @@ import {
   Texture,
   Assets,
   Text,
+  TextStyle,
   ColorMatrixFilter,
 } from 'pixi.js';
 import { Vfx } from './vfx';
@@ -45,6 +46,21 @@ function attackProgress(e: Enemy, telegraph: number): number | null {
         : null;
   return e.state === 3 ? 1 - Math.max(0, e.clock) / 0.6 : null;
 }
+/** Damage numbers: ordinary hits are small and quiet; crits are big, bright and outlined. */
+const HIT_STYLE = new TextStyle({
+    fontFamily: 'Georgia',
+    fontSize: 16,
+    fill: 0xa9b8cf,
+    stroke: { color: 0x060a16, width: 3 },
+  }),
+  CRIT_STYLE = new TextStyle({
+    fontFamily: 'Georgia',
+    fontSize: 26,
+    fontWeight: '700',
+    fill: 0xffffff,
+    stroke: { color: 0x1b2233, width: 5 },
+    dropShadow: { color: 0xc4d4ff, blur: 8, distance: 0, alpha: 0.9 },
+  });
 /** Palette as Pixi tints. */
 const C = {
   silver: tint(PALETTE.silver),
@@ -82,7 +98,7 @@ export class View {
   readonly landmarks = new Graphics();
   readonly threatGraphics = new Graphics();
   numbers = false;
-  numberSlots: { text: Text; life: number }[] = [];
+  numberSlots: { text: Text; life: number; crit: boolean }[] = [];
   art: Record<string, Texture> = {};
   enemySprites: Sprite[] = [];
   arrowSprites: Sprite[] = [];
@@ -211,14 +227,11 @@ export class View {
     this.particleSprites = this.pool(2000, this.art.particle, this.effects);
     this.threatLayer.addChild(this.threatGraphics);
     for (let i = 0; i < 60; i++) {
-      const text = new Text({
-        text: '',
-        style: { fontFamily: 'Georgia', fontSize: 18, fill: C.silver },
-      });
+      const text = new Text({ text: '', style: HIT_STYLE });
       text.anchor.set(0.5);
       text.visible = false;
       this.threatLayer.addChild(text);
-      this.numberSlots.push({ text, life: 0 });
+      this.numberSlots.push({ text, life: 0, crit: false });
     }
   }
   sprite(texture: Texture, parent: Container) {
@@ -587,16 +600,28 @@ export class View {
         slot.text.alpha = Math.min(1, slot.life * 2);
       }
     }
-    for (const event of g.events)
-      if (event.id === 'number.crit' || (this.numbers && event.id.startsWith('enemy.hit.'))) {
+    for (const slot of this.numberSlots)
+      if (slot.life > 0 && slot.crit) {
+        // Crits pop: punch in from 1.7x, settle to 1.15x, then rise and fade.
+        const age = 0.9 - slot.life,
+          pop = this.reducedMotion ? 1.15 : age < 0.1 ? 1.7 - age * 5.5 : 1.15;
+        slot.text.scale.set(pop);
+      }
+    for (const event of g.events) {
+      const crit = event.id === 'number.crit';
+      if (crit || (this.numbers && event.id.startsWith('enemy.hit.'))) {
         const slot = this.numberSlots.find((slot) => slot.life <= 0);
         if (slot) {
-          slot.life = 0.75;
-          slot.text.text = String(Math.round(event.value));
-          slot.text.position.set(event.x, event.y - 28);
+          slot.crit = crit;
+          slot.life = crit ? 0.9 : 0.6;
+          slot.text.text = crit ? Math.round(event.value) + '!' : String(Math.round(event.value));
+          slot.text.style = crit ? CRIT_STYLE : HIT_STYLE;
+          slot.text.scale.set(1);
+          slot.text.position.set(event.x + (event.value % 7) * 3 - 9, event.y - 30);
           slot.text.visible = true;
         }
       }
+    }
     this.lines(g);
     this.reticle(g);
     const submitStart = performance.now();

@@ -775,6 +775,18 @@ function hud(g: Hunt) {
     if (g.rangeWon) persist();
   } else $('hint').textContent = '';
 }
+/** Level-up surge: a full-screen moonlight flash and a big level numeral over the hunt. */
+const surge = document.createElement('div');
+surge.id = 'surge';
+surge.innerHTML =
+  '<div class="surge-flash"></div><div class="surge-text"><small>Level</small><b></b></div>';
+document.body.append(surge);
+function surgeBanner(level: number) {
+  surge.querySelector('b')!.textContent = String(level);
+  surge.classList.remove('play');
+  void surge.offsetWidth;
+  surge.classList.add('play');
+}
 function tick(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
@@ -840,7 +852,11 @@ function tick(now: number) {
     !!game && game.player.focus >= 100,
   );
   view.render(g, dt);
-  for (const event of g.events) if (!event.id.startsWith('number.')) audio.playSfx(event.id);
+  for (const event of g.events) {
+    if (event.id === 'number.crit') audio.playSfx('hit.crit');
+    else if (!event.id.startsWith('number.')) audio.playSfx(event.id);
+    if (event.id === 'level.up' && scene === 'hunt') surgeBanner(event.value);
+  }
   g.events.length = 0;
   if (app.shell.session.phase === 'playing')
     audio.tick(g.time, g.player.draw, uiScreen !== 'gameplay-placeholder');

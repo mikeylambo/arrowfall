@@ -557,3 +557,101 @@ html.touch #touch.active {
     animation: none;
   }
 }
+
+/* Level-up surge: moonlight flash plus a big numeral, played once per level. */
+#surge {
+  position: fixed;
+  inset: 0;
+  z-index: 22;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+#surge .surge-flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(232, 238, 255, 0.55),
+    rgba(155, 107, 255, 0.22) 35%,
+    transparent 70%
+  );
+}
+#surge .surge-text {
+  opacity: 0;
+  text-align: center;
+  font-family: Georgia, serif;
+  color: #fff;
+  text-shadow:
+    0 0 24px rgba(196, 212, 255, 0.9),
+    0 0 60px rgba(155, 107, 255, 0.7);
+  transform: translateY(-14vh);
+}
+#surge .surge-text small {
+  display: block;
+  font:
+    600 14px/1 Inter,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: #c6b2ff;
+  margin-bottom: 6px;
+}
+#surge .surge-text b {
+  font-size: 84px;
+  font-weight: 400;
+  line-height: 1;
+}
+#surge.play .surge-flash {
+  animation: surge-flash 0.6s ease-out;
+}
+#surge.play .surge-text {
+  animation: surge-text 0.9s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes surge-flash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes surge-text {
+  0% {
+    opacity: 0;
+    transform: translateY(-14vh) scale(1.8);
+    letter-spacing: 0.4em;
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-14vh) scale(1);
+    letter-spacing: 0;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-17vh) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #surge.play .surge-flash {
+    animation-duration: 0.3s;
+  }
+  #surge.play .surge-text {
+    animation: surge-text-calm 0.9s ease-out;
+  }
+  @keyframes surge-text-calm {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    30%,
+    70% {
+      opacity: 1;
+    }
+  }
+}

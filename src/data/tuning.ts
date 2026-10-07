@@ -46,6 +46,12 @@ export const T = {
   hitstopElite: 0.06,
   /** Freeze-frame when a boss changes phase (s). */
   hitstopPhase: 0.15,
+  /** Level-up surge: real seconds of slow motion before the cards, and the time scale. */
+  levelSurge: 0.55,
+  levelSurgeScale: 0.2,
+  /** Level-up shockwave: radius (px) and how far it shoves enemies outward (px). */
+  levelNova: 300,
+  levelNovaPush: 140,
   /** Peak screen shake amplitude (px); hurt and Deadeye release kick to this. */
   maxShake: 6,
   /** Screen shake decay (px/s). */

@@ -149,6 +149,49 @@ export class Vfx {
         this.ring(e.x, e.y, VIOLET, 0.3, 0.9, 0.45, 1);
       } else if (id === 'deadeye.release' || id === 'deadeye.enter') {
         this.ring(p.x, p.y, VIOLET, 0.45, 0.3, 2.6, 0.7);
+      } else if (id === 'number.crit') {
+        // Critical: a hard white star burst and a snap ring, distinct from ordinary hits.
+        this.bloom(e.x, e.y, SILVER, 0.16, 0.3, 0.9, 1);
+        this.ring(e.x, e.y, SILVER, 0.22, 0.2, 0.75, 1);
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + this.random() * 0.4;
+          this.emit(
+            'spark',
+            e.x,
+            e.y,
+            SILVER,
+            0.2,
+            1.4,
+            0.4,
+            1,
+            Math.cos(a) * 420,
+            Math.sin(a) * 420,
+          );
+        }
+      } else if (id === 'level.up') {
+        // Level-up surge: a moonlight shockwave the size of the shove, a violet core and a
+        // fountain of silver motes.
+        this.budget += 40;
+        this.ring(p.x, p.y, SILVER, 0.55, 0.4, 7.5, 0.95);
+        this.ring(p.x, p.y, VIOLET, 0.7, 0.2, 5.5, 0.8);
+        this.bloom(p.x, p.y, VIOLET, 0.6, 0.6, 3.2, 0.9);
+        this.bloom(p.x, p.y, SILVER, 0.3, 0.4, 1.8, 1);
+        for (let i = 0; i < 28; i++) {
+          const a = -Math.PI / 2 + (this.random() - 0.5) * 2.6,
+            v = 260 + this.random() * 420;
+          this.emit(
+            'spark',
+            p.x + (this.random() - 0.5) * 30,
+            p.y,
+            i % 3 ? SILVER : VIOLET,
+            0.5 + this.random() * 0.5,
+            1.2,
+            0.3,
+            1,
+            Math.cos(a) * v,
+            Math.sin(a) * v,
+          );
+        }
       } else if (id === 'player.hurt') {
         this.bloom(p.x, p.y, RED, 0.2, 0.6, 1.2, 0.7);
       }
