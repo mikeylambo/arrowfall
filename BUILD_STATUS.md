@@ -25,5 +25,5 @@ Evidence in `evidence/` is regenerated with `npm run evidence`:
 
 - **GPU budget on target devices** (Steam Deck, laptop iGPU). All numbers here come from software WebGL (swiftshader) in a 4-vCPU container. Frame rate there is fill-rate bound and says nothing about real GPUs.
 - **Human playtest** of the new overdraw hold (`autoLoose: false`), Focus/draw readability with the trimmed HUD, and boss weak-point clarity in motion.
-- **Art.** All 8 enemies, the Black Shuck and the Huntmaster use 3/4 cel-shaded sprite sheets (`public/art/sprites`). The Bramble King and Night Hag still use procedural placeholders. `?sprites=off` falls back to the procedural art.
+- **Art.** The hunter, all 8 enemies and all 4 bosses use 3/4 cel-shaded sprite sheets (`public/art/sprites`). The Night Hag's illusions wear her sheet. `?sprites=off` falls back to the procedural art.
 - Physical controller pass, boss TTK balance, full audio production, and Vercel preview (needs a GitHub token with access to the private shell repo). These are carried over from the previous status.

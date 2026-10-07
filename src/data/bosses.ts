@@ -27,8 +27,9 @@ export const BOSSES = [
     radius: 58,
     telegraph: 1,
     // Only the glowing crown takes full damage (GDD 10); the thorn body takes 25%.
-    // The crown sits above the body on screen and never rotates.
-    crown: { dy: -42, r: 24 },
+    // The crown sits on top of the 3/4 sprite (148 px above the feet) and is a target of its own;
+    // it never rotates.
+    crown: { dy: -148, r: 30 },
     art: { form: 'bramble', size: 196, weak: { x: 0, y: -0.43, r: 0.2 }, faces: false } as BossArt,
   },
   {

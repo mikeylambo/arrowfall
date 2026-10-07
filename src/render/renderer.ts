@@ -311,12 +311,19 @@ export class View {
                 ? e.state === 1
                   ? 1 - Math.max(0, e.clock) / 0.7
                   : 1
-                : null,
-          facing = e.boss === 0 && e.state > 0 ? e.tx : e.angle,
+                : // The Bramble King rears and slams through its 1 s volley telegraph; the Hag
+                  // lifts and flings as each 3 s ring of bolts leaves her.
+                  e.boss === 1 && e.clock > 2
+                  ? 3 - e.clock
+                  : e.boss === 2 && e.clock > 2.4
+                    ? (3 - e.clock) / 0.6
+                    : null,
+          // The Bramble King never turns: it always faces the camera.
+          facing = e.boss === 1 ? Math.PI / 2 : e.boss === 0 && e.state > 0 ? e.tx : e.angle,
           frame =
             windup !== null && bossSheet.has('attack')
               ? bossSheet.frame('attack', facing, 0, windup)
-              : bossSheet.frame('move', e.angle, g.realTime),
+              : bossSheet.frame('move', facing, g.realTime),
           k = art.size / (bossSheet.manifest.heightPx ?? art.size);
         s.texture = frame.texture;
         s.anchor.set(bossSheet.manifest.pivot[0], bossSheet.manifest.pivot[1]);
@@ -334,8 +341,24 @@ export class View {
           sheet = sheetId
             ? this.enemySheets[e.elite >= 0 ? sheetId + '-elite' : sheetId]
             : undefined,
-          punch = this.reducedMotion ? 1 : 1 + e.flash * JUICE.hitPunch;
-        if (sheet) {
+          punch = this.reducedMotion ? 1 : 1 + e.flash * JUICE.hitPunch,
+          // The Night Hag's threefold illusions (1 HP, no XP) wear her own sheet.
+          illusion =
+            e.kind === 2 && e.xp === 0 && e.maxHp === 1 && g.boss?.active && g.boss.boss === 2
+              ? this.bossSheets.hag
+              : undefined;
+        if (illusion) {
+          const frame = illusion.frame(
+              'move',
+              Math.atan2(p.y - e.y, p.x - e.x),
+              g.realTime + e.id * 0.53,
+            ),
+            k = (BOSSES[2].art.size / (illusion.manifest.heightPx ?? BOSSES[2].art.size)) * punch;
+          s.texture = frame.texture;
+          s.anchor.set(illusion.manifest.pivot[0], illusion.manifest.pivot[1]);
+          s.scale.set(frame.mirror ? -k : k, k);
+          s.rotation = 0;
+        } else if (sheet) {
           // 3/4 sheet: upright on its feet, own animation phase, attack follows the telegraph.
           const windup = attackProgress(e, def.telegraph),
             standing = e.kind === 3 && Math.hypot(p.x - e.x, p.y - e.y) < 430,
@@ -383,13 +406,18 @@ export class View {
           boss.x + Math.cos(boss.angle) * art.size * 0.42,
           boss.y + Math.sin(boss.angle) * art.size * 0.12 - art.size * 0.66,
         );
+      // The Bramble crown is a sim target (BOSSES[1].crown): the ring marks exactly that circle.
+      else if (boss.boss === 1) this.weakPoint.position.set(boss.x, boss.y + BOSSES[1].crown!.dy);
+      else if (sheet && boss.boss === 2)
+        this.weakPoint.position.set(boss.x, boss.y - art.size * 0.45);
       else if (sheet) this.weakPoint.position.set(boss.x, boss.y - art.size * 0.97);
       else
         this.weakPoint.position.set(
           boss.x + wx * Math.cos(rot) - wy * Math.sin(rot),
           boss.y + wx * Math.sin(rot) + wy * Math.cos(rot),
         );
-      this.weakPoint.scale.set(((art.weak.r * BOSS_HALF * k) / 40) * (1.1 + 0.35 * pulse));
+      const radius = boss.boss === 1 ? BOSSES[1].crown!.r : art.weak.r * BOSS_HALF * k;
+      this.weakPoint.scale.set((radius / 40) * (1.1 + 0.35 * pulse));
       this.weakPoint.alpha = 0.35 + 0.45 * (1 - pulse);
     }
     for (let i = 0; i < g.arrows.items.length; i++) {

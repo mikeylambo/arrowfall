@@ -1,0 +1,56 @@
+{
+  "schema_version": 2,
+  "project_name": "bramble",
+  "folder": "20261007_001748_bramble_01a113b9",
+  "root_task_id": "01a113b9-290a-767c-96ee-4481acfcbc63",
+  "created_at": "2026-10-07T00:17:48.758Z",
+  "updated_at": "2026-10-07T00:21:20.977Z",
+  "tasks": [
+    {
+      "task_id": "01a113b9-290a-767c-96ee-4481acfcbc63",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "model",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a113b9-290a-767c-96ee-4481acfcbc63.json",
+      "operation_id": null,
+      "created_at": "2026-10-07T00:21:17.026Z",
+      "updated_at": "2026-10-07T00:21:17.026Z"
+    },
+    {
+      "task_id": "01a113b9-290a-767c-96ee-4481acfcbc63",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "delivered",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "bramble.glb"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-10-07T00:21:19.521Z",
+      "updated_at": "2026-10-07T00:21:19.521Z"
+    },
+    {
+      "task_id": "01a113b9-290a-767c-96ee-4481acfcbc63",
+      "task_type": "multi-image-to-3d",
+      "resource": "multi-image-to-3d",
+      "endpoint": "/openapi/v1/multi-image-to-3d",
+      "stage": "preview",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "preview.png"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-10-07T00:21:20.977Z",
+      "updated_at": "2026-10-07T00:21:20.977Z"
+    }
+  ]
+}

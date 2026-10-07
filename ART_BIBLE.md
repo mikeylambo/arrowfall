@@ -84,12 +84,12 @@ The silhouette must read as "archer" without the bow.
 
 ### Bosses (GDD section 10)
 
-| Boss             | Read                                                                   | Weak point                                                                                                                      |
-| ---------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| The Black Shuck  | giant spectral black hound, burning eyes, smoke mane                   | head / front arc                                                                                                                |
-| The Bramble King | crowned tangle of thorns, never turns                                  | the **crown** on top: full damage only when an arrow's line of flight passes through it (`BOSSES[1].crown`); the body takes 25% |
-| The Night Hag    | flying hunched crone, tattered cloak, casts a moon-shadow              | the real one's ground shadow; heart lantern                                                                                     |
-| The Huntmaster   | antler-crowned mirror archer, cape; mounts a spectral stag in phase II | head and crown; red perfect-window flash when drawing                                                                           |
+| Boss             | Read                                                                   | Weak point                                                                                                                                                                  |
+| ---------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The Black Shuck  | giant spectral black hound, burning eyes, smoke mane                   | head / front arc                                                                                                                                                            |
+| The Bramble King | crowned tangle of thorns, never turns                                  | the glowing **crown** on top of the sprite is a hit target of its own (`BOSSES[1].crown`, 148 px above the feet): an arrow through it deals full damage, the body takes 25% |
+| The Night Hag    | flying hunched crone, tattered cloak, casts a moon-shadow              | the real one's ground shadow; heart lantern                                                                                                                                 |
+| The Huntmaster   | antler-crowned mirror archer, cape; mounts a spectral stag in phase II | head and crown; red perfect-window flash when drawing                                                                                                                       |
 
 ## Animation set
 
@@ -116,6 +116,6 @@ Clips are rendered at 12 fps.
 4. **Render.** `tools/render-sprites` (three.js, headless) renders the 8 directions × clips with the toon ramp, ink outline, rim and contact shadow, and packs the frames into atlas pages and a manifest.
 5. **Integrate.** The manifest feeds `src/data/art.ts`, and the renderer swaps procedural stand-ins for sprite sheets per character id.
 
-**Credit savers.** Quadrupeds (Moonhound, Hollow Stag) are model-only: no remesh or rig. Their gallop, lunge and charge come from renderer-side motion (`tools/render-sprites/procedural.ts` `RIGID`). The Wisp and Barrow Worm are built in code. Bosses reuse models where the read allows: the Huntmaster reuses the Poacher, and the Black Shuck reuses the Moonhound.
+**Credit savers.** Quadrupeds (Moonhound, Hollow Stag) are model-only: no remesh or rig. Their gallop, lunge and charge come from renderer-side motion (`tools/render-sprites/procedural.ts` `RIGID`). The Wisp and Barrow Worm are built in code. The Bramble King and Night Hag are model-only too (the King renders the front view only, since it never turns). Bosses reuse models where the read allows: the Huntmaster reuses the Poacher, and the Black Shuck reuses the Moonhound.
 
 **Gate.** The hunter goes through the whole pipeline first and is judged in-game before any other character is made.

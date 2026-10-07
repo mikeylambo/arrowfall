@@ -245,6 +245,49 @@ export const RIGID: Record<string, (h: number) => THREE.AnimationClip[]> = {
       };
     }),
   ],
+  /** Bramble King: rooted lumbering sway; its attack rears up tall, then slams down squat. */
+  bramble: (h) => [
+    rigidClip('move', 1.4, 12, (t) => {
+      const w = (t / 1.4) * Math.PI * 2;
+      return {
+        y: Math.abs(Math.sin(w)) * 0.02 * h,
+        roll: Math.sin(w) * 0.07,
+        sq: Math.cos(w * 2) * 0.03,
+      };
+    }),
+    rigidClip('attack', 1.0, 12, (t) => {
+      const k = t / 1.0;
+      const rise = smooth(Math.min(1, k / 0.7)),
+        slam = smooth(Math.max(0, (k - 0.7) / 0.3));
+      return {
+        y: rise * (1 - slam) * 0.06 * h,
+        pitch: -0.12 * rise * (1 - slam) + 0.12 * slam,
+        sq: 0.1 * rise * (1 - slam) - 0.14 * slam,
+      };
+    }),
+  ],
+  /** Night Hag: floats clear of the ground, bobbing and swaying; casting lifts her and flings forward. */
+  hag: (h) => [
+    rigidClip('move', 1.6, 12, (t) => {
+      const w = (t / 1.6) * Math.PI * 2;
+      return {
+        y: (0.14 + Math.sin(w) * 0.04) * h,
+        pitch: -0.12 + Math.sin(w + 1) * 0.04,
+        roll: Math.sin(w * 0.5 * 2) * 0.05,
+        sq: Math.sin(w) * 0.03,
+      };
+    }),
+    rigidClip('attack', 0.6, 8, (t) => {
+      const k = t / 0.6;
+      const lift = Math.sin(Math.min(1, k / 0.8) * Math.PI * 0.5),
+        fling = smooth(Math.max(0, (k - 0.55) / 0.45));
+      return {
+        y: (0.14 + 0.08 * lift - 0.04 * fling) * h,
+        pitch: -0.12 - 0.2 * lift * (1 - fling) + 0.22 * fling,
+        sq: 0.08 * lift * (1 - fling) - 0.04 * fling,
+      };
+    }),
+  ],
 };
 
 /** Wrap a loaded static model so RIGID clips can drive it. */

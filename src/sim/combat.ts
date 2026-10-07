@@ -161,7 +161,9 @@ export function updateArrows(g: Hunt, dt: number) {
       dy = a.y - oy,
       segment = dx * dx + dy * dy || 1,
       step = Math.sqrt(dx * dx + dy * dy);
-    const n = g.hash.query(a.x, a.y, step + 65, arrowTargets);
+    // The Bramble King's crown stands high above its feet, so look further while it is up.
+    const reach = g.boss?.active && g.boss.boss === 1 ? 65 - BOSSES[1].crown!.dy : 65;
+    const n = g.hash.query(a.x, a.y, step + reach, arrowTargets);
     for (let k = 0; k < n && a.active; k++) {
       const e = arrowTargets[k];
       if (!e.active || e.fade > 0 || e.freeze < 0) continue;
@@ -173,7 +175,14 @@ export function updateArrows(g: Hunt, dt: number) {
         }
       if (seen) continue;
       const t = Math.max(0, Math.min(1, ((e.x - ox) * dx + (e.y - oy) * dy) / segment));
-      if (len(e.x - (ox + t * dx), e.y - (oy + t * dy)) > e.r + a.r) continue;
+      if (len(e.x - (ox + t * dx), e.y - (oy + t * dy)) > e.r + a.r) {
+        // The crown is a target of its own: an arrow through it hits even above the body.
+        if (e.boss !== 1) continue;
+        const crown = BOSSES[1].crown!,
+          cy = e.y + crown.dy,
+          u = Math.max(0, Math.min(1, ((e.x - ox) * dx + (cy - oy) * dy) / segment));
+        if (len(e.x - (ox + u * dx), cy - (oy + u * dy)) > crown.r + a.r) continue;
+      }
       if (e.kind === 5 && g.bow.id !== 'oathbreaker' && a.pierce === 0 && a.source !== 'rain') {
         const incoming = Math.atan2(-a.vy, -a.vx),
           diff = Math.atan2(Math.sin(incoming - e.angle), Math.cos(incoming - e.angle));

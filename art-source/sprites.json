@@ -531,6 +531,76 @@
       "source": {
         "note": "Reuses the Moonhound model (no Meshy credits): darker albedo, red ink, 2x scale."
       }
+    },
+    {
+      "id": "bramble",
+      "directions": [2],
+      "ink": "#2a0508",
+      "rim": "#ff6670",
+      "albedo": [1.0, 0.62, 0.5],
+      "rigid": "bramble",
+      "cell": 288,
+      "modelHeight": 1.0,
+      "heightPx": 200,
+      "pivot": [0.5, 0.84],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261007_001748_bramble_01a113b9/bramble.glb",
+          "frames": 8,
+          "loop": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261007_001748_bramble_01a113b9/bramble.glb",
+          "frames": 8,
+          "loop": false
+        }
+      ],
+      "source": {
+        "concept": "art-source/bramble-sheet.png",
+        "meshy": {
+          "image-to-image": "01a113b7-0115-7330-969d-cb773650eae5",
+          "multi-image-to-3d": "01a113b9-290a-767c-96ee-4481acfcbc63"
+        },
+        "note": "Model only; never turns, so only the front view is rendered. Motion is renderer-side (RIGID)."
+      },
+      "glow": true
+    },
+    {
+      "id": "hag",
+      "directions": [0, 1, 2, 6, 7],
+      "ink": "#2a0508",
+      "rim": "#ff6670",
+      "albedo": [1.0, 0.62, 0.5],
+      "rigid": "hag",
+      "cell": 256,
+      "modelHeight": 1.0,
+      "heightPx": 176,
+      "pivot": [0.5, 0.86],
+      "clips": [
+        {
+          "name": "move",
+          "url": "/art-source/meshy_output/20261007_002126_hag_01a113bc/hag.glb",
+          "frames": 8,
+          "loop": true
+        },
+        {
+          "name": "attack",
+          "url": "/art-source/meshy_output/20261007_002126_hag_01a113bc/hag.glb",
+          "frames": 6,
+          "loop": false
+        }
+      ],
+      "source": {
+        "concept": "art-source/hag-sheet.png",
+        "meshy": {
+          "image-to-image": "01a113b7-b1ce-74ef-ac52-c1c9490dbdb9",
+          "multi-image-to-3d": "01a113bc-7da8-72f3-a234-ee452c5891fe"
+        },
+        "note": "Model only; floats via renderer-side motion (RIGID)."
+      },
+      "glow": true
     }
   ]
 }

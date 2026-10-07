@@ -77,6 +77,8 @@ export interface SpriteJob {
   eyes?: EyesJob;
   /** Albedo multiplier (elite variants render brighter). */
   brightness?: number;
+  /** Keep pale painted accents (crowns, glowing eyes) flat, bright and uncorrected. */
+  glow?: boolean;
   /** Per-channel colour correction toward the palette (linear RGB multipliers). */
   albedo?: [number, number, number];
   page: number;
@@ -91,6 +93,7 @@ function toonMaterial(
   rim: THREE.Color,
   brightness = 1,
   albedo: [number, number, number] = [1, 1, 1],
+  glow = false,
 ): THREE.Material {
   const src = source as THREE.MeshStandardMaterial;
   const ramp = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 255, 255, 255, 255]), 2, 1);
@@ -110,13 +113,28 @@ function toonMaterial(
   m.onBeforeCompile = (shader) => {
     shader.uniforms.rimColor = { value: rim };
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 rimColor;')
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform vec3 rimColor;\nfloat glowMask = 0.0;',
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        #if defined(USE_MAP) && ${glow ? 1 : 0}
+        // Pale painted accents (a gold crown, glowing eyes) stay flat and bright: they are
+        // emissive in the art bible, so neither the albedo correction nor shading touches them.
+        glowMask = smoothstep(0.3, 0.42, sampledDiffuseColor.g) * smoothstep(0.14, 0.22, sampledDiffuseColor.b);
+        #endif`,
+      )
       .replace(
         '#include <opaque_fragment>',
         `// Silver rim on the moon side (view-space up/right), 1-2 px wide after downsampling.
         float rimF = pow(1.0 - clamp(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0)), 0.0, 1.0), 3.0);
         float moonSide = clamp(dot(normalize(vNormal.xy + 1e-4), normalize(vec2(0.6, 0.8))), 0.0, 1.0);
         outgoingLight += rimColor * step(0.45, rimF * moonSide) * 0.6;
+        #ifdef USE_MAP
+        outgoingLight = mix(outgoingLight, sampledDiffuseColor.rgb * 1.1, glowMask);
+        #endif
         #include <opaque_fragment>`,
       );
   };
@@ -392,8 +410,8 @@ export async function renderJob(job: SpriteJob) {
         const mesh = o as THREE.Mesh;
         if (mesh.isMesh)
           mesh.material = Array.isArray(mesh.material)
-            ? mesh.material.map((m) => toonMaterial(m, rim, job.brightness, job.albedo))
-            : toonMaterial(mesh.material, rim, job.brightness, job.albedo);
+            ? mesh.material.map((m) => toonMaterial(m, rim, job.brightness, job.albedo, job.glow))
+            : toonMaterial(mesh.material, rim, job.brightness, job.albedo, job.glow);
       });
       // Normalise: feet on y=0, centred, scaled to modelHeight.
       const box = new THREE.Box3().setFromObject(src.root);

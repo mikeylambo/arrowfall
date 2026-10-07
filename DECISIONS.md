@@ -23,3 +23,4 @@
 - **Reduced motion keeps hitstop.** Reduced motion turns off shake, scale pulses and fog drift, and cuts flashes to 30%. Hitstop is a pause, not motion, so it stays. The option defaults to `prefers-reduced-motion`.
 - **VFX never touches the sim.** `render/vfx.ts` reads sim events, uses its own RNG and has a per-frame budget. In crowds it shows fewer sparks rather than taking longer frames.
 - **The hunter draws above all threats.** It sits on a soft navy cutout, so it stays findable in a 350-enemy crowd.
+- **Bramble crown is a target of its own.** On the 3/4 sprite the crown sits 148 px above the King's feet, so the old rule (a crown point 42 px up, inside the body) no longer matched the art. Arrows that pass through the visible crown now hit it for full damage even when they clear the body; body hits still take 25%. The arrow search radius grows only while the King is up. With `?sprites=off`, the ring floats above the placeholder art.
