@@ -1109,3 +1109,151 @@ html.touch #touch.active {
   color: #8fa3bd;
   margin-left: 6px;
 }
+
+/* ---------- First-hunt coach ---------- */
+#coach {
+  position: fixed;
+  left: 50%;
+  bottom: 74px;
+  transform: translateX(-50%);
+  z-index: 21;
+  width: min(460px, calc(100vw - 32px));
+  display: none;
+  pointer-events: none;
+}
+#coach.show {
+  display: block;
+}
+#coach.show.hidden {
+  display: none;
+}
+.coach-card {
+  pointer-events: auto;
+  padding: 14px 18px 12px;
+  border-radius: 12px;
+  border: 1px solid #c6b2ff44;
+  background: linear-gradient(180deg, #121a30ee, #0a1020ee);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(155, 107, 255, 0.12);
+  animation: coach-in 0.35s cubic-bezier(0.2, 0.9, 0.25, 1.1);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.coach-card header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.coach-card header b {
+  font:
+    400 19px Georgia,
+    serif;
+  color: #f2f6ff;
+}
+.coach-count {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #c6b2ff;
+}
+.coach-card [data-skip] {
+  margin-left: auto;
+  font-size: 11px;
+  color: #6f829c;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+}
+.coach-card [data-skip]:hover {
+  color: #dbeaff;
+}
+.coach-card p {
+  margin: 8px 0 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #c3d0e2;
+}
+.coach-card p b {
+  color: #fff;
+  font-weight: 600;
+}
+.coach-card p b.v {
+  color: #c6b2ff;
+}
+.coach-card kbd {
+  display: inline-block;
+  min-width: 22px;
+  margin: 0 2px;
+  padding: 1px 6px;
+  font:
+    600 12px Inter,
+    system-ui,
+    sans-serif;
+  text-align: center;
+  color: #f2f6ff;
+  border: 1px solid #8fa3bd88;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: #1a2540;
+}
+.coach-dots {
+  display: flex;
+  gap: 5px;
+}
+.coach-dots i {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: #24324a;
+}
+.coach-dots i.on {
+  background: #9b6bff;
+}
+.coach-dots i.now {
+  background: linear-gradient(90deg, #9b6bff, #24324a);
+}
+.coach-card.done {
+  border-color: #9b6bff;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.45),
+    0 0 40px rgba(155, 107, 255, 0.45);
+}
+.coach-card.done header b::after {
+  content: ' ✓';
+  color: #c6b2ff;
+}
+.coach-card.ready {
+  text-align: center;
+  padding: 16px;
+}
+.coach-card.ready b {
+  display: block;
+  font:
+    400 24px Georgia,
+    serif;
+  color: #fff;
+}
+.coach-card.ready span {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #c6b2ff;
+}
+@keyframes coach-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+@media (max-height: 520px) {
+  #coach {
+    bottom: 44px;
+    width: min(380px, calc(100vw - 32px));
+  }
+  .coach-card p {
+    font-size: 12.5px;
+    margin: 4px 0 6px;
+  }
+}

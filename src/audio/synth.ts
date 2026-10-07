@@ -141,6 +141,9 @@ export class Synth implements AudioSystem {
       setTimeout(() => {
         for (const f of [392, 493.88, 587.33, 783.99]) this.tone(f, 1.4, 'sine', 0.05);
       }, 340);
+    } else if (id === 'coach.step') {
+      this.tone(659.25, 0.35, 'sine', 0.1);
+      setTimeout(() => this.tone(987.77, 0.5, 'sine', 0.09), 90);
     } else if (id === 'evolution.unlocked' || id === 'relic.open') {
       [293.66, 349.23, 440, 587.33].forEach((f, i) =>
         setTimeout(() => this.tone(f, 0.4, 'sine', 0.15), i * 70),

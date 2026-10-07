@@ -26,6 +26,7 @@ import { xpNeeded } from './data/tuning';
 import { loadProfile, saveProfile, bankRun, boonCost } from './sim/profile';
 import { fmt, bowChoices, offerChoices, altarChoices, logChoices, fingerprint } from './ui/screens';
 import { decorateLevelUp, decorateResults } from './ui/cards';
+import { Coach } from './ui/coach';
 import type { Profile, RunRecord } from './sim/types';
 const $ = (id: string) => document.getElementById(id)!;
 const profileStore = new SaveManager<Profile>(new BrowserStorage('arrowfall'), 'hunter-profile', 2);
@@ -75,6 +76,15 @@ view.numbers = options.numbers;
 view.shake = options.shake;
 view.reducedMotion = options.reducedMotion;
 await view.init($('game-canvas') as HTMLCanvasElement);
+/** First-hunt lessons; created before any scene can begin. */
+const coach = new Coach(
+  () => audio.playSfx('coach.step'),
+  () => {
+    profile.onboarded = true;
+    persist();
+  },
+);
+
 const adapter = new PixiAdapter({
   loadLevel(id) {
     begin(id === 'range' ? 'range' : id === 'camp' ? 'camp' : 'hunt');
@@ -171,6 +181,8 @@ function begin(next: string) {
     view.camera.y = 430;
   }
   view.attach(game, next === 'camp');
+  if (next === 'hunt' && !profile.onboarded) coach.begin(game);
+  else coach.finish();
   $('hud').classList.toggle('visible', next !== 'camp');
   $('camp-title').style.display = next === 'camp' ? 'block' : 'none';
   $('camp-menu').style.display = next === 'camp' ? 'block' : 'none';
@@ -313,6 +325,11 @@ function settings() {
       { id: 'option:music', label: `Music · ${Math.round(options.music * 100)}%` },
       { id: 'option:sfx', label: `SFX · ${Math.round(options.sfx * 100)}%` },
       { id: 'option:fullscreen', label: 'Fullscreen' },
+      {
+        id: 'option:tutorial',
+        label: 'Replay Tutorial',
+        description: 'The next hunt starts with the guided first-hunt lessons',
+      },
       {
         id: 'option:rebind',
         label: 'Rebind Movement',
@@ -513,6 +530,10 @@ app.flow.onActivate = (screen, id) => {
     if (key === 'music' || key === 'sfx') {
       options[key] = options[key] <= 0 ? 1 : Math.max(0, options[key] - 0.1);
       app.audioMixer?.setVolume(key, options[key]);
+    }
+    if (key === 'tutorial') {
+      profile.onboarded = false;
+      persist();
     }
     if (key === 'fullscreen') {
       if (document.fullscreenElement) void document.exitFullscreen();
@@ -755,18 +776,7 @@ function hud(g: Hunt) {
   $('boss').innerHTML = g.boss
     ? `${BOSSES[g.boss.boss].name} · ${['I', 'II', 'III'][g.boss.phase - 1]}<div class="bar"><i style="width:${(g.boss.hp / g.boss.maxHp) * 100}%"></i></div>`
     : '';
-  if (!profile.onboarded && scene === 'hunt')
-    $('hint').textContent =
-      g.shots === 0
-        ? 'Hold to draw'
-        : g.perfects === 0
-          ? 'Release at the chime'
-          : g.time < 40
-            ? 'Space to dodge'
-            : p.focus >= 100
-              ? 'Deadeye ready: right-click'
-              : '';
-  else if (scene === 'range') {
+  if (scene === 'range') {
     $('hint').textContent = g.challenge
       ? g.rangeWon
         ? 'Challenge complete'
@@ -857,6 +867,17 @@ function tick(now: number) {
     controls.touching && !!game && uiScreen === 'gameplay-placeholder',
     !!game && game.player.focus >= 100,
   );
+  if (game && scene === 'hunt' && coach.active) {
+    // The Deadeye lesson hands over a full Focus bar so it can be tried right away.
+    if (coach.step === 5 && !coach.deadeyed && g.player.focus < 100) g.player.focus = 100;
+    coach.update(
+      g,
+      dt,
+      controls.touching ? 'touch' : controls.usingPad ? 'pad' : 'mouse',
+      options.holdFire,
+      uiScreen === 'gameplay-placeholder',
+    );
+  }
   view.render(g, dt);
   for (const event of g.events) {
     if (event.id === 'number.crit') audio.playSfx('hit.crit');
