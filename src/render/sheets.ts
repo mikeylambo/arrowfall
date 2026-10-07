@@ -12,7 +12,13 @@ export interface SheetManifest {
   fps: number;
   clips: Record<
     string,
-    { frames: number; loop: boolean; cells: { page: number; x: number; y: number }[][] }
+    {
+      frames: number;
+      loop: boolean;
+      /** Playback rate for this clip; falls back to the sheet's fps. */
+      fps?: number;
+      cells: { page: number; x: number; y: number }[][];
+    }
   >;
   pages: number;
 }
@@ -49,7 +55,7 @@ export class Sheet {
     const source = mirror ? (dir === 3 ? 1 : dir === 4 ? 0 : 7) : dir;
     const row = Math.max(0, this.manifest.directions.indexOf(source));
     const n = meta.frames,
-      f = Math.floor(time * this.manifest.fps);
+      f = Math.floor(time * (meta.fps ?? this.manifest.fps));
     // One-shot clips can be driven by gameplay progress (0..1) instead of wall time.
     const index =
       progress !== undefined

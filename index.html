@@ -1,1 +1,51 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080e1b"><meta name="description" content="Arrowfall — draw moonlight against the Hollowmoor’s cursed hunt."><title>Arrowfall</title></head><body><canvas id="game-canvas" aria-label="Arrowfall forest arena"></canvas><div id="ui"></div><div id="hud"><div class="health"><header><span id="hp"></span></header><div class="bar"><i id="hp-fill"></i></div></div><div class="moon-clock"><div class="moon" id="moon">☽</div><div class="night" id="night">MOONRISE</div><time id="time">00:00</time></div><div class="inventory" id="inventory"></div><div class="boss" id="boss"></div><div class="banner" id="banner"></div><div class="stats" id="stats"></div><div class="controls" id="controls">WASD move · Hold / release to loose<br>Space dodge · E / right-click Deadeye · Esc pause</div><div class="xp"><i id="xp-fill"></i></div></div><div class="camp-title" id="camp-title"><h2>Hunter’s Camp</h2><p id="silver"></p></div><div id="stations"></div><button id="camp-menu">Options</button><div class="hint" id="hint"></div><div class="dev" id="dev"></div><div class="perf" id="perf"></div><div class="footer-mark">SLU · ARROWFALL v2</div><script type="module" src="/src/main.ts"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#080e1b" />
+    <meta
+      name="description"
+      content="Arrowfall — draw moonlight against the Hollowmoor’s cursed hunt."
+    />
+    <title>Arrowfall</title>
+  </head>
+  <body>
+    <canvas id="game-canvas" aria-label="Arrowfall forest arena"></canvas>
+    <div id="ui"></div>
+    <div id="hud">
+      <div class="health">
+        <header><span id="hp"></span></header>
+        <div class="bar"><i id="hp-fill"></i></div>
+        <div class="focus" id="focus">
+          <header><span>Focus</span><em id="focus-ready"></em></header>
+          <div class="bar"><i id="focus-fill"></i></div>
+        </div>
+      </div>
+      <div class="moon-clock">
+        <div class="moon" id="moon">☽</div>
+        <div class="night" id="night">MOONRISE</div>
+        <time id="time">00:00</time>
+      </div>
+      <div class="inventory" id="inventory"></div>
+      <div class="boss" id="boss"></div>
+      <div class="banner" id="banner"></div>
+      <div class="stats" id="stats"></div>
+      <div class="controls" id="controls">
+        WASD move · Hold / release to loose<br />Space dodge · E / right-click Deadeye · Esc pause
+      </div>
+      <div class="xp"><i id="xp-fill"></i></div>
+    </div>
+    <div class="camp-title" id="camp-title">
+      <h2>Hunter’s Camp</h2>
+      <p id="silver"></p>
+    </div>
+    <div id="stations"></div>
+    <button id="camp-menu">Options</button>
+    <div class="hint" id="hint"></div>
+    <div class="dev" id="dev"></div>
+    <div class="perf" id="perf"></div>
+    <div class="footer-mark">SLU · ARROWFALL v2</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -193,6 +193,11 @@ export interface Legs {
   front: [number, number, number];
   back: [number, number, number];
   amp: number;
+  /** 'gallop' (hound: fore and hind pairs) or 'trot' (stag: diagonal pairs, rears to charge). */
+  gait?: 'gallop' | 'trot';
+  /** Stride length of the move clip and length of the attack clip, in seconds. */
+  cycle?: number;
+  attack?: number;
 }
 const smooth = (k: number) => k * k * (3 - 2 * k);
 function rigidClip(
@@ -383,18 +388,35 @@ function legRig(model: THREE.Object3D, legs: Legs) {
   const hipY = y0 + legs.hip * H;
   /** Swing angles (radians, + = foot forward) for [front-left, front-right, back-left, back-right]. */
   const angles = (clip: string, t: number): number[] => {
-    const a = legs.amp;
+    const a = legs.amp,
+      trot = legs.gait === 'trot';
     if (clip === 'attack') {
+      const k = t / (legs.attack ?? 0.6);
+      if (trot) {
+        // Rear: forelegs lift and paw forward; then they plant back for the charge.
+        const rear = Math.sin(Math.min(1, k / 0.7) * Math.PI),
+          drop = Math.max(0, (k - 0.55) / 0.45);
+        const f = 1.3 * a * rear - 0.4 * a * drop,
+          b = -0.35 * a * rear + 0.3 * a * drop;
+        return [f, f * 0.85, b, b * 0.9];
+      }
       // Crouch: feet gather under the body; spring: front reach forward, hind kick back.
-      const k = t / 0.6,
-        crouch = Math.min(1, k / 0.75),
+      const crouch = Math.min(1, k / 0.75),
         spring = Math.max(0, (k - 0.75) / 0.25);
       const f = -0.25 * crouch * (1 - spring) + 1.1 * a * spring,
         b = 0.25 * crouch * (1 - spring) - 1.1 * a * spring;
       return [f, f * 0.9, b, b * 0.9];
     }
+    const w = (t / (legs.cycle ?? 0.5)) * Math.PI * 2;
+    if (trot)
+      // Trot: diagonal pairs (front-left with back-right) swing together.
+      return [
+        a * Math.sin(w),
+        a * Math.sin(w + Math.PI),
+        a * Math.sin(w + Math.PI),
+        a * Math.sin(w),
+      ];
     // Rotary gallop: fore pair and hind pair half a stride apart, each pair slightly staggered.
-    const w = (t / 0.5) * Math.PI * 2;
     return [
       a * Math.sin(w),
       a * Math.sin(w + 0.45),

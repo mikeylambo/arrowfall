@@ -270,7 +270,8 @@ export function damageEnemy(
     if (g.rank('venom-arrow')) e.poison = Math.min(5, e.poison + 1);
   }
   if (a) {
-    if (a.crit) g.emit('number.crit', e.x, e.y, damage);
+    if (a.source === 'deadeye') g.emit('number.deadeye', e.x, e.y, damage);
+    else if (a.crit) g.emit('number.crit', e.x, e.y, damage);
     g.burst(e.x, e.y, 4);
     g.emit(
       e.kind === 5

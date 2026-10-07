@@ -115,6 +115,33 @@ export class Vfx {
   bloom(x: number, y: number, color: number, life: number, from: number, to: number, alpha = 0.9) {
     this.emit('bloom', x, y, color, life, from, to, alpha);
   }
+  /** A short-lived mote behind a moving body (the raven's dive). */
+  trail(x: number, y: number) {
+    this.budget++;
+    this.emit('bloom', x, y, VIOLET, 0.25, 0.35, 0.1, 0.6);
+  }
+  /** Moonraven strike: a feather burst and a snap ring where the dive lands. */
+  ravenStrike(x: number, y: number) {
+    this.budget += 16;
+    this.ring(x, y, SILVER, 0.3, 0.2, 1.4, 1);
+    this.bloom(x, y, VIOLET, 0.3, 0.4, 1.3, 0.9);
+    for (let i = 0; i < 10; i++) {
+      const a = this.random() * Math.PI * 2,
+        v = 160 + this.random() * 280;
+      this.emit(
+        'spark',
+        x,
+        y,
+        i % 3 ? 0x2a2440 : VIOLET,
+        0.45,
+        1.2,
+        0.5,
+        1,
+        Math.cos(a) * v,
+        Math.sin(a) * v,
+      );
+    }
+  }
   /** Translate this frame's sim events into effects. */
   handle(g: Hunt) {
     const p = g.player;
@@ -147,8 +174,39 @@ export class Vfx {
         );
       } else if (id === 'deadeye.mark') {
         this.ring(e.x, e.y, VIOLET, 0.3, 0.9, 0.45, 1);
-      } else if (id === 'deadeye.release' || id === 'deadeye.enter') {
+      } else if (id === 'deadeye.enter') {
         this.ring(p.x, p.y, VIOLET, 0.45, 0.3, 2.6, 0.7);
+      } else if (id === 'deadeye.release') {
+        // The payoff: a violet shockwave from the hunter and a white core flash.
+        this.budget += 60;
+        this.ring(p.x, p.y, VIOLET, 0.7, 0.4, 9, 1);
+        this.ring(p.x, p.y, SILVER, 0.45, 0.3, 5, 0.9);
+        this.bloom(p.x, p.y, VIOLET, 0.6, 1, 4.5, 0.9);
+        this.bloom(p.x, p.y, SILVER, 0.25, 0.6, 2, 1);
+      } else if (id === 'deadeye.strike') {
+        // Each marked target: a sigil that collapses onto it as the volley lands.
+        this.budget += 6;
+        this.ring(e.x, e.y, VIOLET, 0.5, 2.2, 0.3, 1);
+        this.bloom(e.x, e.y, VIOLET, 0.5, 0.4, 1.4, 0.8);
+      } else if (id === 'number.deadeye') {
+        this.budget += 12;
+        this.bloom(e.x, e.y, VIOLET, 0.35, 0.5, 2.2, 1);
+        this.ring(e.x, e.y, SILVER, 0.3, 0.3, 1.6, 1);
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2 + this.random() * 0.3;
+          this.emit(
+            'spark',
+            e.x,
+            e.y,
+            i % 2 ? VIOLET : SILVER,
+            0.3,
+            1.6,
+            0.4,
+            1,
+            Math.cos(a) * 520,
+            Math.sin(a) * 520,
+          );
+        }
       } else if (id === 'number.crit') {
         // Critical: a hard white star burst and a snap ring, distinct from ordinary hits.
         this.bloom(e.x, e.y, SILVER, 0.16, 0.3, 0.9, 1);

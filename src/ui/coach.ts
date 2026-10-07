@@ -44,11 +44,13 @@ const STEPS: Step[] = [
   {
     title: 'Dodge',
     text: (d) =>
-      d === 'touch'
-        ? 'Tap <b>Dodge</b> to roll through danger. You cannot be hit mid-roll.'
-        : d === 'pad'
-          ? `Press ${key('A')} to roll through danger. You cannot be hit mid-roll.`
-          : `Press ${key('Space')} to roll through danger. You cannot be hit mid-roll.`,
+      `A <b>Hollow Stag</b> is charging. Watch its <b class="r">red line</b>, then ${
+        d === 'touch'
+          ? 'tap <b>Dodge</b>'
+          : d === 'pad'
+            ? `press ${key('A')}`
+            : `press ${key('Space')}`
+      } to roll through it. You cannot be hit mid-roll.`,
     done: (_, c) => c.dodged,
   },
   {
@@ -77,6 +79,8 @@ export class Coach {
   walked = 0;
   dodged = false;
   deadeyed = false;
+  /** The dodge lesson's charging stag has been sent. */
+  charged = false;
   private lastX = 0;
   private lastY = 0;
   private doneTimer = 0;
@@ -98,7 +102,7 @@ export class Coach {
   begin(g: Hunt) {
     this.step = 0;
     this.walked = 0;
-    this.dodged = this.deadeyed = false;
+    this.dodged = this.deadeyed = this.charged = false;
     this.lastX = g.player.x;
     this.lastY = g.player.y;
     this.doneTimer = 0;

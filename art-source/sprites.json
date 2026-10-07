@@ -39,23 +39,26 @@
         {
           "name": "idle",
           "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-idle.glb",
-          "frames": 8,
+          "frames": 12,
           "loop": true,
           "start": 3.3,
-          "end": 4.03
+          "end": 4.03,
+          "fps": 16
         },
         {
           "name": "run",
           "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-running.glb",
-          "frames": 8,
-          "loop": true
+          "frames": 16,
+          "loop": true,
+          "fps": 24
         },
         {
           "name": "draw",
           "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-drawwalk.glb",
-          "frames": 8,
+          "frames": 12,
           "loop": true,
-          "drawing": true
+          "drawing": true,
+          "fps": 18
         },
         {
           "name": "dodge",
@@ -509,6 +512,17 @@
           "multi-image-to-3d": "01a11397-e25e-74be-af24-864edc8262a6"
         },
         "note": "Model only (no remesh or rig); motion is renderer-side (procedural.ts RIGID)."
+      },
+      "legs": {
+        "hip": 0.32,
+        "fade": 0.1,
+        "split": 0.0,
+        "front": [0.17, 0.56, 0.34],
+        "back": [-0.62, -0.17, -0.42],
+        "amp": 0.38,
+        "gait": "trot",
+        "cycle": 0.8,
+        "attack": 0.9
       }
     },
     {

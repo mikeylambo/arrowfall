@@ -102,8 +102,13 @@ export class Synth implements AudioSystem {
       this.tone(110, 0.8, 'sine', 0.2, 'sfx', 0.35);
       this.music!.gain.setTargetAtTime(0.05, this.context.currentTime, 0.1);
     } else if (id === 'deadeye.release') {
-      this.noise(0.7, 0.25);
-      this.tone(65, 0.6, 'triangle', 0.2);
+      // A held breath, then the volley: sub drop, air rush and a bright minor stab.
+      this.noise(0.9, 0.3);
+      this.tone(110, 1.1, 'sine', 0.35, 'sfx', 0.35);
+      this.tone(65, 0.8, 'triangle', 0.22);
+      setTimeout(() => {
+        for (const f of [587.33, 698.46, 880, 1174.66]) this.tone(f, 0.7, 'triangle', 0.06);
+      }, 120);
       this.music!.gain.setTargetAtTime(this.volumes.music, this.context.currentTime, 0.3);
     } else if (id === 'deadeye.mark') this.tone(440 * (1 + this.streak++ * 0.03), 0.1, 'sine', 0.1);
     else if (id === 'player.hurt' || id === 'player.death')
@@ -141,6 +146,13 @@ export class Synth implements AudioSystem {
       setTimeout(() => {
         for (const f of [392, 493.88, 587.33, 783.99]) this.tone(f, 1.4, 'sine', 0.05);
       }, 340);
+    } else if (id === 'tool.moonraven') {
+      // Caw: a falling, raspy chirp.
+      this.tone(1250, 0.16, 'sawtooth', 0.05, 'sfx', 0.55);
+      setTimeout(() => this.tone(1050, 0.14, 'sawtooth', 0.04, 'sfx', 0.6), 110);
+      this.noise(0.06, 0.06);
+    } else if (id === 'deadeye.strike') {
+      return;
     } else if (id === 'coach.step') {
       this.tone(659.25, 0.35, 'sine', 0.1);
       setTimeout(() => this.tone(987.77, 0.5, 'sine', 0.09), 90);

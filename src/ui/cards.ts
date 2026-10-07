@@ -96,6 +96,22 @@ export function cardFor(g: Hunt, id: string): Card {
 
 const escape = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+/**
+ * Effect text with its progression: per-rank numbers ("+8% draw speed") show the total you
+ * have now and the total this card takes you to ("+8% → +16% draw speed").
+ */
+function progression(card: Card) {
+  const text = escape(card.effect);
+  if (card.rank <= 1 || !/^(\+|Sweet-spot)/.test(card.effect)) return text;
+  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+  return text.replace(
+    /([+\u2212]?)(\d+(?:\.\d+)?)(%?)/g,
+    (_, sign: string, n: string, pct: string) => {
+      const v = Number(n);
+      return `<span class="was">${sign}${fmt(v * (card.rank - 1))}${pct}</span> → <b>${sign}${fmt(v * card.rank)}${pct}</b>`;
+    },
+  );
+}
 const icon = (name: keyof typeof ICONS) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
@@ -132,7 +148,7 @@ export function decorateLevelUp(root: HTMLElement, g: Hunt, reducedMotion: boole
       <span class="slu-choice-label card-name">${escape(card.name)}</span>
       <span class="card-kind">${escape(card.kind)}</span>
       ${pips}
-      <span class="slu-choice-desc card-effect">${escape(card.effect)}</span>
+      <span class="slu-choice-desc card-effect">${progression(card)}</span>
       <span class="card-rarity">${card.rarity}</span>`;
   });
   if (actions.children.length) choices.after(actions);

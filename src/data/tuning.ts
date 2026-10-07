@@ -46,6 +46,8 @@ export const T = {
   hitstopElite: 0.06,
   /** Freeze-frame when a boss changes phase (s). */
   hitstopPhase: 0.15,
+  /** Freeze on Deadeye release, before the marked volley flies (s). */
+  hitstopDeadeye: 0.12,
   /** Level-up surge: real seconds of slow motion before the cards, and the time scale. */
   levelSurge: 0.55,
   levelSurgeScale: 0.2,

@@ -855,7 +855,7 @@ export class Hunt {
         this.toolTarget.x = nearest.x;
         this.toolTarget.y = nearest.y;
         damageEnemy(this, nearest, 30 * (1 + 0.15 * (raven - 1)), undefined, 'moonraven');
-        this.emit('tool.moonraven');
+        this.emit('tool.moonraven', nearest.x, nearest.y, 30 * (1 + 0.15 * (raven - 1)));
         this.burst(nearest.x, nearest.y, 15);
         if (raven === 5)
           for (const q of this.pickups.items)
@@ -939,9 +939,12 @@ export class Hunt {
   }
   releaseDeadeye() {
     this.deadeye = 0;
+    let marked = 0;
     for (const e of this.enemies.items)
       if (e.active && e.deadmark) {
         e.deadmark = false;
+        marked++;
+        this.emit('deadeye.strike', e.x, e.y, marked);
         loose(
           this,
           true,
@@ -952,7 +955,10 @@ export class Hunt {
         );
       }
     this.shake = T.maxShake;
-    this.emit('deadeye.release');
+    // A held breath before the volley lands: a short freeze sells the payoff.
+    this.hitstop = Math.max(this.hitstop, T.hitstopDeadeye);
+    this.flash = 0.5;
+    this.emit('deadeye.release', this.player.x, this.player.y, marked);
   }
   eligible() {
     return EVOLUTIONS.filter(

@@ -1179,6 +1179,9 @@ html.touch #touch.active {
   color: #fff;
   font-weight: 600;
 }
+.coach-card p b.r {
+  color: #ff6670;
+}
 .coach-card p b.v {
   color: #c6b2ff;
 }
@@ -1255,5 +1258,56 @@ html.touch #touch.active {
   .coach-card p {
     font-size: 12.5px;
     margin: 4px 0 6px;
+  }
+}
+
+#ui .card-effect .was {
+  color: #6f829c;
+}
+#ui .card-effect b {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Focus: fills from perfect releases and hits; full means Deadeye is ready. */
+.focus {
+  margin-top: 12px;
+}
+.focus header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 10px !important;
+  letter-spacing: 0.24em !important;
+  text-transform: uppercase;
+  color: #c6b2ff;
+}
+.focus em {
+  font-style: normal;
+  letter-spacing: 0.08em;
+  color: #fff;
+  white-space: nowrap;
+}
+.focus .bar {
+  margin-top: 6px !important;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #9b6bff1f;
+  box-shadow: inset 0 0 0 1px #9b6bff33;
+}
+.focus .bar i {
+  background: linear-gradient(90deg, #6e4dce, #9b6bff) !important;
+  box-shadow: 0 0 10px #9b6bff88 !important;
+  transition: width 0.15s ease-out;
+}
+.focus.ready .bar i {
+  background: linear-gradient(90deg, #9b6bff, #e6d7ff) !important;
+  animation: focus-ready 0.9s ease-in-out infinite;
+}
+@keyframes focus-ready {
+  50% {
+    box-shadow: 0 0 22px #c6b2ff;
+    filter: brightness(1.3);
   }
 }

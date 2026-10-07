@@ -27,6 +27,7 @@ import { loadProfile, saveProfile, bankRun, boonCost } from './sim/profile';
 import { fmt, bowChoices, offerChoices, altarChoices, logChoices, fingerprint } from './ui/screens';
 import { decorateLevelUp, decorateResults } from './ui/cards';
 import { Coach } from './ui/coach';
+import { TOOLS } from './data/tools';
 import type { Profile, RunRecord } from './sim/types';
 const $ = (id: string) => document.getElementById(id)!;
 const profileStore = new SaveManager<Profile>(new BrowserStorage('arrowfall'), 'hunter-profile', 2);
@@ -49,12 +50,13 @@ let game: Hunt | null = null,
   seedOverride: number | null = null;
 const touchDevice = matchMedia('(pointer: coarse)').matches;
 let options = {
+  version: 2,
   autoLoose: false,
   // Touch players hold to fire by default; on PC it is an option (tap/hold-release otherwise).
   holdFire: touchDevice,
   colorblind: false,
   bands: true,
-  numbers: false,
+  numbers: true,
   toggle: false,
   uiScale: 1,
   assist: 0.3,
@@ -65,7 +67,10 @@ let options = {
   reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
 };
 try {
-  options = { ...options, ...JSON.parse(localStorage.getItem('arrowfall.options') || '{}') };
+  const saved = JSON.parse(localStorage.getItem('arrowfall.options') || '{}');
+  // v2: damage numbers on every hit became the default; older saves had it off.
+  if ((saved.version ?? 1) < 2) delete saved.numbers;
+  options = { ...options, ...saved, version: 2 };
 } catch {}
 controls.toggle = options.toggle;
 controls.bindings = options.bindings;
@@ -748,6 +753,12 @@ function hud(g: Hunt) {
   $('hp').textContent = String(Math.max(0, Math.ceil(p.hp)));
   $('hp-fill').style.width = (p.hp / p.maxHp) * 100 + '%';
   $('hp-fill').parentElement!.classList.toggle('low', p.hp / p.maxHp < 0.3);
+  const ready = p.focus >= 100;
+  $('focus-fill').style.width = Math.min(100, p.focus) + '%';
+  $('focus').classList.toggle('ready', ready);
+  $('focus-ready').textContent = ready
+    ? `Deadeye ready · ${controls.touching ? 'tap Deadeye' : controls.usingPad ? 'RB' : 'E / right-click'}`
+    : '';
   $('time').textContent = fmt(g.time);
   $('night').textContent =
     g.time >= 1140
@@ -766,9 +777,8 @@ function hud(g: Hunt) {
   $('stats').innerHTML = `<b class="lv">${g.level}</b><span>Level</span><em>${g.kills} hunted</em>`;
   $('controls').classList.toggle('faded', scene === 'hunt' && g.time > 20);
   $('xp-fill').style.width = (g.xp / xpNeeded(g.level)) * 100 + '%';
-  $('inventory').innerHTML = `${['moonraven', 'thornsnare', 'lantern']
-    .filter((id) => g.rank(id) > 0)
-    .map((id) => id + ' ' + g.rank(id))
+  $('inventory').innerHTML = `${TOOLS.filter((t) => g.rank(t.id) > 0)
+    .map((t) => t.name + ' ' + g.rank(t.id))
     .join(
       ' · ',
     )}<br><b>${[...g.evolutions].map((id) => EVOLUTIONS.find((e) => e.id === id)?.name).join(' · ')}</b>`;
@@ -870,6 +880,14 @@ function tick(now: number) {
   if (game && scene === 'hunt' && coach.active) {
     // The Deadeye lesson hands over a full Focus bar so it can be tried right away.
     if (coach.step === 5 && !coach.deadeyed && g.player.focus < 100) g.player.focus = 100;
+    // The dodge lesson sends a real Hollow Stag charge to roll through.
+    if (coach.step === 3 && !coach.charged) {
+      coach.charged = true;
+      coach.dodged = false;
+      const a = g.player.aim + Math.PI * 0.5,
+        stag = g.spawn(4, g.player.x + Math.cos(a) * 520, g.player.y + Math.sin(a) * 520);
+      if (stag) stag.clock = 0;
+    }
     coach.update(
       g,
       dt,
@@ -880,7 +898,7 @@ function tick(now: number) {
   }
   view.render(g, dt);
   for (const event of g.events) {
-    if (event.id === 'number.crit') audio.playSfx('hit.crit');
+    if (event.id === 'number.crit' || event.id === 'number.deadeye') audio.playSfx('hit.crit');
     else if (!event.id.startsWith('number.')) audio.playSfx(event.id);
     if (event.id === 'level.up' && scene === 'hunt') surgeBanner(event.value);
   }

@@ -27,6 +27,8 @@ export interface ClipJob {
   yaw?: number;
   /** Strip horizontal root motion (rolls, lunges) so the figure stays on its pivot. */
   inPlace?: boolean;
+  /** Playback fps for this clip in game (default: the sheet's 12). */
+  fps?: number;
   /** Pull the bowstring to the drawing hand. */
   drawing?: boolean;
   /** Hide the eye glints (tumbling clips such as rolls and hit reactions). */
@@ -549,7 +551,10 @@ export async function renderJob(job: SpriteJob) {
       directions: job.directions,
       fps: 12,
       clips: Object.fromEntries(
-        job.clips.map((c) => [c.name, { frames: c.frames, loop: c.loop, cells: frames[c.name] }]),
+        job.clips.map((c) => [
+          c.name,
+          { frames: c.frames, loop: c.loop, fps: c.fps, cells: frames[c.name] },
+        ]),
       ),
       pages: pages.length,
     },

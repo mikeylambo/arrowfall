@@ -5,8 +5,8 @@ import {
   Graphics,
   Texture,
   Assets,
-  Text,
-  TextStyle,
+  BitmapFont,
+  BitmapText,
   ColorMatrixFilter,
 } from 'pixi.js';
 import { Vfx } from './vfx';
@@ -46,21 +46,47 @@ function attackProgress(e: Enemy, telegraph: number): number | null {
         : null;
   return e.state === 3 ? 1 - Math.max(0, e.clock) / 0.6 : null;
 }
-/** Damage numbers: ordinary hits are small and quiet; crits are big, bright and outlined. */
-const HIT_STYLE = new TextStyle({
+/**
+ * Damage numbers as bitmap fonts (cheap at hundreds of hits a second): ordinary hits are small
+ * and quiet; crits are big, bright and outlined.
+ */
+BitmapFont.install({
+  name: 'HitNumbers',
+  style: {
     fontFamily: 'Georgia',
     fontSize: 16,
-    fill: 0xa9b8cf,
+    fill: 0xb7c5da,
     stroke: { color: 0x060a16, width: 3 },
-  }),
-  CRIT_STYLE = new TextStyle({
+  },
+  chars: [['0', '9']],
+});
+BitmapFont.install({
+  name: 'DeadeyeNumbers',
+  style: {
+    fontFamily: 'Georgia',
+    fontSize: 34,
+    fontWeight: '700',
+    fill: 0xf1e8ff,
+    stroke: { color: 0x2a1450, width: 6 },
+    dropShadow: { color: 0x9b6bff, blur: 10, distance: 0, alpha: 1 },
+  },
+  chars: [['0', '9'], '!'],
+});
+BitmapFont.install({
+  name: 'CritNumbers',
+  style: {
     fontFamily: 'Georgia',
     fontSize: 26,
     fontWeight: '700',
     fill: 0xffffff,
     stroke: { color: 0x1b2233, width: 5 },
-    dropShadow: { color: 0xc4d4ff, blur: 8, distance: 0, alpha: 0.9 },
-  });
+    dropShadow: { color: 0xc4d4ff, blur: 6, distance: 0, alpha: 0.9 },
+  },
+  chars: [['0', '9'], '!'],
+});
+const HUNTER_SCALE = 0.4,
+  /** Moonraven dive length (s): out to the target and back. */
+  RAVEN_DIVE = 0.36;
 /** Palette as Pixi tints. */
 const C = {
   silver: tint(PALETTE.silver),
@@ -98,7 +124,8 @@ export class View {
   readonly landmarks = new Graphics();
   readonly threatGraphics = new Graphics();
   numbers = false;
-  numberSlots: { text: Text; life: number; crit: boolean }[] = [];
+  ravenDive = { t: 0, x: 0, y: 0, hit: false };
+  numberSlots: { text: BitmapText; life: number; kind: number }[] = [];
   art: Record<string, Texture> = {};
   enemySprites: Sprite[] = [];
   arrowSprites: Sprite[] = [];
@@ -226,12 +253,18 @@ export class View {
     this.pickupSprites = this.pool(1600, this.art.xp, this.effects);
     this.particleSprites = this.pool(2000, this.art.particle, this.effects);
     this.threatLayer.addChild(this.threatGraphics);
-    for (let i = 0; i < 60; i++) {
-      const text = new Text({ text: '', style: HIT_STYLE });
+    for (let i = 0; i < 170; i++) {
+      // Slots by kind: 0 plain hits, 1 crits, 2 Deadeye strikes.
+      const kind = i < 20 ? 2 : i < 50 ? 1 : 0,
+        font = ['HitNumbers', 'CritNumbers', 'DeadeyeNumbers'][kind],
+        text = new BitmapText({
+          text: '',
+          style: { fontFamily: font, fontSize: [16, 26, 34][kind] },
+        });
       text.anchor.set(0.5);
       text.visible = false;
       this.threatLayer.addChild(text);
-      this.numberSlots.push({ text, life: 0, crit: false });
+      this.numberSlots.push({ text, life: 0, kind });
     }
   }
   sprite(texture: Texture, parent: Container) {
@@ -484,9 +517,10 @@ export class View {
           speed = Math.sqrt(a.vx * a.vx + a.vy * a.vy);
         s.position.set(a.x, a.y);
         s.rotation = angle;
-        s.scale.set(a.perfect ? 0.8 : 0.6);
-        s.alpha = dim;
-        s.tint = a.source === 'phantom' ? C.phantom : 0xffffff;
+        const deadeye = a.source === 'deadeye';
+        s.scale.set(deadeye ? 1.1 : a.perfect ? 0.8 : 0.6);
+        s.alpha = deadeye ? 1 : dim;
+        s.tint = a.source === 'phantom' ? C.phantom : deadeye ? C.focusLight : 0xffffff;
         // Short trail behind the shaft, longer for faster arrows, fading as the arrow ages.
         trail.position.set(a.x - Math.cos(angle) * 18, a.y - Math.sin(angle) * 18);
         trail.rotation = angle;
@@ -494,9 +528,9 @@ export class View {
           (JUICE.trailLength / 128) *
             Math.min(1.6, speed / T.arrowSpeed) *
             Math.min(1, a.travel / 60),
-          a.perfect ? 1.4 : 1,
+          deadeye ? 2.4 : a.perfect ? 1.4 : 1,
         );
-        trail.alpha = JUICE.trailAlpha * dim;
+        trail.alpha = deadeye ? 1 : JUICE.trailAlpha * dim;
         trail.tint = a.perfect ? C.focus : a.source === 'phantom' ? C.phantom : C.silver;
       }
     }
@@ -570,11 +604,13 @@ export class View {
       else frame = sheet.frame(g.moving && sheet.has('run') ? 'run' : 'idle', p.aim, g.realTime);
       this.hunter.texture = frame.texture;
       this.hunter.anchor.set(sheet.manifest.pivot[0], sheet.manifest.pivot[1]);
-      this.hunter.scale.set(frame.mirror ? -0.5 : 0.5, 0.5);
+      // ~69 px tall on screen (art bible: 72 px), so bosses and crowds keep their scale.
+      const k = HUNTER_SCALE;
+      this.hunter.scale.set(frame.mirror ? -k : k, k);
       this.hunter.rotation = 0;
       this.footShadow.visible = true;
-      this.footShadow.position.set(p.x + 4, p.y + 3);
-      this.footShadow.scale.set(0.36, 0.14);
+      this.footShadow.position.set(p.x + 3, p.y + 2);
+      this.footShadow.scale.set(0.29, 0.11);
       this.footShadow.alpha = 0.7;
     } else this.hunter.rotation = p.aim;
     this.hunter.alpha = p.invuln > 0 ? 0.55 + 0.45 * Math.sin(g.realTime * 30) : 1;
@@ -589,8 +625,37 @@ export class View {
     }
     this.raven.visible = g.rank('moonraven') > 0;
     if (this.raven.visible) {
-      this.raven.position.set(p.x + Math.cos(g.time * 2) * 90, p.y + Math.sin(g.time * 2) * 90);
-      this.raven.rotation = g.time * 2 + Math.PI / 2;
+      const ox = p.x + Math.cos(g.time * 2) * 90,
+        oy = p.y + Math.sin(g.time * 2) * 90,
+        dive = this.ravenDive;
+      for (const e of g.events)
+        if (e.id === 'tool.moonraven') {
+          dive.t = RAVEN_DIVE;
+          dive.x = e.x;
+          dive.y = e.y;
+          dive.hit = false;
+        }
+      if (dive.t > 0) {
+        // Dive: swoop from the orbit onto the target, strike at the midpoint, wheel back.
+        dive.t = Math.max(0, dive.t - realDt);
+        const k = 1 - dive.t / RAVEN_DIVE,
+          out = k < 0.5 ? k / 0.5 : 1 - (k - 0.5) / 0.5,
+          ease = out * out * (3 - 2 * out),
+          x = ox + (dive.x - ox) * ease,
+          y = oy + (dive.y - oy) * ease;
+        this.raven.rotation = Math.atan2(y - this.raven.y, x - this.raven.x) + Math.PI / 2;
+        this.raven.position.set(x, y);
+        this.raven.scale.set(0.45 + 0.3 * ease);
+        this.vfx.trail(x, y);
+        if (k >= 0.5 && !dive.hit) {
+          dive.hit = true;
+          this.vfx.ravenStrike(dive.x, dive.y);
+        }
+      } else {
+        this.raven.position.set(ox, oy);
+        this.raven.rotation = g.time * 2 + Math.PI / 2;
+        this.raven.scale.set(0.45);
+      }
     }
     for (const slot of this.numberSlots) {
       slot.life -= realDt;
@@ -601,21 +666,33 @@ export class View {
       }
     }
     for (const slot of this.numberSlots)
-      if (slot.life > 0 && slot.crit) {
+      if (slot.life > 0 && slot.kind > 0) {
         // Crits pop: punch in from 1.7x, settle to 1.15x, then rise and fade.
         const age = 0.9 - slot.life,
           pop = this.reducedMotion ? 1.15 : age < 0.1 ? 1.7 - age * 5.5 : 1.15;
         slot.text.scale.set(pop);
       }
-    for (const event of g.events) {
-      const crit = event.id === 'number.crit';
-      if (crit || (this.numbers && event.id.startsWith('enemy.hit.'))) {
-        const slot = this.numberSlots.find((slot) => slot.life <= 0);
+    const events = g.events;
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i],
+        kind =
+          event.id === 'number.deadeye'
+            ? 2
+            : event.id === 'number.crit' || event.id === 'tool.moonraven'
+              ? 1
+              : 0,
+        crit = kind > 0;
+      // A crit emits its number then its hit: the hit's plain number is skipped.
+      const hit =
+        this.numbers &&
+        event.value > 0 &&
+        event.id.startsWith('enemy.hit.') &&
+        !(i > 0 && events[i - 1].id.startsWith('number.'));
+      if (crit || hit) {
+        const slot = this.numberSlots.find((slot) => slot.life <= 0 && slot.kind === kind);
         if (slot) {
-          slot.crit = crit;
-          slot.life = crit ? 0.9 : 0.6;
+          slot.life = kind === 2 ? 1.1 : crit ? 0.9 : 0.55;
           slot.text.text = crit ? Math.round(event.value) + '!' : String(Math.round(event.value));
-          slot.text.style = crit ? CRIT_STYLE : HIT_STYLE;
           slot.text.scale.set(1);
           slot.text.position.set(event.x + (event.value % 7) * 3 - 9, event.y - 30);
           slot.text.visible = true;
