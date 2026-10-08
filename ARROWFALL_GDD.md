@@ -364,6 +364,8 @@ The midnight moon turn at 10:00 is a fixed set piece, not a random event.
 
 Four bosses anchor the night; each one tests a pillar, and every attack has a readable telegraph of at least 0.6 s. HP is tuned to time-to-kill targets at the expected build power for that minute.
 
+**Arena entrance:** the intro opens on a wide shot as the ring closes in and the boss's markers rise around it (Shuck: grave-candle wisps; Bramble King: thorn clusters; Night Hag: moon sigils; Huntmaster: hunt banners), then pushes in on the boss for the title card.
+
 **Arena rule:** when a boss spawns, a ring of moonlight 2 screens wide forms around the hunter. Leaving it is blocked by a soft wall. Regular spawns drop to the boss-arena cap (section 8). A boss health bar and name card appear top-center.
 
 ### 5:00 — The Black Shuck
@@ -443,6 +445,8 @@ Top-down, following the hunter with a look-ahead of up to 18% of the screen towa
 
 Hunter's Camp is a small walkable hub between hunts, and full unlocks should take roughly 15–20 hours. Every Camp station is a place you walk to, not a menu list.
 
+**The camp grows with you.** Each station is a prop that shows progress at a glance: the Fletcher's rack holds every bow you own, the Trophy Wall gains each boss's trophy (Shuck skull, thorn crown, Hag's lantern, Huntmaster's antlers), the Altar's twelve stars light with each boon's rank, the Trail's signpost flies a pennant per Moon Phase opened, the Log's page stack grows with hunts, and the campfire burns bigger the more hunts you come home from.
+
 ### Stations
 
 | Station          | Purpose                                                                        |
@@ -488,12 +492,12 @@ Practice with no fail state, plus challenges that pay 10–30 Moonsilver the fir
 
 ### Moon Phases (difficulty)
 
-| Phase      | Unlocks after           | Changes                                                       |
-| ---------- | ----------------------- | ------------------------------------------------------------- |
-| Crescent   | Default                 | Base game                                                     |
-| Half Moon  | Survive until dawn once | +25% enemy HP, +15% density                                   |
-| Full Moon  | Complete a hunt on Half | Elites ×2 frequency; bosses gain one new attack each          |
-| Blood Moon | Complete a hunt on Full | Enemies +15% speed; no Quiet Grove; the moon is red all night |
+| Phase      | Unlocks after           | Changes                                                                                           |
+| ---------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
+| Crescent   | Default                 | Base game                                                                                         |
+| Half Moon  | Survive until dawn once | +25% enemy HP, +15% density                                                                       |
+| Full Moon  | Complete a hunt on Half | Elites ×2 frequency; bosses gain one new attack each                                              |
+| Blood Moon | Complete a hunt on Full | Enemies +15% speed; no Quiet Grove; the moon is red all night (red-lit ground, mist and vignette) |
 
 ### Curses
 

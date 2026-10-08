@@ -270,7 +270,11 @@ function begin(next: string) {
   if (resuming) checkDeeds(game, 0, true);
   // Each bow announces what makes it different as the hunt begins.
   if (resuming) game.announce(`The hunt resumes · ${fmt(game.time)}`);
-  else if (next === 'hunt') game.announce(`${game.bow.name} · ${game.bow.signature}`);
+  else if (next === 'hunt')
+    game.announce(
+      (game.phase ? ['', 'Half Moon', 'Full Moon', 'Blood Moon'][game.phase] + ' · ' : '') +
+        `${game.bow.name} · ${game.bow.signature}`,
+    );
   if (next === 'hunt' && !profile.onboarded && !resuming) coach.begin(game);
   else coach.finish();
   $('hud').classList.toggle('visible', next !== 'camp');
@@ -937,6 +941,8 @@ if (devMode) {
       if (config.phase !== undefined) phase = config.phase;
       void launch(config.range ? 'range' : 'hunt');
     },
+    /** Test hook: read or patch the profile (camp progression, unlocks). */
+    patchProfile: (patch: object = {}) => Object.assign(profile, patch),
     skipTutorial: () => {
       coach.finish();
       profile.onboarded = true;

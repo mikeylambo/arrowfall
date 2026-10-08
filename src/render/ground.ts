@@ -194,6 +194,8 @@ export class Atmosphere {
   }
   /** Screen-space rain for the Witching Hours. */
   readonly rain = new TilingSprite({ texture: rainTexture(), width: 1, height: 1 });
+  /** Blood Moon (GDD 13): the moon is red all night; the moor, mist and vignette take its light. */
+  bloodMoon = false;
   private tintNow = [0.77, 0.83, 1];
   private mistBoost = 1;
   private rainAlpha = 0;
@@ -216,7 +218,15 @@ export class Atmosphere {
                 ? [[0.8, 0.86, 1], 2.3, 0]
                 : [[0.9, 0.55, 0.62], 1.6, 0];
     const k = Math.min(1, dt * 0.5);
+    if (this.bloodMoon) {
+      target[0] = Math.min(1, target[0] * 1.14);
+      target[1] *= 0.6;
+      target[2] *= 0.66;
+    }
     for (let i = 0; i < 3; i++) this.tintNow[i] += (target[i] - this.tintNow[i]) * k;
+    const blood = this.bloodMoon ? 0xffa0a6 : 0xffffff;
+    this.mistLow.tint = this.mistHigh.tint = blood;
+    this.vignette.tint = this.bloodMoon ? 0xff6070 : 0xffffff;
     this.mistBoost += (mist - this.mistBoost) * k;
     this.rainAlpha += ((reduced ? rain * 0.5 : rain) - this.rainAlpha) * k;
     const [r, g, b] = this.tintNow;

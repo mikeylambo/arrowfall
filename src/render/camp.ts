@@ -5,6 +5,8 @@
  */
 import { Container, Sprite, Texture } from 'pixi.js';
 import { STATIONS } from '../data/world';
+import { BOONS } from '../sim/profile';
+import type { Profile } from '../sim/types';
 
 type Ctx = CanvasRenderingContext2D;
 const INK = '#050912',
@@ -65,7 +67,11 @@ function rect(c: Ctx, x: number, y: number, w: number, h: number) {
 }
 
 /** Camp prop textures, keyed by station id plus fire, flame and tent. Anchor: feet at (0.5, 0.8). */
-export function campArt(): Record<string, Texture> {
+export function campArt(p?: Profile): Record<string, Texture> {
+  const bows = p?.unlocked ?? ['recurve'],
+    bosses = p?.bosses ?? [],
+    runs = p?.runs.length ?? 0,
+    moon = p?.phase ?? 0;
   return {
     // The Trail: a signpost pointing out of camp into the moor.
     trail: canvas(140, 150, (c) => {
@@ -98,6 +104,21 @@ export function campArt(): Record<string, Texture> {
         WOOD,
         WOOD_RIM,
       );
+      // A pennant on the post for each Moon Phase opened: silver, gold, red.
+      ['#c4d4ff', '#e8c66a', '#d2403c'].slice(0, moon).forEach((color, i) => {
+        ink(
+          c,
+          () => {
+            c.moveTo(-3, -18 + i * 12 - 30);
+            c.lineTo(-24, -12 + i * 12 - 30);
+            c.lineTo(-3, -8 + i * 12 - 30);
+            c.closePath();
+          },
+          color,
+          INK,
+          0.8,
+        );
+      });
       // A moon carved in the upper sign.
       c.fillStyle = MOON;
       c.beginPath();
@@ -119,13 +140,16 @@ export function campArt(): Record<string, Texture> {
       line(c, [-40, -16, -40, -82], WOOD_RIM, 3);
       line(c, [40, -16, 40, -82], WOOD_RIM, 3);
       line(c, [-44, -76, 44, -76], WOOD_RIM, 3);
-      for (const x of [-22, 0, 22]) {
+      // One bow on the rack per bow unlocked, in that bow's own finish.
+      const spacing = bows.length > 3 ? 13 : 22;
+      bows.slice(0, 6).forEach((id, i) => {
+        const x = (i - (Math.min(6, bows.length) - 1) / 2) * spacing + 12;
         c.beginPath();
         c.arc(x - 12, -46, 30, -1.1, 1.1);
         c.strokeStyle = INK;
         c.lineWidth = 5;
         c.stroke();
-        c.strokeStyle = x === 0 ? MOON : '#8fa6c4';
+        c.strokeStyle = BOW_FINISH[id] ?? '#8fa6c4';
         c.lineWidth = 2.5;
         c.stroke();
         line(
@@ -139,7 +163,7 @@ export function campArt(): Record<string, Texture> {
           '#dfe8f5',
           0.8,
         );
-      }
+      });
       // Arrows and a feather on the bench.
       line(c, [-30, -22, 18, -26], '#9fb3cc', 1.5);
       line(c, [-26, -20, 26, -22], '#9fb3cc', 1.5);
@@ -168,7 +192,7 @@ export function campArt(): Record<string, Texture> {
       line(c, [-10, -54, -32, -66], '#9fb3cc', 1.6);
     }),
     // Silver Altar: a stone plinth under a small constellation.
-    altar: canvas(150, 170, (c) => {
+    altar: canvas(170, 190, (c) => {
       c.translate(0, 40);
       shadow(c, 46, 12, 16);
       ink(c, rect(c, -42, 0, 84, 16), BODY, RIM);
@@ -176,45 +200,79 @@ export function campArt(): Record<string, Texture> {
       ink(c, rect(c, -36, -54, 72, 12), BODY, RIM);
       // A silver bowl of moonlight.
       ink(c, () => c.ellipse(0, -58, 20, 7, 0, 0, Math.PI * 2), '#c9d6ea', MOON);
-      const stars = [
-        [-30, -112],
-        [-8, -126],
-        [16, -110],
-        [34, -124],
-        [4, -94],
-      ];
-      line(c, stars.flat(), 'rgba(171,164,255,0.45)', 1);
-      for (const [x, y] of stars) {
-        c.fillStyle = FOCUS;
+      // Twelve stars, one per Altar boon; each brightens with its rank, lit ones are joined.
+      const lit: number[][] = [];
+      ALTAR_STARS.forEach(([x, y], i) => {
+        const [, cap] = BOONS[i],
+          rank = p?.boons[BOONS[i][0]] ?? 0,
+          k = rank / cap;
+        if (rank) lit.push([x, y]);
+        c.fillStyle = rank ? FOCUS : 'rgba(120,130,170,0.35)';
         c.beginPath();
-        c.arc(x, y, 3, 0, Math.PI * 2);
+        c.arc(x, y, rank ? 2.4 + k * 2.2 : 1.6, 0, Math.PI * 2);
         c.fill();
-      }
+        if (rank) {
+          c.fillStyle = `rgba(171,164,255,${0.1 + k * 0.15})`;
+          c.beginPath();
+          c.arc(x, y, 4 + k * 3, 0, Math.PI * 2);
+          c.fill();
+        }
+      });
+      if (lit.length > 1) line(c, lit.flat(), 'rgba(171,164,255,0.45)', 1);
     }),
     // Trophy Wall: a timber frame hung with antlers and a hound skull.
-    trophies: canvas(170, 160, (c) => {
+    trophies: canvas(170, 190, (c) => {
+      c.translate(0, 14);
       c.translate(0, 34);
       shadow(c, 60, 11, 18);
       line(c, [-56, 20, -56, -86], WOOD_RIM, 5);
       line(c, [56, 20, 56, -86], WOOD_RIM, 5);
       ink(c, rect(c, -60, -90, 120, 10), WOOD, WOOD_RIM);
       ink(c, rect(c, -50, -78, 100, 62), '#1a1726', WOOD_RIM, 1.5);
-      // Antlers.
-      for (const side of [-1, 1]) {
-        line(c, [0, -48, side * 18, -62, side * 30, -70, side * 38, -66], '#d8cba4', 2.5);
-        line(c, [side * 18, -62, side * 16, -74], '#d8cba4', 2);
-        line(c, [side * 30, -70, side * 34, -78], '#d8cba4', 2);
-      }
-      ink(c, () => c.ellipse(0, -44, 9, 11, 0, 0, Math.PI * 2), '#d8cba4', '#efe6cb', 1.5);
-      // Hound skull and a red-eyed husk mask.
-      ink(c, () => c.ellipse(-30, -30, 9, 7, 0, 0, Math.PI * 2), '#cfc6ad', '#efe6cb', 1.2);
-      ink(c, () => c.ellipse(30, -30, 8, 9, 0, 0, Math.PI * 2), '#3a1820', '#7a2434', 1.2);
+      // A red-eyed husk mask hangs from the first hunt; each boss felled adds its trophy.
+      ink(c, () => c.ellipse(-36, -30, 7, 8, 0, 0, Math.PI * 2), '#3a1820', '#7a2434', 1.2);
       c.fillStyle = '#ff5a6e';
-      c.fillRect(26, -32, 2.5, 2.5);
-      c.fillRect(32, -32, 2.5, 2.5);
+      c.fillRect(-39, -32, 2.2, 2.2);
+      c.fillRect(-34, -32, 2.2, 2.2);
+      // Empty hooks wait for the rest.
+      c.fillStyle = WOOD_RIM;
+      for (const [x, y] of [
+        [-14, -62],
+        [14, -62],
+        [0, -40],
+        [30, -34],
+      ])
+        c.fillRect(x - 1.5, y - 14, 3, 4);
+      // The Black Shuck: a great black skull with green-lit sockets.
+      if (bosses.includes('shuck')) {
+        ink(c, () => c.ellipse(-14, -56, 12, 9, 0, 0, Math.PI * 2), '#151820', '#4a5468', 1.4);
+        ink(c, () => c.ellipse(-24, -52, 6, 4, 0, 0, Math.PI * 2), '#151820', '#4a5468', 1);
+        c.fillStyle = '#8ff0e0';
+        c.fillRect(-18, -59, 3, 3);
+        c.fillRect(-11, -59, 3, 3);
+      }
+      // The Bramble King: his thorn crown.
+      if (bosses.includes('bramble')) {
+        ink(c, rect(c, 4, -54, 22, 6), '#2a1418', '#7a3a34', 1.2);
+        for (let i = 0; i < 4; i++) line(c, [6 + i * 6, -54, 7 + i * 6, -66], '#d2403c', 1.6);
+      }
+      // The Night Hag: her lantern, still lit.
+      if (bosses.includes('hag')) {
+        line(c, [0, -54, 0, -46], '#5a5068', 1.2);
+        ink(c, rect(c, -6, -46, 12, 14), '#2a2440', '#8a6cff', 1.2);
+        c.fillStyle = '#d6c8ff';
+        c.fillRect(-3, -43, 6, 8);
+      }
+      // The Huntmaster: his antler crown, at the top of the wall.
+      if (bosses.includes('huntmaster'))
+        for (const side of [-1, 1]) {
+          line(c, [0, -84, side * 18, -98, side * 30, -106, side * 38, -102], '#e9dfbf', 2.5);
+          line(c, [side * 18, -98, side * 16, -110], '#e9dfbf', 2);
+          line(c, [side * 30, -106, side * 34, -114], '#e9dfbf', 2);
+        }
     }),
     // Hunter's Log: a lectern with an open book and a candle.
-    log: canvas(130, 150, (c) => {
+    log: canvas(150, 150, (c) => {
       c.translate(0, 32);
       shadow(c, 30, 9, 18);
       line(c, [0, 20, 0, -30], WOOD_RIM, 6);
@@ -247,6 +305,10 @@ export function campArt(): Record<string, Texture> {
       );
       line(c, [-20, -41, -6, -42], '#8a8070', 0.8);
       line(c, [6, -42, 20, -41], '#8a8070', 0.8);
+      // A stack of filled pages beside the book grows with every hunt written in it.
+      const pages = Math.min(12, Math.ceil(runs / 2));
+      for (let i = 0; i < pages; i++)
+        ink(c, rect(c, -46, 18 - i * 3.2, 22, 3), '#d9d2bf', '#f5efe0', 0.6);
       // Candle.
       ink(c, rect(c, 34, -58, 6, 16), '#d9d2bf', '#f5efe0', 1);
       c.fillStyle = EMBER;
@@ -340,10 +402,39 @@ const TENTS = [
   { x: 1000, y: 760, flip: true },
   { x: 1060, y: 120, flip: true },
 ];
+/** Each bow's finish on the Fletcher's rack. */
+const BOW_FINISH: Record<string, string> = {
+  recurve: '#8fa6c4',
+  sparrow: '#9fd0b0',
+  nightreach: '#6a7fd8',
+  letoff: '#d8cba4',
+  oathbreaker: '#c4504c',
+  moonbow: MOON,
+};
+/** The Altar's twelve stars (one per boon, in BOONS order), laid out as a loose crown. */
+const ALTAR_STARS = [
+  [-52, -98],
+  [-40, -116],
+  [-22, -128],
+  [0, -134],
+  [22, -128],
+  [40, -116],
+  [52, -98],
+  [-26, -104],
+  [0, -112],
+  [26, -104],
+  [-12, -90],
+  [12, -90],
+];
 export const CAMPFIRE = { x: 600, y: 400 };
 
 /** Builds the camp props into a container; returns the flame sprite for the renderer to animate. */
-export function buildCamp(layer: Container, art: Record<string, Texture>) {
+let baked: Record<string, Texture> = {};
+export function buildCamp(layer: Container, art: Record<string, Texture>, profile: Profile) {
+  // The station props show the hunter's progress, so they are re-baked on every camp visit.
+  for (const t of Object.values(baked)) t.destroy(true);
+  baked = campArt(profile);
+  art = { ...art, ...baked };
   const put = (tex: Texture, x: number, y: number, scale = 1, flip = false) => {
     const s = new Sprite(tex);
     s.anchor.set(0.5, 0.78);
@@ -354,10 +445,13 @@ export function buildCamp(layer: Container, art: Record<string, Texture>) {
   };
   for (const t of TENTS) put(art.tent, t.x, t.y, 1, t.flip);
   for (const s of STATIONS) if (art[s.id]) put(art[s.id], s.x, s.y + 14);
-  const base = put(art.fire, CAMPFIRE.x, CAMPFIRE.y, 0.9);
+  // The campfire burns bigger the more hunts the hunter has come home from.
+  const fire = 0.85 + Math.min(0.35, profile.runs.length * 0.02);
+  const base = put(art.fire, CAMPFIRE.x, CAMPFIRE.y, 0.9 * fire);
   base.anchor.set(0.5, 0.5);
   const flame = put(art.flame, CAMPFIRE.x, CAMPFIRE.y + 4);
   flame.anchor.set(0.5, 0.95);
   flame.blendMode = 'add';
-  return flame;
+  flame.scale.set(fire);
+  return { flame, size: fire };
 }

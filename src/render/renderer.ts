@@ -15,6 +15,7 @@ import { loadSheet, type Sheet } from './sheets';
 import { Atmosphere } from './ground';
 import { landmarkArt, WorldDressing } from './landmarks';
 import { buildCamp, campArt, CAMPFIRE } from './camp';
+import { Arena } from './arena';
 
 import { UNIT } from './silhouettes';
 import { BOSSES } from '../data/bosses';
@@ -114,8 +115,11 @@ export class View {
   readonly deadeyeFilter = new ColorMatrixFilter();
   /** Accessibility: no shake, no scale pulses, no fog drift, dimmed flashes. */
   reducedMotion = false;
+  /** The boss arena ring and its markers. */
+  readonly arena = new Arena();
   /** The camp's campfire flame (flickered each frame), when the camp is shown. */
   private campFlame: Sprite | null = null;
+  private campFire = 1;
   /** Performance mode: native resolution 1, fewer lights, no high mist, half the particles. */
   lowPower = false;
   setLowPower(on: boolean) {
@@ -202,6 +206,7 @@ export class View {
       this.atmosphere.mistLow,
       this.cover,
       this.landmarks,
+      this.arena.layer,
       this.worldLines,
       this.effects,
       this.arrows,
@@ -313,6 +318,8 @@ export class View {
   }
   attach(g: Hunt, camp = false) {
     this.camp = camp;
+    this.atmosphere.bloodMoon = !camp && g.phase === 3;
+    this.arena.clear();
     this.camera.x = g.player.x;
     this.camera.y = g.player.y;
     this.cover.removeChildren().forEach((c) => c.destroy());
@@ -339,7 +346,9 @@ export class View {
     this.campFlame = null;
     if (camp) {
       this.world.clear();
-      this.campFlame = buildCamp(this.cover, this.art);
+      const camp = buildCamp(this.cover, this.art, g.profile);
+      this.campFlame = camp.flame;
+      this.campFire = camp.size;
     } else this.world.build(g);
     // The Hollow's edge: a dense treeline over a dark band, so the world boundary reads as
     // forest you cannot enter instead of an invisible wall.
@@ -534,7 +543,7 @@ export class View {
       put(p.x, p.y, 2.2, C.silver, 0.1);
     }
     if (!this.camp) {
-      put(p.x, p.y, 2.6, C.silver, 0.13);
+      put(p.x, p.y, 2.6, g.phase === 3 ? 0xff8a90 : C.silver, 0.13);
       const lantern = g.rank('lantern');
       if (lantern) put(p.x, p.y, (140 + 20 * (lantern - 1)) / 45, 0xdceeff, 0.12);
       const L = g.world.landmarks,
@@ -564,27 +573,39 @@ export class View {
     const fallen = g.outcome === 'The Hunter Falls';
     this.deathTime = fallen ? this.deathTime + realDt : 0;
     const cine = g.cinematic > 0 || fallen,
+      // A boss intro opens wide on the arena forming (render/arena.ts), then pushes in.
+      arenaShot =
+        !fallen &&
+        g.cinematic > 0 &&
+        g.cinematicKind === 'intro' &&
+        T.bossIntro - g.cinematic < T.bossArenaShot,
       targetZoom = fallen
         ? 1.3
-        : cine
-          ? g.cinematicKind === 'intro'
-            ? 1.2
-            : 1.08
-          : g.boss || g.deadeye > 0
-            ? 0.9
-            : 1;
+        : arenaShot
+          ? Math.min(this.width, this.height) / 2 / 1250
+          : cine
+            ? g.cinematicKind === 'intro'
+              ? 1.2
+              : 1.08
+            : g.boss || g.deadeye > 0
+              ? 0.9
+              : 1;
     this.zoom += (targetZoom - this.zoom) * Math.min(1, realDt * (cine ? 2.5 : 4));
     const look = this.camp ? 0 : Math.min(this.width * 0.18, 120);
     const targetX = fallen
         ? p.x
-        : cine
-          ? p.x + (g.cinematicX - p.x) * 0.8
-          : p.x + Math.cos(p.aim) * look,
+        : arenaShot
+          ? g.eventX
+          : cine
+            ? p.x + (g.cinematicX - p.x) * 0.8
+            : p.x + Math.cos(p.aim) * look,
       targetY = fallen
         ? p.y - 30
-        : cine
-          ? p.y + (g.cinematicY - 70 - p.y) * 0.8
-          : p.y + Math.sin(p.aim) * look,
+        : arenaShot
+          ? g.eventY
+          : cine
+            ? p.y + (g.cinematicY - 70 - p.y) * 0.8
+            : p.y + Math.sin(p.aim) * look,
       follow = Math.min(1, realDt * (cine ? 3 : 8));
     this.camera.x += (targetX - this.camera.x) * follow;
     this.camera.y += (targetY - this.camera.y) * follow;
@@ -601,11 +622,12 @@ export class View {
     this.atmosphere.update(this, this.reducedMotion ? 0 : g.realTime);
     this.atmosphere.night(this.camp ? 0 : g.time, g.realTime, realDt, this.reducedMotion);
     this.updateLights(g);
+    this.arena.update(g, realDt, this.reducedMotion);
     if (this.campFlame && !this.reducedMotion) {
       const t = g.realTime;
       this.campFlame.scale.set(
-        0.9 + 0.08 * Math.sin(t * 11),
-        0.85 + 0.15 * Math.sin(t * 7.3) + 0.06 * Math.sin(t * 19),
+        this.campFire * (0.9 + 0.08 * Math.sin(t * 11)),
+        this.campFire * (0.85 + 0.15 * Math.sin(t * 7.3) + 0.06 * Math.sin(t * 19)),
       );
       this.campFlame.skew.x = 0.08 * Math.sin(t * 3.1);
     }
@@ -1013,8 +1035,7 @@ export class View {
         .stroke({ color: 0xdceeff, alpha: 0.7, width: 2 });
     if (g.boss?.boss === 2)
       w.ellipse(g.boss.x + 15, g.boss.y + 35, 50, 16).fill({ color: 0x03060d, alpha: 0.9 });
-    if (g.boss)
-      w.circle(g.eventX, g.eventY, 1050).stroke({ color: 0xb5d2ed, alpha: 0.5, width: 6 });
+
     for (const e of g.enemies.items)
       if (e.active) {
         if (e.elite >= 0) this.eliteMark(tg, e, g.realTime);

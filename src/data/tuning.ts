@@ -67,7 +67,9 @@ export const T = {
   /** Level-up surge: real seconds of slow motion before the cards, and the time scale. */
   levelSurge: 0.55,
   /** Boss arrival and fall cinematics: real seconds and the time scale while they play. */
-  bossIntro: 2.4,
+  bossIntro: 3.8,
+  /** The opening of a boss intro: a wide shot of the arena forming, before the push-in. */
+  bossArenaShot: 1.6,
   bossIntroScale: 0.1,
   bossFall: 1.8,
   bossFallScale: 0.2,
