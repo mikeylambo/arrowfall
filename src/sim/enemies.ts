@@ -66,7 +66,9 @@ function projectile(g: Hunt, e: Enemy, angle: number, speed = 380) {
   }
   g.emit('enemy.loose', e.x, e.y);
 }
+const separation: Enemy[] = [];
 export function updateEnemies(g: Hunt, dt: number) {
+  g.tick++;
   const p = g.player;
   for (const e of g.enemies.items)
     if (e.active) {
@@ -140,8 +142,38 @@ export function updateEnemies(g: Hunt, dt: number) {
         move = false;
         if (e.clock <= 0) e.state = 2;
       }
+      if (e.kind === 1 && e.pack >= 0 && e.state === 0) {
+        // Pack hunting: circle at ~300 px, each hound on its own place on the ring, until the
+        // pack's shared clock runs out; then every circling hound crouches at once.
+        if (d < 420) {
+          const ring = e.slot + g.time * 0.55,
+            tx = p.x + Math.cos(ring) * 300,
+            ty = p.y + Math.sin(ring) * 300,
+            ox = tx - e.x,
+            oy = ty - e.y,
+            ol = len(ox, oy) || 1;
+          e.x += (ox / ol) * Math.min(ol, speed * 1.15 * dt);
+          e.y += (oy / ol) * Math.min(ol, speed * 1.15 * dt);
+          e.angle = aim;
+          blockedMove(e, e.r * 0.7, g.world.hash);
+          move = false;
+          const at = g.packAttack[e.pack];
+          if (at === undefined || at < g.time - 6) g.packAttack[e.pack] = g.time + 1.8;
+          else if (g.time >= at && e.clock <= 0) {
+            e.state = 1;
+            e.clock = def.telegraph;
+            e.tx = p.x + g.playerVelocity.x * 0.35;
+            e.ty = p.y + g.playerVelocity.y * 0.35;
+            telegraph(g, e, 0, def.telegraph, 12, 320);
+            if (!e.dummy) g.emit('enemy.hound.crouch', e.x, e.y);
+          }
+        }
+      } else if (e.kind === 1 && e.pack >= 0 && e.state === 2 && e.clock <= 0.05) {
+        // Back from the lunge: the pack regroups and lunges again after a few seconds.
+        g.packAttack[e.pack] = g.time + 3.5;
+      }
       if (e.kind === 1) {
-        if (e.state === 0 && d < 340) {
+        if (e.state === 0 && e.pack < 0 && d < 340) {
           e.state = 1;
           e.clock = def.telegraph;
           e.tx = p.x;
@@ -164,7 +196,28 @@ export function updateEnemies(g: Hunt, dt: number) {
         }
       }
       if (e.kind === 3) {
-        if (d < 430) move = false;
+        // Poacher: holds ~400 px, strafes while it nocks, backs off when crowded, and leads
+        // its shot toward where the hunter is heading.
+        if (d < 430) {
+          move = false;
+          if (e.state === 0) {
+            const side = e.id % 2 ? 1 : -1,
+              away = d < 300 ? -1 : 0,
+              sx = (-dy / (d || 1)) * side + (dx / (d || 1)) * away,
+              sy = (dx / (d || 1)) * side + (dy / (d || 1)) * away;
+            e.x += sx * speed * 0.8 * dt;
+            e.y += sy * speed * 0.8 * dt;
+            blockedMove(e, e.r * 0.7, g.world.hash);
+          }
+        }
+        if (e.state === 1) {
+          // The draw line tracks the lead point while it aims.
+          const t = d / 380;
+          e.angle = Math.atan2(
+            p.y + g.playerVelocity.y * t * 0.8 - e.y,
+            p.x + g.playerVelocity.x * t * 0.8 - e.x,
+          );
+        }
         if (e.clock <= 0) {
           if (e.state === 0) {
             e.state = 1;
@@ -238,6 +291,24 @@ export function updateEnemies(g: Hunt, dt: number) {
           vy /= length;
           e.x += vx * speed * dt;
           e.y += vy * speed * dt;
+        }
+        // Loose clumps: shove apart from close neighbours (a third of the crowd per tick).
+        if ((e.id + g.tick) % 3 === 0) {
+          const n = g.hash.query(e.x, e.y, e.r * 2, separation);
+          for (let i = 0, k = 0; i < n && k < 4; i++) {
+            const o = separation[i];
+            if (o === e || !o.active || o.boss >= 0) continue;
+            const sx = e.x - o.x,
+              sy = e.y - o.y,
+              sd = len(sx, sy) || 1,
+              min = e.r + o.r;
+            if (sd < min) {
+              const push = ((min - sd) / sd) * 0.5;
+              e.x += sx * push;
+              e.y += sy * push;
+              k++;
+            }
+          }
         }
         blockedMove(e, e.r * 0.7, g.world.hash);
       }

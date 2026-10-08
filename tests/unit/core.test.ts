@@ -165,3 +165,27 @@ it('director spawns outside the visible rectangle', () => {
     ).toBe(true);
   }
 });
+it('a Moonhound pack circles the hunter, then crouches together', () => {
+  const profile = freshProfile();
+  profile.onboarded = true;
+  const g = new Hunt(91, profile);
+  g.freezeSpawns = true;
+  g.god = true;
+  const hounds = [0, 1, 2, 3].map((i) => {
+    const h = g.spawn(1, g.player.x + 360, g.player.y + (i - 1.5) * 40)!;
+    h.pack = 7;
+    h.slot = (i / 4) * Math.PI * 2;
+    h.clock = 0;
+    return h;
+  });
+  let circled = false,
+    together = false;
+  for (let t = 0; t < 60 * 4 && !together; t++) {
+    g.step(1 / 60, input);
+    const ds = hounds.map((h) => Math.hypot(h.x - g.player.x, h.y - g.player.y));
+    if (hounds.every((h) => h.state === 0) && ds.every((d) => d > 220 && d < 400)) circled = true;
+    together = hounds.filter((h) => h.state === 1).length >= 3;
+  }
+  expect(circled).toBe(true);
+  expect(together).toBe(true);
+});

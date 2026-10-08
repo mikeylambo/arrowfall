@@ -10,6 +10,7 @@ export class Synth implements AudioSystem {
   voiceCount = 0;
   nextBeat = 0;
   lastCrit = 0;
+  lastGrowl = 0;
   unlock() {
     if (!this.context) {
       this.context = new AudioContext();
@@ -170,6 +171,13 @@ export class Synth implements AudioSystem {
       this.noise(0.06, 0.06);
     } else if (id === 'deadeye.strike') {
       return;
+    } else if (id === 'enemy.hound.crouch') {
+      // Pack growl: a rough low rumble, throttled so a pack crouching together growls once.
+      const now = this.context.currentTime;
+      if (now - this.lastGrowl < 0.4) return;
+      this.lastGrowl = now;
+      this.tone(70, 0.5, 'sawtooth', 0.08, 'sfx', 0.8);
+      this.tone(105, 0.45, 'sawtooth', 0.04, 'sfx', 0.85);
     } else if (id === 'streak.tier') {
       // Rising fanfare in key, higher with each tier.
       [587.33, 739.99, 880, 1174.66].forEach((f, i) =>

@@ -67,6 +67,8 @@ export class Hunt {
     statusClock: 0,
     deadmark: false,
     dummy: false,
+    pack: -1,
+    slot: 0,
   }));
   readonly arrows = new Pool<Arrow>(1400, () => ({
     active: false,
@@ -178,6 +180,15 @@ export class Hunt {
   /** A felled boss's relic cards (or the Huntmaster's victory) wait for its fall cinematic. */
   pendingRelic = false;
   pendingVictory = false;
+  /** Moonhound packs: next pack id and, per pack, the time it next lunges together. */
+  nextPack = 0;
+  /** Sim ticks, for staggering per-enemy work across frames. */
+  tick = 0;
+  lastPlayerX = 0;
+  lastPlayerY = 0;
+  readonly packAttack: Record<number, number> = {};
+  /** Hunter velocity (px/s), smoothed, so archers can lead their shots. */
+  readonly playerVelocity = { x: 0, y: 0 };
   offers: string[] = [];
   choiceGuard = 0;
   outcome = '';
@@ -362,6 +373,8 @@ export class Hunt {
     e.statusClock = 0;
     e.deadmark = false;
     e.dummy = dummy;
+    e.pack = -1;
+    e.slot = 0;
     if (!this.profile.seen.includes(d.id)) this.profile.seen.push(d.id);
     return e;
   }
@@ -561,6 +574,13 @@ export class Hunt {
       p.y += (input.my / l) * speed * dt;
     }
     blockedMove(p, 16, this.world.hash);
+    if (dt > 0) {
+      const k = Math.min(1, dt * 6);
+      this.playerVelocity.x += ((p.x - this.lastPlayerX) / dt - this.playerVelocity.x) * k;
+      this.playerVelocity.y += ((p.y - this.lastPlayerY) / dt - this.playerVelocity.y) * k;
+    }
+    this.lastPlayerX = p.x;
+    this.lastPlayerY = p.y;
     for (const wall of this.threats.items)
       if (wall.active && wall.kind === 4) {
         const dx = p.x - wall.x,
@@ -780,7 +800,21 @@ export class Hunt {
           ? 0
           : Math.min(0.08, 0.02 + ((this.time - 240) / 660) * 0.06) * (this.phase >= 2 ? 2 : 1);
       if (this.directorRng.next() < chance) elite = Math.floor(this.directorRng.next() * 6);
-      this.spawn(kind, undefined, undefined, false, elite);
+      const lead = this.spawn(kind, undefined, undefined, false, elite);
+      // Moonhounds hunt in packs of 3-5 (GDD 9): the rest arrive beside the first.
+      if (lead && kind === 1) {
+        const pack = this.nextPack++,
+          size = 3 + Math.floor(this.directorRng.next() * 3);
+        lead.pack = pack;
+        lead.slot = 0;
+        for (let i = 1; i < size && this.enemies.count < this.cap() + 4; i++) {
+          const h = this.spawn(1, lead.x + (i % 2 ? 50 : -50) * i, lead.y + (i % 2 ? -40 : 40) * i);
+          if (h) {
+            h.pack = pack;
+            h.slot = (i / size) * Math.PI * 2;
+          }
+        }
+      }
     }
     this.formationClock -= dt;
     if (this.formationClock <= 0 && !this.boss) {

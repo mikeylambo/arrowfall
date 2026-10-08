@@ -43,6 +43,9 @@ export interface Enemy extends Body {
   statusClock: number;
   deadmark: boolean;
   dummy: boolean;
+  /** Moonhound pack id (-1 alone) and this member's place on the circle (radians). */
+  pack: number;
+  slot: number;
 }
 export interface Arrow extends Body {
   vx: number;
