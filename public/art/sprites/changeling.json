@@ -1,6 +1,7 @@
 {
   "id": "changeling",
   "cell": 256,
+  "heightPx": 128,
   "pivot": [
     0.5,
     0.88

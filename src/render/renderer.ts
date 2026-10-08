@@ -86,6 +86,8 @@ BitmapFont.install({
   chars: [['0', '9'], '!'],
 });
 const HUNTER_SCALE = 0.4,
+  /** Enemy death collapse (s). */
+  CORPSE_TIME = 0.45,
   /** Moonraven dive length (s): out to the target and back. */
   RAVEN_DIVE = 0.36;
 /** Palette as Pixi tints. */
@@ -111,6 +113,12 @@ export class View {
   readonly deadeyeFilter = new ColorMatrixFilter();
   /** Accessibility: no shake, no scale pulses, no fog drift, dimmed flashes. */
   reducedMotion = false;
+  /** Performance mode: native resolution 1, fewer lights, no high mist, half the particles. */
+  lowPower = false;
+  setLowPower(on: boolean) {
+    this.lowPower = on;
+    if (this.app.renderer) this.app.renderer.resolution = on ? 1 : Math.min(devicePixelRatio, 2);
+  }
   readonly cover = new Container();
   readonly effects = new Container();
   readonly actors = new Container();
@@ -126,6 +134,12 @@ export class View {
   readonly threatGraphics = new Graphics();
   numbers = false;
   ravenDive = { t: 0, x: 0, y: 0, hit: false };
+  deathTime = 0;
+  corpses: { sprite: Sprite; life: number; tip: number; sx: number; sy: number; y: number }[] = [];
+  corpseCursor = 0;
+  recoil = 0;
+  facing = 0;
+  heldFacing = 0;
   numberSlots: { text: BitmapText; life: number; kind: number }[] = [];
   art: Record<string, Texture> = {};
   enemySprites: Sprite[] = [];
@@ -167,7 +181,7 @@ export class View {
       resizeTo: window,
       background: PALETTE.background,
       antialias: false,
-      resolution: Math.min(devicePixelRatio, 2),
+      resolution: this.lowPower ? 1 : Math.min(devicePixelRatio, 2),
       autoDensity: true,
       preference: 'webgl',
     });
@@ -246,6 +260,15 @@ export class View {
       s.scale.set(0.7);
       this.ghostSprites.push(s);
     }
+    // Corpses draw beneath the living.
+    this.corpses = this.pool(60, this.art.husk, this.threatLayer).map((sprite) => ({
+      sprite,
+      life: 0,
+      tip: 1,
+      sx: 1,
+      sy: 1,
+      y: 0,
+    }));
     this.enemySprites = this.pool(500, this.art.husk, this.threatLayer);
     // The boss weak point draws over the bodies (a sheet boss wears it on its head).
     this.threatLayer.addChild(this.weakPoint);
@@ -424,6 +447,55 @@ export class View {
       }
     }
   }
+  /**
+   * Enemy deaths: the body that was standing there tips over, darkens, sinks and fades
+   * (presentation only; the sim has already removed the enemy).
+   */
+  updateCorpses(g: Hunt, dt: number) {
+    for (const ev of g.events) {
+      if (!ev.id.startsWith('enemy.kill.')) continue;
+      let best = -1,
+        bestD = 30;
+      for (let i = 0; i < this.enemySprites.length; i++) {
+        const s = this.enemySprites[i];
+        if (!s.visible || g.enemies.items[i].active) continue;
+        const d = Math.abs(s.x - ev.x) + Math.abs(s.y - ev.y);
+        if (d < bestD) {
+          best = i;
+          bestD = d;
+        }
+      }
+      if (best < 0) continue;
+      const from = this.enemySprites[best],
+        c = this.corpses[this.corpseCursor++ % this.corpses.length];
+      c.sprite.texture = from.texture;
+      c.sprite.anchor.copyFrom(from.anchor);
+      c.sprite.position.copyFrom(from.position);
+      c.sprite.rotation = from.rotation;
+      c.sx = from.scale.x;
+      c.sy = from.scale.y;
+      c.y = from.y;
+      c.tip = from.scale.x < 0 ? -1 : 1;
+      c.life = CORPSE_TIME;
+      c.sprite.visible = true;
+      from.visible = false;
+    }
+    for (const c of this.corpses) {
+      if (c.life <= 0) continue;
+      c.life -= dt;
+      if (c.life <= 0) {
+        c.sprite.visible = false;
+        continue;
+      }
+      const t = 1 - c.life / CORPSE_TIME,
+        ease = 1 - (1 - t) * (1 - t);
+      c.sprite.scale.set(c.sx * (1 + 0.1 * ease), c.sy * (1 - 0.55 * ease));
+      c.sprite.rotation = this.reducedMotion ? 0 : c.tip * 0.5 * ease;
+      c.sprite.y = c.y + 6 * ease;
+      c.sprite.tint = t < 0.15 ? 0xffffff : 0x5a1018;
+      c.sprite.alpha = 1 - t * t;
+    }
+  }
   /** Place this frame's lights (pooled additive blooms; budgeted so crowds stay cheap). */
   updateLights(g: Hunt) {
     if (!this.lightSprites.length)
@@ -436,8 +508,9 @@ export class View {
         this.lightSprites.push(l);
       }
     let n = 0;
+    const budget = this.lowPower ? 10 : this.lightSprites.length;
     const put = (x: number, y: number, scale: number, color: number, alpha: number) => {
-      if (n >= this.lightSprites.length) return;
+      if (n >= budget) return;
       const l = this.lightSprites[n++];
       l.visible = true;
       l.position.set(x, y);
@@ -455,7 +528,7 @@ export class View {
       put(L[0].x, L[0].y - 170, 3.2, 0xc4d4ff, 0.3 * pulse);
       put(L[7].x, L[7].y - 40, 2.4, 0xc4d4ff, 0.2 * pulse);
       for (const a of g.arrows.items) {
-        if (n >= this.lightSprites.length) break;
+        if (n >= budget) break;
         if (a.active && (a.perfect || a.source === 'deadeye'))
           put(a.x, a.y, 1.1, C.focus, a.source === 'deadeye' ? 0.45 : 0.3);
       }
@@ -474,18 +547,30 @@ export class View {
     this.height = innerHeight;
     const p = g.player;
     // Boss cinematics frame the boss (pushed in on arrival), otherwise the camera leads the aim.
-    const cine = g.cinematic > 0,
-      targetZoom = cine
-        ? g.cinematicKind === 'intro'
-          ? 1.2
-          : 1.08
-        : g.boss || g.deadeye > 0
-          ? 0.9
-          : 1;
+    const fallen = g.outcome === 'The Hunter Falls';
+    this.deathTime = fallen ? this.deathTime + realDt : 0;
+    const cine = g.cinematic > 0 || fallen,
+      targetZoom = fallen
+        ? 1.3
+        : cine
+          ? g.cinematicKind === 'intro'
+            ? 1.2
+            : 1.08
+          : g.boss || g.deadeye > 0
+            ? 0.9
+            : 1;
     this.zoom += (targetZoom - this.zoom) * Math.min(1, realDt * (cine ? 2.5 : 4));
     const look = this.camp ? 0 : Math.min(this.width * 0.18, 120);
-    const targetX = cine ? p.x + (g.cinematicX - p.x) * 0.8 : p.x + Math.cos(p.aim) * look,
-      targetY = cine ? p.y + (g.cinematicY - 70 - p.y) * 0.8 : p.y + Math.sin(p.aim) * look,
+    const targetX = fallen
+        ? p.x
+        : cine
+          ? p.x + (g.cinematicX - p.x) * 0.8
+          : p.x + Math.cos(p.aim) * look,
+      targetY = fallen
+        ? p.y - 30
+        : cine
+          ? p.y + (g.cinematicY - 70 - p.y) * 0.8
+          : p.y + Math.sin(p.aim) * look,
       follow = Math.min(1, realDt * (cine ? 3 : 8));
     this.camera.x += (targetX - this.camera.x) * follow;
     this.camera.y += (targetY - this.camera.y) * follow;
@@ -502,6 +587,7 @@ export class View {
     this.atmosphere.update(this, this.reducedMotion ? 0 : g.realTime);
     this.atmosphere.night(this.camp ? 0 : g.time, g.realTime, realDt, this.reducedMotion);
     this.updateLights(g);
+    if (this.lowPower) this.atmosphere.mistHigh.visible = false;
     this.timing.atmosphere += (performance.now() - atmosphereStart - this.timing.atmosphere) * 0.1;
     for (let i = 0; i < this.coverSprites.length; i++) {
       const s = this.coverSprites[i];
@@ -510,6 +596,7 @@ export class View {
         Math.abs(s.y - this.camera.y) < this.height / 2 / this.zoom + 150;
     }
     const dim = g.crowd > 150 ? 0.7 : 1;
+    this.updateCorpses(g, realDt);
     for (let i = 0; i < g.enemies.items.length; i++) {
       const e = g.enemies.items[i],
         s = this.enemySprites[i];
@@ -564,6 +651,18 @@ export class View {
             e.kind === 2 && e.xp === 0 && e.maxHp === 1 && g.boss?.active && g.boss.boss === 2
               ? this.bossSheets.hag
               : undefined;
+        if (e.kind === 7 && e.state === 0) {
+          // Changeling, disguised: almost an XP shard. A touch larger, slower to bob, and
+          // every few seconds a red glint betrays it (GDD 9).
+          const glint = Math.sin(g.realTime * 1.3 + e.id) > 0.97;
+          s.texture = this.art.xp;
+          s.anchor.set(0.5);
+          s.rotation = 0;
+          s.scale.set(0.62 + 0.03 * Math.sin(g.realTime * 2.2 + e.id));
+          s.tint = glint ? C.threat : C.silver;
+          s.alpha = 1;
+          continue;
+        }
         if (illusion) {
           const frame = illusion.frame(
               'move',
@@ -695,7 +794,7 @@ export class View {
     for (let i = 0; i < g.pickups.items.length; i++) {
       const q = g.pickups.items[i],
         s = this.pickupSprites[i];
-      s.visible = q.active;
+      s.visible = q.active && !(this.lowPower && i & 1);
       if (q.active) {
         s.texture = this.art[q.kind === 2 ? 'berry' : 'xp'];
         s.position.set(q.x, q.y);
@@ -729,20 +828,36 @@ export class View {
       // Clip from gameplay state: dodge and hurt follow their own timers, drawing holds its aim
       // pose while standing and walks with the bow up while moving.
       const sheet = this.hunterSheet;
+      // Facing eases toward the aim and holds near a direction's edge, so the sprite doesn't
+      // flicker between two directions while aiming along the boundary.
+      const turn = Math.atan2(Math.sin(p.aim - this.facing), Math.cos(p.aim - this.facing));
+      this.facing += turn * Math.min(1, realDt * 16);
+      const step = Math.PI / 4,
+        current = Math.round(this.heldFacing / step) * step,
+        off = Math.atan2(Math.sin(this.facing - current), Math.cos(this.facing - current));
+      if (Math.abs(off) > step * 0.62) this.heldFacing = this.facing;
+      const face = Math.round(this.heldFacing / step) * step;
       let frame;
-      if (p.dodge > 0 && sheet.has('dodge'))
-        frame = sheet.frame('dodge', p.aim, 0, 1 - p.dodge / T.dodgeTime);
+      if (g.outcome === 'The Hunter Falls' && sheet.has('death'))
+        frame = sheet.frame('death', face, 0, Math.min(1, this.deathTime / 1.4));
+      else if (p.dodge > 0 && sheet.has('dodge'))
+        frame = sheet.frame('dodge', face, 0, 1 - p.dodge / T.dodgeTime);
       else if (p.invuln > 0 && sheet.has('hurt'))
-        frame = sheet.frame('hurt', p.aim, 0, 1 - p.invuln / T.invulnerability);
+        frame = sheet.frame('hurt', face, 0, 1 - p.invuln / T.invulnerability);
       else if (p.draw > 0 && sheet.has('draw'))
-        frame = g.moving
-          ? sheet.frame('draw', p.aim, g.realTime)
-          : sheet.frame('draw', p.aim, 0, 0);
-      else frame = sheet.frame(g.moving && sheet.has('run') ? 'run' : 'idle', p.aim, g.realTime);
+        frame = g.moving ? sheet.frame('draw', face, g.realTime) : sheet.frame('draw', face, 0, 0);
+      else frame = sheet.frame(g.moving && sheet.has('run') ? 'run' : 'idle', face, g.realTime);
       this.hunter.texture = frame.texture;
       this.hunter.anchor.set(sheet.manifest.pivot[0], sheet.manifest.pivot[1]);
       // ~69 px tall on screen (art bible: 72 px), so bosses and crowds keep their scale.
-      const k = HUNTER_SCALE;
+      // Release recoil: a quick punch back along the aim on every loose.
+      for (const e of g.events)
+        if (e.id === 'bow.perfect' || e.id === 'bow.full' || e.id === 'bow.quick')
+          this.recoil = e.id === 'bow.perfect' ? 1 : 0.7;
+      this.recoil = Math.max(0, this.recoil - realDt * 9);
+      const kick = this.reducedMotion ? 0 : this.recoil;
+      this.hunter.position.set(p.x - Math.cos(p.aim) * 4 * kick, p.y - Math.sin(p.aim) * 4 * kick);
+      const k = HUNTER_SCALE * (1 + 0.05 * kick);
       this.hunter.scale.set(frame.mirror ? -k : k, k);
       this.hunter.rotation = 0;
       this.footShadow.visible = true;

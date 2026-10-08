@@ -78,6 +78,14 @@
           "start": 0,
           "end": 1.0,
           "noEyes": true
+        },
+        {
+          "name": "death",
+          "url": "/art-source/meshy_output/20261006_202735_hunter_01a112e6/hunter-death.glb",
+          "frames": 12,
+          "loop": false,
+          "inPlace": true,
+          "noEyes": true
         }
       ],
       "source": {
@@ -91,7 +99,8 @@
             "archery": "01a112f2-5093-7402-9136-7e0e294566f2",
             "dodge": "01a112f2-959f-739c-b9dd-d38ae7c93908",
             "hurt": "01a112f2-9ccb-7731-925f-6871d394664d",
-            "drawwalk": "01a112f2-a2dc-7372-9b41-45f0f65109d7"
+            "drawwalk": "01a112f2-a2dc-7372-9b41-45f0f65109d7",
+            "death": "01a11992-7693-7094-aa72-b85984a74aa5"
           }
         },
         "note": "Models are not committed. Re-download into the project folder with: NODE_USE_ENV_PROXY=1 npx meshy-cli@0.4.0 download --resource animate --task-id <id> --asset result.animation_glb_url --output art-source/meshy_output/<folder>/hunter-<clip>.glb (rigging: --resource rigging --asset result.basic_animations.running_glb_url)"

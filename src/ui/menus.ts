@@ -47,7 +47,8 @@ const ICON: Record<string, string> = {
 /** Icon for a row, from its id (and screen). */
 function iconFor(screen: string, id: string, disabled: boolean) {
   if (disabled && (screen === 'fletcher' || screen === 'phase')) return 'lock';
-  if (id === 'start' || id === 'resume' || id === 'begin' || id === 'retry') return 'play';
+  if (id === 'start' || id === 'continue' || id === 'resume' || id === 'begin' || id === 'retry')
+    return 'play';
   if (id === 'restart') return 'restart';
   if (id === 'settings' || id === 'options') return 'gear';
   if (id === 'quit' || id === 'camp') return 'door';
@@ -166,10 +167,16 @@ async function portrait(button: HTMLElement, enemy: string) {
 }
 
 /** Watch the UI root and decorate every screen as it is rendered. */
-export function decorateMenus(root: HTMLElement) {
+export function decorateMenus(
+  root: HTMLElement,
+  extra?: (screen: string, section: HTMLElement) => void,
+) {
   const run = () => {
     const section = root.querySelector<HTMLElement>('.slu-screen');
-    if (section && !section.dataset.decorated) decorate(section);
+    if (section && !section.dataset.decorated) {
+      decorate(section);
+      extra?.(section.dataset.screenId ?? '', section);
+    }
   };
   new MutationObserver(run).observe(root, { childList: true });
   run();

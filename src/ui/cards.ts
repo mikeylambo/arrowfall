@@ -269,3 +269,51 @@ function recapPanel(r: Recap) {
     <p class="recap-nudge">${escape(r.nudge)}</p>`;
   return el;
 }
+
+/** Pause: the run's build at a glance (bow, upgrades with ranks, evolutions owned and near). */
+export function buildPanel(g: Hunt) {
+  const el = document.createElement('div');
+  el.className = 'build-panel';
+  const owned = Object.entries(g.ranks).filter(([, r]) => r > 0);
+  const near = EVOLUTIONS.filter(
+    (e) => !g.evolutions.has(e.id) && e.ingredients.some((i) => g.rank(i) > 0),
+  )
+    .map((e) => ({ e, have: e.ingredients.filter((i) => g.rank(i) > 0).length }))
+    .sort((a, b) => b.have / b.e.ingredients.length - a.have / a.e.ingredients.length)
+    .slice(0, 4);
+  const name = (id: string) =>
+    UPGRADES.find((u) => u.id === id)?.name ?? TOOLS.find((t) => t.id === id)?.name ?? id;
+  const cap = (id: string) => UPGRADES.find((u) => u.id === id)?.cap ?? 5;
+  el.innerHTML = `
+    <h3>${escape(g.bow.name)} <small>${escape(g.bow.signature)}</small></h3>
+    <div class="build-upgrades">${
+      owned.length
+        ? owned
+            .map(([id, r]) => {
+              const u = UPGRADES.find((x) => x.id === id);
+              return `<span class="build-chip" data-rarity="${(u?.rarity ?? 'Uncommon').toLowerCase()}">${icon((u?.family ?? 'Tool') as keyof typeof ICONS)}<b>${escape(name(id))}</b><i>${r}/${cap(id)}</i></span>`;
+            })
+            .join('')
+        : '<em>No upgrades yet</em>'
+    }</div>
+    ${
+      g.evolutions.size
+        ? `<h4>Evolutions</h4><div class="build-evos">${[...g.evolutions]
+            .map((id) => `<span>${escape(EVOLUTIONS.find((e) => e.id === id)?.name ?? id)}</span>`)
+            .join('')}</div>`
+        : ''
+    }
+    ${
+      near.length
+        ? `<h4>Within reach</h4><ul class="build-near">${near
+            .map(
+              ({ e }) =>
+                `<li><b>${escape(e.name)}</b>${e.ingredients
+                  .map((i) => `<i class="${g.rank(i) > 0 ? 'on' : ''}">${escape(name(i))}</i>`)
+                  .join('')}</li>`,
+            )
+            .join('')}</ul>`
+        : ''
+    }`;
+  return el;
+}

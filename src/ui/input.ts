@@ -17,6 +17,10 @@ export class Controls {
     dodge: 'Space',
     deadeye: 'KeyE',
   };
+  /** Gamepad buttons (standard mapping): RT draws, A dodges, RB Deadeye. */
+  padBindings = { draw: 7, dodge: 0, deadeye: 5 };
+  /** Phone vibration and gamepad rumble. */
+  haptics = true;
   toggle = false;
   toggleDown = false;
   touch: TouchPad;
@@ -86,6 +90,44 @@ export class Controls {
     const angle = Math.atan2(best.y - player.y, best.x - player.x);
     return aim + Math.atan2(Math.sin(angle - aim), Math.cos(angle - aim)) * strength;
   }
+  /** The input device in use, for on-screen prompts. */
+  get device(): 'touch' | 'pad' | 'keyboard' {
+    return this.touching ? 'touch' : this.usingPad ? 'pad' : 'keyboard';
+  }
+  /** A pad button pressed this frame (for rebinding), or -1. */
+  padPress(previous: boolean[]) {
+    const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean);
+    if (!pad) return -1;
+    const pressed = pad.buttons.map((b) => b.pressed);
+    const index = pressed.findIndex((p, i) => p && !previous[i]);
+    previous.length = 0;
+    previous.push(...pressed);
+    return index;
+  }
+  /** Buzz the phone or the pad. `strength` 0..1, `ms` duration. */
+  rumble(strength: number, ms: number) {
+    if (!this.haptics) return;
+    if (this.touching) navigator.vibrate?.(Math.round(ms * Math.min(1, strength + 0.3)));
+    else if (this.usingPad) {
+      const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean),
+        actuator = (
+          pad as
+            | (Gamepad & {
+                vibrationActuator?: {
+                  playEffect?: (type: string, params: object) => Promise<unknown>;
+                };
+              })
+            | undefined
+        )?.vibrationActuator;
+      void actuator
+        ?.playEffect?.('dual-rumble', {
+          duration: ms,
+          strongMagnitude: strength,
+          weakMagnitude: Math.min(1, strength * 1.4),
+        })
+        ?.catch(() => {});
+    }
+  }
   sample(view: View, player: { x: number; y: number }, targets: readonly Enemy[] = []): Input {
     let mx = Number(this.keys.has(this.bindings.right)) - Number(this.keys.has(this.bindings.left)),
       my = Number(this.keys.has(this.bindings.down)) - Number(this.keys.has(this.bindings.up));
@@ -117,9 +159,10 @@ export class Controls {
         this.mouse.x = view.width / 2 + (aim.x - view.camera.x) * view.zoom;
         this.mouse.y = view.height / 2 + (aim.y - view.camera.y) * view.zoom;
       }
-      draw = draw || pressed[7];
-      this.dodge = this.dodge || edge(0) || edge(6);
-      this.deadeye = this.deadeye || edge(5);
+      const b = this.padBindings;
+      draw = draw || pressed[b.draw];
+      this.dodge = this.dodge || edge(b.dodge) || (b.dodge === 0 && edge(6));
+      this.deadeye = this.deadeye || edge(b.deadeye);
       this.previousButtons = pressed;
     }
     if (this.touching) {

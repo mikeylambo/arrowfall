@@ -301,6 +301,64 @@ export class Hunt {
     for (const e of this.enemies.items) if (e.active) crowd++;
     this.crowd = crowd;
   }
+  /** The essentials of a hunt in progress, for a mid-run save (enemies are not kept). */
+  toSave(): HuntSave {
+    const p = this.player;
+    return {
+      seed: this.seed,
+      bow: this.bow.id,
+      phase: this.phase,
+      curses: [...this.curses],
+      time: this.time,
+      level: this.level,
+      xp: this.xp,
+      pendingLevels: this.pendingLevels,
+      kills: this.kills,
+      shots: this.shots,
+      perfects: this.perfects,
+      sweetKills: this.sweetKills,
+      maxStreak: this.maxStreak,
+      earned: this.earned,
+      bossMask: this.bossMask,
+      discovered: this.discovered,
+      rerolls: this.rerolls,
+      banishes: this.banishes,
+      skips: this.skips,
+      ranks: { ...this.ranks },
+      evolutions: [...this.evolutions],
+      banished: [...this.banished],
+      damageSources: { ...this.damageSources },
+      player: { x: p.x, y: p.y, hp: p.hp, maxHp: p.maxHp, focus: p.focus },
+    };
+  }
+  /** Resume a saved hunt: progress and build come back; the night begins again around you. */
+  restore(save: HuntSave) {
+    this.curses.clear();
+    for (const c of save.curses) this.curses.add(c);
+    this.time = save.time;
+    this.level = save.level;
+    this.xp = save.xp;
+    this.pendingLevels = save.pendingLevels;
+    this.kills = save.kills;
+    this.shots = save.shots;
+    this.perfects = save.perfects;
+    this.sweetKills = save.sweetKills;
+    this.maxStreak = save.maxStreak;
+    this.earned = save.earned;
+    this.bossMask = save.bossMask;
+    this.discovered = save.discovered;
+    this.rerolls = save.rerolls;
+    this.banishes = save.banishes;
+    this.skips = save.skips;
+    Object.assign(this.ranks, save.ranks);
+    for (const e of save.evolutions) this.evolutions.add(e);
+    for (const b of save.banished) this.banished.add(b);
+    Object.assign(this.damageSources, save.damageSources);
+    Object.assign(this.player, save.player);
+    this.lastPlayerX = this.player.x;
+    this.lastPlayerY = this.player.y;
+    this.cinematic = 0;
+  }
   rank(id: string) {
     return this.ranks[id] || 0;
   }
@@ -1250,4 +1308,31 @@ export class Hunt {
     );
     this.emit(outcome === 'The Hunter Falls' ? 'player.death' : 'world.dawn');
   }
+}
+
+export interface HuntSave {
+  seed: number;
+  bow: string;
+  phase: number;
+  curses: string[];
+  time: number;
+  level: number;
+  xp: number;
+  pendingLevels: number;
+  kills: number;
+  shots: number;
+  perfects: number;
+  sweetKills: number;
+  maxStreak: number;
+  earned: number;
+  bossMask: number;
+  discovered: number;
+  rerolls: number;
+  banishes: number;
+  skips: number;
+  ranks: Record<string, number>;
+  evolutions: string[];
+  banished: string[];
+  damageSources: Record<string, number>;
+  player: { x: number; y: number; hp: number; maxHp: number; focus: number };
 }

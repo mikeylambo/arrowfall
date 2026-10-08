@@ -501,11 +501,16 @@ export async function renderJob(job: SpriteJob) {
     // Root motion: the hips' horizontal offset at the window start is held for the whole clip.
     const hips = clipJob.inPlace ? src.root.getObjectByName('Hips') : null;
     const start = clipJob.start ?? 0,
-      end = clipJob.end ?? clip?.duration ?? 1;
+      end = clipJob.end ?? (clip ? clip.duration - 1e-3 : 1);
     mixer.setTime(start);
     const hipRest = hips ? hips.position.clone() : null;
     frames[clipJob.name] = [];
     for (const dir of job.directions) {
+      // A one-shot clip that reached its end is paused by three.js; restart it per direction.
+      if (action) {
+        action.reset();
+        action.play();
+      }
       const row: { page: number; x: number; y: number }[] = [];
       // Direction 0 faces screen-right; directions step 45 degrees clockwise on screen.
       src.root.rotation.y =

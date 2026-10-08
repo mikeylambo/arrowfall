@@ -12,7 +12,7 @@ import {
 import { View } from './render/renderer';
 import { Synth } from './audio/synth';
 import { Controls } from './ui/input';
-import { Hunt } from './sim/game';
+import { Hunt, type HuntSave } from './sim/game';
 import { BOWS } from './data/bows';
 import { BOSSES } from './data/bosses';
 import { UPGRADES } from './data/upgrades';
@@ -25,7 +25,7 @@ import { STATIONS } from './data/world';
 import { T, xpNeeded } from './data/tuning';
 import { loadProfile, saveProfile, bankRun, boonCost } from './sim/profile';
 import { fmt, bowChoices, offerChoices, altarChoices, logChoices, fingerprint } from './ui/screens';
-import { decorateLevelUp, decorateResults, type Recap } from './ui/cards';
+import { buildPanel, decorateLevelUp, decorateResults, type Recap } from './ui/cards';
 import { Coach } from './ui/coach';
 import { decorateMenus } from './ui/menus';
 import { TOOLS } from './data/tools';
@@ -51,6 +51,12 @@ let game: Hunt | null = null,
   pauseDeferred = false,
   seedOverride: number | null = null;
 const touchDevice = matchMedia('(pointer: coarse)').matches;
+/** Seconds of the death beat before results (the death clip, a slow push-in). */
+const DEATH_BEAT = 1.8;
+let deathClock = 0;
+/** Gamepad rebinding in progress: actions still to bind, and last frame's buttons. */
+let padRebind: ('draw' | 'dodge' | 'deadeye')[] = [];
+let padPrevious: boolean[] = [];
 let options = {
   version: 3,
   autoLoose: false,
@@ -58,6 +64,12 @@ let options = {
   holdFire: true,
   /** Performance mode: fewer effects and lower resolution; on by default for phones. */
   lowPower: touchDevice,
+  /** Captions for important sounds (growls, horns, bells, drums). */
+  captions: false,
+  /** Phone vibration and gamepad rumble. */
+  haptics: true,
+  /** Last preset applied (Comfort / Standard / Challenge). */
+  preset: 'Standard',
   colorblind: false,
   bands: true,
   numbers: true,
@@ -65,6 +77,7 @@ let options = {
   uiScale: 1,
   assist: 0.3,
   bindings: controls.bindings,
+  padBindings: controls.padBindings,
   music: 0.25,
   sfx: 0.7,
   shake: 1,
@@ -81,13 +94,25 @@ try {
 controls.toggle = options.toggle;
 controls.bindings = options.bindings;
 controls.assist = options.assist;
+controls.haptics = options.haptics;
+controls.padBindings = { ...controls.padBindings, ...options.padBindings };
+view.lowPower = options.lowPower;
 view.colorblind = options.colorblind;
 view.showBands = options.bands;
 view.numbers = options.numbers;
 view.shake = options.shake;
 view.reducedMotion = options.reducedMotion;
 await view.init($('game-canvas') as HTMLCanvasElement);
-decorateMenus($('ui'));
+// Installable and playable offline (production builds only; dev keeps hot reload clean).
+if (import.meta.env.PROD && 'serviceWorker' in navigator)
+  void navigator.serviceWorker.register('/sw.js').catch(() => {});
+decorateMenus($('ui'), (screen, section) => {
+  // Pause shows the run's build beside the menu.
+  if (screen === 'pause' && game && scene === 'hunt') {
+    section.classList.add('with-build');
+    section.querySelector('.slu-panel')?.append(buildPanel(game));
+  }
+});
 /** First-hunt lessons; created before any scene can begin. */
 const coach = new Coach(
   () => audio.playSfx('coach.step'),
@@ -161,7 +186,10 @@ function saveOptions() {
   view.numbers = options.numbers;
   controls.toggle = options.toggle;
   controls.assist = options.assist;
+  controls.haptics = options.haptics;
+  view.setLowPower(options.lowPower);
   options.bindings = controls.bindings;
+  options.padBindings = controls.padBindings;
   document
     .querySelectorAll<HTMLElement>('.slu-panel')
     .forEach((el) => (el.style.zoom = String(options.uiScale)));
@@ -171,8 +199,43 @@ function saveOptions() {
   }
   document.documentElement.style.fontSize = 16 * options.uiScale + 'px';
 }
+/** Mid-run save: kept on pause, when the tab hides, and every 30 seconds of a hunt. */
+const RUN_KEY = 'arrowfall.run';
+let resumeSave: (HuntSave & { nightly?: boolean }) | null = null,
+  saveClock = 0;
+function loadRunSave(): (HuntSave & { nightly?: boolean }) | null {
+  try {
+    return JSON.parse(localStorage.getItem(RUN_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+function saveRun() {
+  // A boss alive at save time is fought again on resume (its bit in bossMask is still clear).
+  if (!game || scene !== 'hunt' || game.outcome || coach.active) return;
+  try {
+    localStorage.setItem(RUN_KEY, JSON.stringify({ ...game.toSave(), nightly }));
+  } catch {}
+}
+function clearRunSave() {
+  try {
+    localStorage.removeItem(RUN_KEY);
+  } catch {}
+}
+addEventListener('visibilitychange', () => {
+  if (document.hidden) saveRun();
+});
+addEventListener('pagehide', saveRun);
 function begin(next: string) {
   scene = next;
+  const resuming = next === 'hunt' ? resumeSave : null;
+  resumeSave = null;
+  if (resuming) {
+    seedOverride = resuming.seed;
+    selected = resuming.bow;
+    phase = resuming.phase;
+    nightly = !!resuming.nightly;
+  } else if (next === 'hunt') clearRunSave();
   savedRun = false;
   controls.clear();
   const seed =
@@ -183,6 +246,11 @@ function begin(next: string) {
   game = new Hunt(seed, profile, selected, phase, next === 'range');
   game.assistLoose = options.autoLoose;
   game.holdFire = options.holdFire;
+  if (resuming) {
+    seedOverride = null;
+    game.restore(resuming);
+  }
+  saveClock = 0;
   if (next === 'camp') {
     game.scene = 'camp';
     game.freezeSpawns = true;
@@ -193,10 +261,14 @@ function begin(next: string) {
     view.camera.y = 430;
   }
   view.attach(game, next === 'camp');
+  deathClock = 0;
   if (next === 'hunt') resetDeeds();
+  // A resumed hunt has already announced the deeds its progress met.
+  if (resuming) checkDeeds(game, 0, true);
   // Each bow announces what makes it different as the hunt begins.
-  if (next === 'hunt') game.announce(`${game.bow.name} · ${game.bow.signature}`);
-  if (next === 'hunt' && !profile.onboarded) coach.begin(game);
+  if (resuming) game.announce(`The hunt resumes · ${fmt(game.time)}`);
+  else if (next === 'hunt') game.announce(`${game.bow.name} · ${game.bow.signature}`);
+  if (next === 'hunt' && !profile.onboarded && !resuming) coach.begin(game);
   else coach.finish();
   $('hud').classList.toggle('visible', next !== 'camp');
   $('camp-title').style.display = next === 'camp' ? 'block' : 'none';
@@ -348,6 +420,12 @@ function settings() {
     'Options',
     [
       {
+        id: 'option:preset',
+        label: `Preset · ${options.preset}`,
+        description:
+          'Comfort: Hold to Fire, strong aim assist, calm motion · Standard · Challenge: release by hand, no assist or bands',
+      },
+      {
         id: 'option:holdFire',
         label: `Fire Mode · ${options.holdFire ? 'Hold to Fire' : 'Release to Fire'}`,
         description: options.holdFire
@@ -379,6 +457,21 @@ function settings() {
       },
       { id: 'option:music', label: `Music · ${Math.round(options.music * 100)}%` },
       { id: 'option:sfx', label: `SFX · ${Math.round(options.sfx * 100)}%` },
+      {
+        id: 'option:captions',
+        label: `Captions · ${options.captions ? 'On' : 'Off'}`,
+        description: 'Text for important sounds: growls, horns, bells, war drums',
+      },
+      {
+        id: 'option:haptics',
+        label: `Haptics · ${options.haptics ? 'On' : 'Off'}`,
+        description: 'Phone vibration and gamepad rumble',
+      },
+      {
+        id: 'option:lowPower',
+        label: `Performance Mode · ${options.lowPower ? 'On' : 'Off'}`,
+        description: 'Fewer effects and lights, lower resolution (on by default on phones)',
+      },
       { id: 'option:fullscreen', label: 'Fullscreen' },
       {
         id: 'option:tutorial',
@@ -389,6 +482,11 @@ function settings() {
         id: 'option:rebind',
         label: 'Rebind Movement',
         description: 'Press a key for Up, Down, Left, Right in order',
+      },
+      {
+        id: 'option:padRebind',
+        label: 'Rebind Gamepad',
+        description: 'Press a pad button for Draw, Dodge, then Deadeye',
       },
     ],
     undefined,
@@ -407,6 +505,7 @@ function levelUp() {
 function endRun() {
   if (!game || savedRun) return;
   savedRun = true;
+  clearRunSave();
   const g = game;
   // Each active curse adds to the Moonsilver payout.
   g.earned = Math.round(g.earned * (1 + CURSE_BONUS * g.curses.size));
@@ -511,6 +610,11 @@ app.flow.onActivate = (screen, id) => {
   audio.unlock();
   audio.playSfx('ui.confirm');
   if (screen === 'title') {
+    if (id === 'continue') {
+      resumeSave = loadRunSave();
+      void launch('hunt');
+      return;
+    }
     if (!profile.onboarded) {
       void launch();
     } else {
@@ -528,7 +632,10 @@ app.flow.onActivate = (screen, id) => {
       hideUI();
     } else if (id === 'restart') void launch(scene === 'range' ? 'range' : 'hunt');
     else if (id === 'settings') settings();
-    else if (id === 'quit') void launch('camp');
+    else if (id === 'quit') {
+      clearRunSave();
+      void launch('camp');
+    }
     return;
   }
   if (screen === 'trail') {
@@ -630,6 +737,9 @@ app.flow.onActivate = (screen, id) => {
         'bands',
         'numbers',
         'reducedMotion',
+        'captions',
+        'haptics',
+        'lowPower',
       ].includes(key)
     ) {
       const k = key as 'autoLoose';
@@ -642,6 +752,45 @@ app.flow.onActivate = (screen, id) => {
     if (key === 'music' || key === 'sfx') {
       options[key] = options[key] <= 0 ? 1 : Math.max(0, options[key] - 0.1);
       app.audioMixer?.setVolume(key, options[key]);
+    }
+    if (key === 'preset') {
+      const order = ['Comfort', 'Standard', 'Challenge'],
+        next = order[(order.indexOf(options.preset) + 1) % order.length];
+      options.preset = next;
+      Object.assign(
+        options,
+        next === 'Comfort'
+          ? {
+              holdFire: true,
+              assist: 0.6,
+              reducedMotion: true,
+              shake: 0.5,
+              bands: true,
+              numbers: true,
+            }
+          : next === 'Challenge'
+            ? {
+                holdFire: false,
+                assist: 0,
+                reducedMotion: false,
+                shake: 1,
+                bands: false,
+                numbers: false,
+              }
+            : {
+                holdFire: true,
+                assist: 0.3,
+                reducedMotion: false,
+                shake: 1,
+                bands: true,
+                numbers: true,
+              },
+      );
+    }
+    if (key === 'padRebind') {
+      padRebind = ['draw', 'dodge', 'deadeye'];
+      padPrevious = [];
+      $('hint').textContent = 'Press a gamepad button for Draw';
     }
     if (key === 'tutorial') {
       profile.onboarded = false;
@@ -701,7 +850,18 @@ app.flow.onBack = (screen) => {
 show(
   'title',
   'ARROWFALL',
-  [{ id: 'start', label: profile.onboarded ? 'Return to the Hollowmoor' : 'Begin the Hunt' }],
+  [
+    ...(loadRunSave()
+      ? [
+          {
+            id: 'continue',
+            label: 'Continue Hunt',
+            description: `${fmt(loadRunSave()!.time)} survived · level ${loadRunSave()!.level}`,
+          },
+        ]
+      : []),
+    { id: 'start', label: profile.onboarded ? 'Return to the Hollowmoor' : 'Begin the Hunt' },
+  ],
   '20 Minutes. One Hunter. Endless Arrows.',
 );
 const menuBackdrop = new Hunt(4421, profile);
@@ -710,6 +870,7 @@ menuBackdrop.freezeSpawns = true;
 $('camp-menu').onclick = settings;
 app.shell.events.on('game:pause', () => {
   uiScreen = 'pause';
+  saveRun();
   if (game?.deadeye) {
     pauseDeferred = true;
     app.shell.resume();
@@ -764,6 +925,10 @@ if (devMode) {
       selected = config.bow ?? 'recurve';
       void launch(config.range ? 'range' : 'hunt');
     },
+    skipTutorial: () => {
+      coach.finish();
+      profile.onboarded = true;
+    },
     setSeed: (seed: number) => {
       seedOverride = seed;
     },
@@ -789,7 +954,11 @@ if (devMode) {
     god: (value = true) => {
       if (game) game.god = value;
     },
-    finish: () => game?.finish('The Hunter Falls'),
+    finish: () => {
+      // Straight to results: the dev command skips the death beat.
+      deathClock = DEATH_BEAT;
+      game?.finish('The Hunter Falls');
+    },
     xp: (amount: number) => game?.gainXp(amount),
     choose: (i: number) => {
       if (game) {
@@ -889,6 +1058,10 @@ function hud(g: Hunt) {
   // Draw window, Focus and dodge recovery are shown on the hunter (render/diegetic.ts).
   $('stats').innerHTML = `<b class="lv">${g.level}</b><span>Level</span><em>${g.kills} hunted</em>`;
   $('controls').classList.toggle('faded', scene === 'hunt' && g.time > 20);
+  if (shownDevice !== controls.device) {
+    shownDevice = controls.device;
+    $('controls').innerHTML = CONTROL_HINTS[controls.device];
+  }
   $('xp-fill').style.width = (g.xp / xpNeeded(g.level)) * 100 + '%';
   $('inventory').innerHTML = `${TOOLS.filter((t) => g.rank(t.id) > 0)
     .map((t) => t.name + ' ' + g.rank(t.id))
@@ -935,9 +1108,9 @@ function resetDeeds() {
   );
   deedsNear = new Set();
 }
-function checkDeeds(g: Hunt, dt: number) {
+function checkDeeds(g: Hunt, dt: number, silent = false) {
   deedClock -= dt;
-  if (deedClock > 0) return;
+  if (deedClock > 0 && !silent) return;
   deedClock = 0.5;
   const live = {
     ...profile,
@@ -951,11 +1124,12 @@ function checkDeeds(g: Hunt, dt: number) {
     const progress = deedProgress(live, d.metric);
     if (progress >= d.target) {
       deedsDone.add(d.id);
+      if (silent) continue;
       toast('Deed complete', d.name);
       audio.playSfx('coach.step');
     } else if (d.target >= 20 && progress / d.target >= 0.9 && !deedsNear.has(d.id)) {
       deedsNear.add(d.id);
-      toast('Almost there', `${d.name} · ${progress}/${d.target}`);
+      if (!silent) toast('Almost there', `${d.name} · ${progress}/${d.target}`);
     }
   }
 }
@@ -987,6 +1161,58 @@ function surgeBanner(level: number) {
   void surge.offsetWidth;
   surge.classList.add('play');
 }
+/** Captions for sounds that carry information (option: Captions). */
+const CAPTIONS: Record<string, string> = {
+  'enemy.hound.crouch': '[Pack growls]',
+  'enemy.telegraph': '[Attack winding up]',
+  'enemy.loose': '[Bowstring, enemy archer]',
+  'formation.arrival': '[Distant horn]',
+  'pace.swarm': '[Hunting horn — the swarm comes]',
+  'pace.lull': '[A hush falls]',
+  'world.midnight': '[Midnight bell tolls]',
+  'world.event': '[Something stirs in the moor]',
+  'world.discover': '[A landmark chimes]',
+  'boss.intro': '[War drums]',
+  'boss.phase': '[The beast roars]',
+  'boss.fall': '[A great beast falls]',
+  'boss.bramble.wall': '[Roots tear the earth]',
+  'boss.hag.threefold': '[The Hag laughs, threefold]',
+  'tool.snare.trigger': '[Snare snaps]',
+  'player.hurt': '[Hit]',
+};
+/** Haptic weight per event: [strength 0..1, milliseconds]. */
+const RUMBLE: Record<string, [number, number]> = {
+  'player.hurt': [0.8, 140],
+  'player.death': [1, 400],
+  'player.dodge': [0.25, 50],
+  'bow.perfect': [0.35, 45],
+  'number.crit': [0.2, 30],
+  'deadeye.release': [0.7, 160],
+  'boss.intro': [0.6, 500],
+  'boss.fall': [1, 600],
+  'level.up': [0.4, 120],
+};
+let captionTimer = 0;
+function caption(text: string) {
+  const el = $('caption');
+  if (el.textContent === text && captionTimer) return;
+  el.textContent = text;
+  el.classList.add('on');
+  clearTimeout(captionTimer);
+  captionTimer = window.setTimeout(() => {
+    el.classList.remove('on');
+    captionTimer = 0;
+  }, 2200);
+}
+/** On-screen control hints follow the device in hand. */
+const CONTROL_HINTS = {
+  keyboard:
+    'WASD move · Hold / release to loose<br />Space dodge · E / right-click Deadeye · Esc pause',
+  pad: 'Left stick move · Right stick aim · RT draw<br />A dodge · RB Deadeye · Start pause',
+  touch:
+    'Left thumb move · Right thumb aim and draw<br />Tap Dodge · Tap Deadeye when Focus is full',
+};
+let shownDevice = '';
 function tick(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
@@ -1023,7 +1249,13 @@ function tick(now: number) {
         }
         view.timing.sim += (performance.now() - simStart - view.timing.sim) * 0.1;
         if (g.offers.length) levelUp();
-        if (g.outcome) endRun();
+        if ((saveClock += dt) >= 30) {
+          saveClock = 0;
+          saveRun();
+        }
+        // A fallen hunter gets a moment: the death plays out before the results arrive.
+        if (g.outcome === 'The Hunter Falls' && deathClock < DEATH_BEAT) deathClock += dt;
+        else if (g.outcome) endRun();
         if (pauseDeferred && g.deadeye <= 0) {
           pauseDeferred = false;
           app.flow.showPause();
@@ -1078,7 +1310,29 @@ function tick(now: number) {
     if (event.id === 'level.up' && scene === 'hunt') surgeBanner(event.value);
     if (event.id === 'boss.intro' && scene === 'hunt') bossCard(event.value, 'intro');
     if (event.id === 'boss.fall' && scene === 'hunt') bossCard(event.value, 'fall');
+    const buzz = RUMBLE[event.id];
+    if (buzz && scene !== 'camp') controls.rumble(buzz[0], buzz[1]);
+    if (options.captions && CAPTIONS[event.id]) caption(CAPTIONS[event.id]);
   }
+  // Pad rebinding: the next three fresh presses become Draw, Dodge, Deadeye.
+  if (padRebind.length) {
+    const pressed = controls.padPress(padPrevious);
+    if (pressed >= 0) {
+      controls.padBindings[padRebind.shift()!] = pressed;
+      $('hint').textContent = padRebind.length
+        ? 'Press a gamepad button for ' + padRebind[0][0].toUpperCase() + padRebind[0].slice(1)
+        : '';
+      if (!padRebind.length) saveOptions();
+    }
+  }
+  // Draw tension: a faint pad hum while the window is open.
+  if (
+    game &&
+    scene === 'hunt' &&
+    g.player.draw >= g.drawFull - g.drawWindow &&
+    g.player.draw < g.drawFull + 0.05
+  )
+    controls.rumble(0.08, 40);
   g.events.length = 0;
   if (app.shell.session.phase === 'playing')
     audio.tick(g.time, g.player.draw, uiScreen !== 'gameplay-placeholder', !!g.boss);

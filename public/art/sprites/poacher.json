@@ -1,6 +1,7 @@
 {
   "id": "poacher",
   "cell": 144,
+  "heightPx": 104,
   "pivot": [
     0.5,
     0.85

@@ -4,7 +4,7 @@
   "folder": "20261006_202735_hunter_01a112e6",
   "root_task_id": "01a112e6-527e-74f4-b7fb-3d3d69208aed",
   "created_at": "2026-10-06T20:27:35.083Z",
-  "updated_at": "2026-10-06T20:41:38.901Z",
+  "updated_at": "2026-10-08T03:33:23.343Z",
   "tasks": [
     {
       "task_id": "01a112e6-527e-74f4-b7fb-3d3d69208aed",
@@ -165,6 +165,22 @@
       "operation_id": "66fe8197-bfcb-4d1c-b48f-61d9101f57e4",
       "created_at": "2026-10-06T20:41:27.597Z",
       "updated_at": "2026-10-06T20:41:38.901Z"
+    },
+    {
+      "task_id": "01a11992-7693-7094-aa72-b85984a74aa5",
+      "task_type": "animate",
+      "resource": "animate",
+      "endpoint": "/openapi/v1/animations",
+      "stage": "anim-death",
+      "parent_task_id": "01a112eb-84dd-7014-ae41-074b95762e28",
+      "status": "SUCCEEDED",
+      "files": [
+        "hunter-death.glb"
+      ],
+      "task_json": "task_01a11992-7693-7094-aa72-b85984a74aa5.json",
+      "operation_id": "acf13d06-ba54-49e4-a9e7-49038e847413",
+      "created_at": "2026-10-08T03:33:11.851Z",
+      "updated_at": "2026-10-08T03:33:23.343Z"
     }
   ]
 }

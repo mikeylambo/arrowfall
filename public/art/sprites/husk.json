@@ -1,6 +1,7 @@
 {
   "id": "husk",
   "cell": 128,
+  "heightPx": 96,
   "pivot": [
     0.5,
     0.85

@@ -1,6 +1,7 @@
 {
   "id": "knight-elite",
   "cell": 160,
+  "heightPx": 112,
   "pivot": [
     0.5,
     0.82
