@@ -189,3 +189,35 @@ it('a Moonhound pack circles the hunter, then crouches together', () => {
   expect(circled).toBe(true);
   expect(together).toBe(true);
 });
+it('behaviour upgrades and curses run without breaking the hunt', () => {
+  const profile = freshProfile();
+  profile.onboarded = true;
+  profile.curses = ['haste', 'glass', 'pack', 'famine', 'champions'];
+  const g = new Hunt(57, profile);
+  g.god = true;
+  for (const id of [
+    'ricochet',
+    'splitshot',
+    'starfall',
+    'moonseeker',
+    'echo-shot',
+    'still-water',
+    'briar-shot',
+    'lifedraw',
+  ])
+    for (let r = 0; r < 3; r++) g.grant(id);
+  for (let i = 0; i < 12; i++)
+    g.spawn(0, g.player.x + 200 + (i % 4) * 30, g.player.y - 60 + Math.floor(i / 4) * 40);
+  let draw = false;
+  for (let t = 0; t < 60 * 20; t++) {
+    draw = t % 50 < 40;
+    g.step(1 / 60, { ...input, draw, ax: g.player.x + 300, ay: g.player.y });
+    if (g.offers.length) {
+      g.choiceGuard = 0;
+      g.choose(0);
+    }
+  }
+  expect(g.shots).toBeGreaterThan(0);
+  expect(g.kills).toBeGreaterThan(0);
+  expect(g.curses.size).toBe(5);
+});

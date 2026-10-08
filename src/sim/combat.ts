@@ -4,6 +4,59 @@ import type { Cover } from './world';
 import { BOSSES } from '../data/bosses';
 import { T, distance, len } from '../data/tuning';
 import { drawProfile, drawDamage } from './bow';
+const starTargets: Enemy[] = [];
+const seekTargets: Enemy[] = [];
+/** A secondary arrow (split shards, echoes): flies straight, no pierce, inherits on-hit rules. */
+function shard(
+  g: Hunt,
+  x: number,
+  y: number,
+  angle: number,
+  damage: number,
+  source: string,
+  skip = -1,
+) {
+  const arrow = g.arrows.acquire();
+  if (!arrow) return;
+  const speed = T.arrowSpeed * 0.9;
+  arrow.x = x;
+  arrow.y = y;
+  arrow.vx = Math.cos(angle) * speed;
+  arrow.vy = Math.sin(angle) * speed;
+  arrow.life = 0.45;
+  arrow.damage = damage;
+  arrow.pierce = 0;
+  arrow.perfect = false;
+  arrow.full = false;
+  arrow.crit = false;
+  arrow.r = 3;
+  arrow.source = source;
+  arrow.travel = 0;
+  arrow.bounces = 0;
+  arrow.hitCount = 0;
+  if (skip >= 0) arrow.hit[arrow.hitCount++] = skip;
+}
+/** Nearest active enemy to (x, y) within r, excluding ids the arrow already hit. */
+function nearestTo(g: Hunt, x: number, y: number, r: number, a?: Arrow) {
+  const n = g.hash.query(x, y, r, seekTargets);
+  let best: Enemy | undefined,
+    bestD = r;
+  for (let i = 0; i < n; i++) {
+    const t = seekTargets[i];
+    if (!t.active || t.fade > 0) continue;
+    if (a) {
+      let seen = false;
+      for (let k = 0; k < a.hitCount; k++) if (a.hit[k] === t.id) seen = true;
+      if (seen) continue;
+    }
+    const d = len(t.x - x, t.y - y);
+    if (d < bestD) {
+      best = t;
+      bestD = d;
+    }
+  }
+  return best;
+}
 export function loose(
   g: Hunt,
   perfect: boolean,
@@ -35,6 +88,7 @@ export function loose(
   // Perfect streaks escalate: each tier reached adds to perfect damage.
   if (perfect) damage *= 1 + T.streakBonus * T.streakTiers.filter((n) => p.streak >= n).length;
   damage *= 1 + 0.04 * g.chain + (p.apex > 0 ? 0.15 : 0);
+  if (g.rank('still-water') && g.stillTime >= 0.8) damage *= 1 + 0.15 * g.rank('still-water');
   damage *= multiplier;
   if (g.rank('last-arrow') && (g.shots + 1) % 10 === 0) damage *= 3;
   if (countShot) {
@@ -85,6 +139,7 @@ export function loose(
     arrow.source = origin;
     arrow.travel = 0;
     arrow.hitCount = 0;
+    arrow.bounces = 0;
     if (
       (g.evolutions.has('worldpiercer') && full) ||
       (g.rank('last-arrow') && g.shots % 10 === 0)
@@ -103,6 +158,16 @@ export function loose(
         for (let i = 0; i < count; i++)
           spawn(ghost.x, ghost.y, angle + (i - (count - 1) / 2) * 0.095, 'phantom');
   if (countShot && g.bow.id === 'sparrow' && perfect && p.streak % 3 === 0) spawn(p.x, p.y, angle);
+  if (countShot && perfect && g.rank('starfall') && ++g.starCount % 5 === 0) {
+    // Starfall: a star strikes the aim point, 90 px blast at triple base damage.
+    const n = g.hash.query(g.aim.x, g.aim.y, 90, starTargets);
+    for (let i = 0; i < n; i++) {
+      const t = starTargets[i];
+      if (t.active && len(t.x - g.aim.x, t.y - g.aim.y) < 90)
+        damageEnemy(g, t, T.damage * 3, undefined, 'starfall', true);
+    }
+    g.emit('upgrade.starfall', g.aim.x, g.aim.y);
+  }
   if (countShot && full && g.evolutions.has('heaven-s-volley')) {
     const n = perfect ? 36 : 12;
     for (let i = 0; i < n; i++) {
@@ -147,6 +212,24 @@ export function updateArrows(g: Hunt, dt: number) {
     a.x += a.vx * dt;
     a.y += a.vy * dt;
     a.travel += len(a.vx, a.vy) * dt;
+    if (
+      a.perfect &&
+      a.source !== 'rain' &&
+      g.rank('moonseeker') &&
+      (g.tick + a.hitCount) % 2 === 0
+    ) {
+      // Moonseeker: perfect arrows bend toward the nearest enemy ahead of them.
+      const t = nearestTo(g, a.x, a.y, 260, a);
+      if (t) {
+        const speed = len(a.vx, a.vy),
+          want = Math.atan2(t.y - a.y, t.x - a.x),
+          now = Math.atan2(a.vy, a.vx),
+          turn = Math.atan2(Math.sin(want - now), Math.cos(want - now)),
+          next = now + Math.max(-0.12, Math.min(0.12, turn));
+        a.vx = Math.cos(next) * speed;
+        a.vy = Math.sin(next) * speed;
+      }
+    }
     if (!(worldpiercer && a.full)) {
       const n = g.world.hash.query(a.x, a.y, 80, arrowCover);
       for (let i = 0; i < n; i++)
@@ -230,6 +313,39 @@ export function updateArrows(g: Hunt, dt: number) {
         }
       }
       damageEnemy(g, e, a.damage * multiplier, a, a.source);
+      const flight = Math.atan2(a.vy, a.vx);
+      if (a.perfect && g.rank('briar-shot') && e.active && e.boss < 0)
+        e.root = Math.max(e.root, 0.8);
+      if (g.rank('splitshot') && a.source === 'bow' && a.hitCount === 1)
+        for (const side of [-0.45, 0.45])
+          shard(
+            g,
+            e.x,
+            e.y,
+            flight + side,
+            a.damage * (0.3 + 0.1 * g.rank('splitshot')),
+            'split',
+            e.id,
+          );
+      if (a.crit && g.rank('echo-shot') && a.source !== 'echo') {
+        const next = nearestTo(g, e.x, e.y, 320, a);
+        if (next)
+          shard(g, e.x, e.y, Math.atan2(next.y - e.y, next.x - e.x), a.damage * 0.5, 'echo', e.id);
+      }
+      if (!e.active && g.rank('ricochet') && a.bounces < g.rank('ricochet')) {
+        // Ricochet: the killing arrow turns toward the nearest enemy it has not hit yet.
+        const next = nearestTo(g, e.x, e.y, 300, a);
+        if (next) {
+          const speed = len(a.vx, a.vy),
+            to = Math.atan2(next.y - a.y, next.x - a.x);
+          a.vx = Math.cos(to) * speed;
+          a.vy = Math.sin(to) * speed;
+          a.bounces++;
+          a.pierce++;
+          a.life = Math.max(a.life, 0.5);
+          g.emit('upgrade.ricochet', e.x, e.y);
+        }
+      }
       if (a.full) g.player.focus = Math.min(100, g.player.focus + focusPerHit);
       if (g.bow.id === 'moonbow') g.player.focus = Math.min(100, g.player.focus + 1);
       // Knockback: every hit shoves along the arrow's flight; heavier for full draws and

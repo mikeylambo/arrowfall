@@ -18,6 +18,7 @@ export const freshProfile = (): Profile => ({
   seen: [],
   discovered: [],
   challenges: [],
+  curses: [],
 });
 export function loadProfile(storage: Pick<Storage, 'getItem'>): Profile {
   try {

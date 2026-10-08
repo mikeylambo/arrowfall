@@ -61,6 +61,8 @@ export interface Arrow extends Body {
   travel: number;
   hit: Uint32Array;
   hitCount: number;
+  /** Ricochets used so far. */
+  bounces: number;
 }
 export interface Particle extends Body {
   vx: number;
@@ -147,4 +149,6 @@ export interface Profile {
   seen: string[];
   discovered: string[];
   challenges: string[];
+  /** Curses chosen at the Trail for the next hunts (data/curses.ts). */
+  curses: string[];
 }

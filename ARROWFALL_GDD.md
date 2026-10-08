@@ -20,7 +20,7 @@ Everything that is not the bow is automatic: the Hunter's Tools (raven, snares, 
 
 ### Position
 
-- **Halls of Torment** has an archer class; Arrowfall is an archer *game*.
+- **Halls of Torment** has an archer class; Arrowfall is an archer _game_.
 - **20 Minutes Till Dawn** is the closest competitor (manual aim, 20-minute runs). It uses guns with a reload rhythm and a flat arena. Arrowfall differs on the verb (draw commitment and a true perfect window), the payoff (manual Deadeye screen-clears), and the space (range bands and a forest with cover).
 - **Archero** proved touch archery works; a later mobile port maps cleanly (drag-aim, hold to draw, lift to loose).
 
@@ -40,11 +40,11 @@ Once a generation the Hunt Moon rises wrong: cracked, bleeding light, and everyt
 
 ### Tri-color meaning
 
-| Color | Means | Used for |
-| --- | --- | --- |
-| Silver | Your light | The hunter, arrows, Moonraven, XP and pickups |
+| Color     | Means                 | Used for                                                                                |
+| --------- | --------------------- | --------------------------------------------------------------------------------------- |
+| Silver    | Your light            | The hunter, arrows, Moonraven, XP and pickups                                           |
 | Blood-red | The moon's corruption | Every enemy threat **including elites**, enemy projectiles, telegraphs, low-HP warnings |
-| Violet | Power you earned | The perfect window and release, Focus, Deadeye, upgrade cards, evolutions, relics |
+| Violet    | Power you earned      | The perfect window and release, Focus, Deadeye, upgrade cards, evolutions, relics       |
 
 Violet pairs the core skill (the perfect release) with every reward it leads to, so the colour itself becomes the reward signal. Elites stay red because at 350 enemies "red means danger" must have no exceptions.
 
@@ -60,14 +60,14 @@ The loop is DISTANCE → AIM → DRAW → RELEASE → REPOSITION, and every numb
 
 ### Controls
 
-| Action | Mouse + keyboard | Gamepad |
-| --- | --- | --- |
-| Move | WASD | Left stick |
-| Aim | Mouse (free aim) | Right stick (soft aim assist, toggleable) |
-| Draw / loose | Hold / release left mouse | Hold / release RT |
-| Dodge | Space | LT or A |
-| Deadeye | Right mouse or E | RB |
-| Pause | Esc | Start |
+| Action       | Mouse + keyboard          | Gamepad                                   |
+| ------------ | ------------------------- | ----------------------------------------- |
+| Move         | WASD                      | Left stick                                |
+| Aim          | Mouse (free aim)          | Right stick (soft aim assist, toggleable) |
+| Draw / loose | Hold / release left mouse | Hold / release RT                         |
+| Dodge        | Space                     | LT or A                                   |
+| Deadeye      | Right mouse or E          | RB                                        |
+| Pause        | Esc                       | Start                                     |
 
 Gamepad: right-trigger rumble builds with draw tension and snaps at the perfect window.
 
@@ -89,11 +89,11 @@ A short roll: 140 px over 0.18 s, fully invulnerable for its duration, 1.2 s coo
 
 A faint ring around the hunter shows the sweet-spot band; distance is measured at impact.
 
-| Band | Recurve distance | Damage | Bonus |
-| --- | --- | --- | --- |
-| Close | under 180 px | 80% | none; the danger zone |
-| Sweet spot | 260–460 px | 115% | +10% crit chance; hits flash silver |
-| Far | over 460 px | 100% | none |
+| Band       | Recurve distance | Damage | Bonus                               |
+| ---------- | ---------------- | ------ | ----------------------------------- |
+| Close      | under 180 px     | 80%    | none; the danger zone               |
+| Sweet spot | 260–460 px       | 115%   | +10% crit chance; hits flash silver |
+| Far        | over 460 px      | 100%   | none                                |
 
 The band between 180 and 260 px is neutral (100%). Each bow shifts the band (see Bows).
 
@@ -113,26 +113,26 @@ The band between 180 and 260 px is neutral (100%). Each bow shifts the band (see
 
 You choose one bow at Camp before each hunt and keep it all run; bows differ by draw profile, not by stat totals. The Recurve is owned from the start; the other five unlock through Deeds.
 
-| Bow | Draw time | Perfect window | Sweet spot | Move while drawing | Deadeye marks | Signature |
-| --- | --- | --- | --- | --- | --- | --- |
-| **Hunter's Recurve** | 0.60 s | 110 ms | 260–460 px | 65% | 8 | Balanced; teaches every system |
-| **Sparrow** (shortbow) | 0.35 s | 140 ms | 140–300 px | 85% | 14 (×0.8 dmg) | Three perfects in a row fire a free instant arrow |
-| **Nightreach** (longbow) | 0.85 s | 110 ms | 420–680 px | 45% | 5 | +1 base pierce; +20% damage per 300 px an arrow travels |
-| **Let-Off** (compound) | 0.60 s | 60 ms | 260–460 px | 60% | 8 | No overdraw sway and no auto-loose timer: hold at full draw forever. Perfect crits ×3.0 |
-| **Oathbreaker** (warbow) | 1.00 s | 110 ms | 220–420 px | 35% | 4 | Ignores armor; heavy knockback; perfects stagger for 0.6 s. Deadeye marks knock enemies away |
-| **Moonbow** (arcane) | 0.60 s | 110 ms, no overdraw | 260–460 px | 70% | 10 | Silver arrows curve gently toward the reticle; every hit builds +1 Focus |
+| Bow                      | Draw time | Perfect window      | Sweet spot | Move while drawing | Deadeye marks | Signature                                                                                    |
+| ------------------------ | --------- | ------------------- | ---------- | ------------------ | ------------- | -------------------------------------------------------------------------------------------- |
+| **Hunter's Recurve**     | 0.60 s    | 110 ms              | 260–460 px | 65%                | 8             | Balanced; teaches every system                                                               |
+| **Sparrow** (shortbow)   | 0.35 s    | 140 ms              | 140–300 px | 85%                | 14 (×0.8 dmg) | Three perfects in a row fire a free instant arrow                                            |
+| **Nightreach** (longbow) | 0.85 s    | 110 ms              | 420–680 px | 45%                | 5             | +1 base pierce; +20% damage per 300 px an arrow travels                                      |
+| **Let-Off** (compound)   | 0.60 s    | 60 ms               | 260–460 px | 60%                | 8             | No overdraw sway and no auto-loose timer: hold at full draw forever. Perfect crits ×3.0      |
+| **Oathbreaker** (warbow) | 1.00 s    | 110 ms              | 220–420 px | 35%                | 4             | Ignores armor; heavy knockback; perfects stagger for 0.6 s. Deadeye marks knock enemies away |
+| **Moonbow** (arcane)     | 0.60 s    | 110 ms, no overdraw | 260–460 px | 70%                | 10            | Silver arrows curve gently toward the reticle; every hit builds +1 Focus                     |
 
 The Let-Off name comes from real compound bows, whose let-off reduces holding weight at full draw. Its auto-loose applies only when the player enables the Auto-Loose accessibility option.
 
 ### Unlock deeds
 
-| Bow | Unlock by |
-| --- | --- |
-| Sparrow | Land 300 perfect looses (lifetime) |
-| Nightreach | Kill 500 enemies inside the sweet spot (lifetime) |
-| Let-Off | Chain 10 perfect looses in a row |
-| Oathbreaker | Defeat the Bramble King |
-| Moonbow | Complete a hunt (kill the Huntmaster) |
+| Bow         | Unlock by                                         |
+| ----------- | ------------------------------------------------- |
+| Sparrow     | Land 300 perfect looses (lifetime)                |
+| Nightreach  | Kill 500 enemies inside the sweet spot (lifetime) |
+| Let-Off     | Chain 10 perfect looses in a row                  |
+| Oathbreaker | Defeat the Bramble King                           |
+| Moonbow     | Complete a hunt (kill the Huntmaster)             |
 
 ## 5. Upgrades
 
@@ -148,66 +148,81 @@ The pool holds 31 upgrades in six families; 20 are available from the first run 
 
 ### Bowcraft
 
-| Upgrade | Rarity | Cap | Effect per rank |
-| --- | --- | --- | --- |
-| Quick Nock | Common | 5 | +8% draw speed |
-| Draw Strength | Common | 5 | +12% full-draw damage |
-| Taut String | Common | 3 | +15% arrow speed |
-| Steady Hand | Uncommon | 3 | +25% perfect-window length |
-| Heavy Bow (Deed) | Uncommon | 1 | +25% damage, −10% draw speed |
-| Swift Bow (Deed) | Uncommon | 1 | +20% draw speed, −10% perfect bonus |
+| Upgrade          | Rarity   | Cap | Effect per rank                     |
+| ---------------- | -------- | --- | ----------------------------------- |
+| Quick Nock       | Common   | 5   | +8% draw speed                      |
+| Draw Strength    | Common   | 5   | +12% full-draw damage               |
+| Taut String      | Common   | 3   | +15% arrow speed                    |
+| Steady Hand      | Uncommon | 3   | +25% perfect-window length          |
+| Heavy Bow (Deed) | Uncommon | 1   | +25% damage, −10% draw speed        |
+| Swift Bow (Deed) | Uncommon | 1   | +20% draw speed, −10% perfect bonus |
 
 ### Precision
 
-| Upgrade | Rarity | Cap | Effect per rank |
-| --- | --- | --- | --- |
-| Eagle Eye | Common | 5 | +5% crit chance |
-| Broadhead | Common | 5 | +20% crit damage |
-| Far Sight | Uncommon | 3 | Sweet-spot band +15% wider and +10% stronger |
-| Moonwell | Uncommon | 3 | +25% Focus gain |
-| Hunter's Mark | Uncommon | 1 | Every 4 s the toughest enemy on screen is Marked: +30% damage taken |
-| Executioner | Uncommon | 1 | +50% damage to enemies under 20% HP |
+| Upgrade       | Rarity   | Cap | Effect per rank                                                     |
+| ------------- | -------- | --- | ------------------------------------------------------------------- |
+| Eagle Eye     | Common   | 5   | +5% crit chance                                                     |
+| Broadhead     | Common   | 5   | +20% crit damage                                                    |
+| Far Sight     | Uncommon | 3   | Sweet-spot band +15% wider and +10% stronger                        |
+| Moonwell      | Uncommon | 3   | +25% Focus gain                                                     |
+| Hunter's Mark | Uncommon | 1   | Every 4 s the toughest enemy on screen is Marked: +30% damage taken |
+| Executioner   | Uncommon | 1   | +50% damage to enemies under 20% HP                                 |
 
 ### Arrowcraft
 
-| Upgrade | Rarity | Cap | Effect per rank |
-| --- | --- | --- | --- |
-| Fletcher's Craft | Rare | 4 | +1 arrow per loose (fan spread) |
-| Piercer | Common | 4 | +1 pierce |
-| Longshaft | Common | 3 | +20% range |
-| Broadshaft | Common | 3 | +25% arrow hitbox |
-| Barbed Arrow | Uncommon | 1 | Hits apply Bleed (damage over 3 s) |
+| Upgrade          | Rarity   | Cap | Effect per rank                    |
+| ---------------- | -------- | --- | ---------------------------------- |
+| Fletcher's Craft | Rare     | 4   | +1 arrow per loose (fan spread)    |
+| Piercer          | Common   | 4   | +1 pierce                          |
+| Longshaft        | Common   | 3   | +20% range                         |
+| Broadshaft       | Common   | 3   | +25% arrow hitbox                  |
+| Barbed Arrow     | Uncommon | 1   | Hits apply Bleed (damage over 3 s) |
 
 ### Elemental
 
-| Upgrade | Rarity | Cap | Effect per rank |
-| --- | --- | --- | --- |
-| Ember Arrow | Uncommon | 1 | Hits ignite: burn for 2 s |
-| Frost Arrow | Uncommon | 1 | Hits slow 30% for 1.5 s |
-| Storm Arrow | Uncommon | 1 | 20% chance to chain lightning to 2 nearby enemies |
-| Venom Arrow (Deed) | Uncommon | 1 | Hits add a poison stack (max 5) |
-| Rupture (Deed) | Rare | 1 | +40% damage to enemies with 2+ status effects |
+| Upgrade            | Rarity   | Cap | Effect per rank                                   |
+| ------------------ | -------- | --- | ------------------------------------------------- |
+| Ember Arrow        | Uncommon | 1   | Hits ignite: burn for 2 s                         |
+| Frost Arrow        | Uncommon | 1   | Hits slow 30% for 1.5 s                           |
+| Storm Arrow        | Uncommon | 1   | 20% chance to chain lightning to 2 nearby enemies |
+| Venom Arrow (Deed) | Uncommon | 1   | Hits add a poison stack (max 5)                   |
+| Rupture (Deed)     | Rare     | 1   | +40% damage to enemies with 2+ status effects     |
 
 ### Mobility
 
-| Upgrade | Rarity | Cap | Effect per rank |
-| --- | --- | --- | --- |
-| Lightfoot | Common | 5 | +8% move speed |
-| Windstep | Uncommon | 1 | +20% move speed for 1 s after each loose |
-| Evasive Shot | Uncommon | 1 | The first loose within 0.5 s after a dodge is automatically perfect |
-| Backstep (Deed) | Uncommon | 1 | Dodge leaves a trail of 5 arrows fanning backward |
-| Phantom Step (Deed) | Rare | 1 | Dodge leaves a spectral afterimage that fires your next loose too |
+| Upgrade             | Rarity   | Cap | Effect per rank                                                     |
+| ------------------- | -------- | --- | ------------------------------------------------------------------- |
+| Lightfoot           | Common   | 5   | +8% move speed                                                      |
+| Windstep            | Uncommon | 1   | +20% move speed for 1 s after each loose                            |
+| Evasive Shot        | Uncommon | 1   | The first loose within 0.5 s after a dodge is automatically perfect |
+| Backstep (Deed)     | Uncommon | 1   | Dodge leaves a trail of 5 arrows fanning backward                   |
+| Phantom Step (Deed) | Rare     | 1   | Dodge leaves a spectral afterimage that fires your next loose too   |
 
 ### Hunting
 
-| Upgrade | Rarity | Cap | Effect per rank |
-| --- | --- | --- | --- |
-| Blood Trail (Deed) | Uncommon | 1 | Bleeding enemies take +25% damage |
-| Predator (Deed) | Uncommon | 3 | Kills grant +3% move speed for 3 s (stacks 5) |
-| Chain Kill (Deed) | Uncommon | 1 | Kills within 1.5 s of each other build +4% damage (max +40%); resets when the chain breaks |
-| Last Arrow (Deed) | Uncommon | 1 | Every 10th loose deals ×3 damage and pierces everything |
+| Upgrade            | Rarity   | Cap | Effect per rank                                                                            |
+| ------------------ | -------- | --- | ------------------------------------------------------------------------------------------ |
+| Blood Trail (Deed) | Uncommon | 1   | Bleeding enemies take +25% damage                                                          |
+| Predator (Deed)    | Uncommon | 3   | Kills grant +3% move speed for 3 s (stacks 5)                                              |
+| Chain Kill (Deed)  | Uncommon | 1   | Kills within 1.5 s of each other build +4% damage (max +40%); resets when the chain breaks |
+| Last Arrow (Deed)  | Uncommon | 1   | Every 10th loose deals ×3 damage and pierces everything                                    |
 
 The 20 starting upgrades are every card not marked Deed.
+
+### Behaviour upgrades (v2)
+
+Eight cards that change how arrows act rather than adding percentages; all are available from the first run.
+
+| Upgrade     | Family     | Rarity   | Cap | Effect per rank                                                                        |
+| ----------- | ---------- | -------- | --- | -------------------------------------------------------------------------------------- |
+| Ricochet    | Arrowcraft | Uncommon | 2   | An arrow that kills bounces to the nearest enemy it has not hit (+1 bounce per rank)   |
+| Splitshot   | Arrowcraft | Uncommon | 3   | On its first hit an arrow splits into 2 shards at 30% damage (+10% per rank)           |
+| Starfall    | Arrowcraft | Rare     | 1   | Every 5th perfect loose calls a star onto the aim point: 90 px blast at ×3 base damage |
+| Moonseeker  | Precision  | Rare     | 1   | Perfect arrows bend toward the nearest enemy in flight                                 |
+| Echo Shot   | Precision  | Rare     | 1   | Crits loose a ghost arrow from the struck enemy at the next one (50% damage)           |
+| Still Water | Bowcraft   | Uncommon | 3   | +15% damage after standing still for 0.8 s                                             |
+| Briar Shot  | Hunting    | Uncommon | 1   | Perfect hits root their target for 0.8 s                                               |
+| Lifedraw    | Hunting    | Uncommon | 3   | Every 15 kills heal 2 HP                                                               |
 
 ## 6. Evolutions
 
@@ -221,18 +236,18 @@ Ten named evolutions transform the bow when you hold the right upgrades; they ar
 - Ingredients stay owned after evolving. No limit on evolutions per run.
 - Undiscovered evolutions appear as silhouettes in the Hunter's Log, with one ingredient revealed.
 
-| Evolution | Ingredients | Effect |
-| --- | --- | --- |
-| **Barrage** | Fletcher's Craft + Quick Nock | Looses fire a widening fan; each consecutive loose within 1 s adds +1 arrow (max +6) |
-| **Worldpiercer** | Piercer + Longshaft + Draw Strength | Full-draw arrows pierce infinitely, cross the whole screen, and gain +10% damage per enemy pierced |
-| **Deadshot** | Eagle Eye + Broadhead + Far Sight | Perfect crits in the sweet spot or beyond detonate: 80 px blast at 60% of the hit |
-| **Hellfire** | Ember Arrow + Broadhead + Rupture | Crits cause burning explosions; burning enemies spread fire to neighbors on death |
-| **Frostbite** | Frost Arrow + Far Sight | Full-draw hits beyond the sweet spot freeze targets for 1.5 s; frozen enemies take +100% damage |
-| **Thunderstorm** | Storm Arrow + Fletcher's Craft + Rupture | Lightning chains always trigger and jump up to 6 times, each jump +15% damage |
-| **Phantom Hunt** | Phantom Step + Evasive Shot + Windstep | Each dodge summons a spectral hunter for 4 s that mirrors your looses (max 3 at once) |
-| **Red Harvest** | Barbed Arrow + Blood Trail + Executioner | Bleeding enemies fling blood darts at neighbors every second; bleeding kills infect the nearest 3 enemies |
-| **Apex Hunter** | Hunter's Mark + Predator + Chain Kill | Killing a Marked enemy instantly marks the next, extends the kill chain by 2 s, and grants +15% damage for 5 s |
-| **Heaven's Volley** | Fletcher's Craft + Draw Strength + Longshaft | Full-draw looses call a rain of 12 silver arrows on the aim point; perfect looses call 36 across a wider area |
+| Evolution           | Ingredients                                  | Effect                                                                                                         |
+| ------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Barrage**         | Fletcher's Craft + Quick Nock                | Looses fire a widening fan; each consecutive loose within 1 s adds +1 arrow (max +6)                           |
+| **Worldpiercer**    | Piercer + Longshaft + Draw Strength          | Full-draw arrows pierce infinitely, cross the whole screen, and gain +10% damage per enemy pierced             |
+| **Deadshot**        | Eagle Eye + Broadhead + Far Sight            | Perfect crits in the sweet spot or beyond detonate: 80 px blast at 60% of the hit                              |
+| **Hellfire**        | Ember Arrow + Broadhead + Rupture            | Crits cause burning explosions; burning enemies spread fire to neighbors on death                              |
+| **Frostbite**       | Frost Arrow + Far Sight                      | Full-draw hits beyond the sweet spot freeze targets for 1.5 s; frozen enemies take +100% damage                |
+| **Thunderstorm**    | Storm Arrow + Fletcher's Craft + Rupture     | Lightning chains always trigger and jump up to 6 times, each jump +15% damage                                  |
+| **Phantom Hunt**    | Phantom Step + Evasive Shot + Windstep       | Each dodge summons a spectral hunter for 4 s that mirrors your looses (max 3 at once)                          |
+| **Red Harvest**     | Barbed Arrow + Blood Trail + Executioner     | Bleeding enemies fling blood darts at neighbors every second; bleeding kills infect the nearest 3 enemies      |
+| **Apex Hunter**     | Hunter's Mark + Predator + Chain Kill        | Killing a Marked enemy instantly marks the next, extends the kill chain by 2 s, and grants +15% damage for 5 s |
+| **Heaven's Volley** | Fletcher's Craft + Draw Strength + Longshaft | Full-draw looses call a rain of 12 silver arrows on the aim point; perfect looses call 36 across a wider area  |
 
 ### Synergy rules
 
@@ -246,11 +261,11 @@ Evolutions are built as **rules on arrows and hits**, not one-off effects, so co
 
 Three auto-acting tools fight on their own while you work the bow; they enter the same level-up card pool as upgrades, rank 1–5 each, and all three can be owned in one run.
 
-| Tool | Rank 1 | Per rank | Rank 5 bonus | Fantasy |
-| --- | --- | --- | --- | --- |
-| **Moonraven** | A celestial raven circles you and dives the nearest enemy every 2.5 s for 30 damage | −0.3 s dive interval, +15% damage | Prioritizes Marked enemies and fetches XP shards within 300 px on its way back | The hunter's familiar; silver starlit feathers leaving a faint constellation trail |
-| **Thornsnare** | Every 5 s drops a snare at your feet; the first enemy to cross is rooted 2 s and takes 20 damage | +1 snare held, −0.5 s interval | Snares explode into bramble on trigger, rooting everything within 90 px | Kiting tool: lay traps along your retreat line |
-| **Hunter's Lantern** | A 140 px aura of silver light: 6 damage/s to enemies inside; Wisps inside cannot fade | +20 px radius, +3 damage/s | Burns away Fog Bank around you and reveals Changelings | Survival light against the dark |
+| Tool                 | Rank 1                                                                                           | Per rank                          | Rank 5 bonus                                                                   | Fantasy                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| **Moonraven**        | A celestial raven circles you and dives the nearest enemy every 2.5 s for 30 damage              | −0.3 s dive interval, +15% damage | Prioritizes Marked enemies and fetches XP shards within 300 px on its way back | The hunter's familiar; silver starlit feathers leaving a faint constellation trail |
+| **Thornsnare**       | Every 5 s drops a snare at your feet; the first enemy to cross is rooted 2 s and takes 20 damage | +1 snare held, −0.5 s interval    | Snares explode into bramble on trigger, rooting everything within 90 px        | Kiting tool: lay traps along your retreat line                                     |
+| **Hunter's Lantern** | A 140 px aura of silver light: 6 damage/s to enemies inside; Wisps inside cannot fade            | +20 px radius, +3 damage/s        | Burns away Fog Bank around you and reveals Changelings                         | Survival light against the dark                                                    |
 
 Rules: tools never consume Focus and never trigger perfect-loose effects. Tool damage counts as hits for status effects only when an evolution says so. The Moonraven's constellation trail stays silver; tools never introduce new colors.
 
@@ -258,17 +273,17 @@ Rules: tools never consume Focus and never trigger perfect-loose effects. Tool d
 
 One run is one night: 20 minutes from moonrise to dawn, with fixed set pieces at 5:00, 10:00, 15:00 and 19:00 and a power arc of Hunter → Archer → Master → Monster → Legend.
 
-| Time | Night phase | Enemies introduced | Set piece | Active-enemy cap | Power target |
-| --- | --- | --- | --- | --- | --- |
-| 0:00–2:00 | Moonrise | Husks | Onboarding script (section 16) | 8 → 15 | 1 arrow; learning the draw; \~5 level-ups |
-| 2:00–5:00 | First Howl | Moonhounds (1:30), Wisps (3:00), Poachers (4:00) | First formation 2:30; first elite 4:00 | 15 → 60 | A specialized bow by minute 3 |
-| 5:00 | — | — | **The Black Shuck** → relic chest | 20 (boss arena) | First evolution |
-| 5:00–10:00 | Deep Night | Hollow Stags (6:00), Barrow Knights (7:00), Barrow Worms (9:00) | Events begin at 6:00 | 60 → 150 | \~3 arrows per loose |
-| 10:00 | Midnight | — | 12 bell tolls; the moon turns red. **The Bramble King** → relic | 30 (boss arena) | Build online |
-| 10:00–15:00 | Witching Hours | Changelings (11:00) | Layered formations; elites common | 150 → 300 | \~8 arrows by 12:00; build absurd by 13:00 |
-| 15:00 | — | — | **The Night Hag** → relic | 40 (boss arena) | Third evolution window |
-| 15:00–19:00 | False Dawn | All types, elite-heavy | Swarm crescendo | 300 → 350 | \~20 arrows; Deadeye clears screens by 16:00; pressure catches up at 18:00 |
-| 19:00–20:00 | The Final Hunt | Spawns stop | **The Huntmaster** | — | The final test |
+| Time        | Night phase    | Enemies introduced                                              | Set piece                                                       | Active-enemy cap | Power target                                                               |
+| ----------- | -------------- | --------------------------------------------------------------- | --------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------- |
+| 0:00–2:00   | Moonrise       | Husks                                                           | Onboarding script (section 16)                                  | 8 → 15           | 1 arrow; learning the draw; \~5 level-ups                                  |
+| 2:00–5:00   | First Howl     | Moonhounds (1:30), Wisps (3:00), Poachers (4:00)                | First formation 2:30; first elite 4:00                          | 15 → 60          | A specialized bow by minute 3                                              |
+| 5:00        | —              | —                                                               | **The Black Shuck** → relic chest                               | 20 (boss arena)  | First evolution                                                            |
+| 5:00–10:00  | Deep Night     | Hollow Stags (6:00), Barrow Knights (7:00), Barrow Worms (9:00) | Events begin at 6:00                                            | 60 → 150         | \~3 arrows per loose                                                       |
+| 10:00       | Midnight       | —                                                               | 12 bell tolls; the moon turns red. **The Bramble King** → relic | 30 (boss arena)  | Build online                                                               |
+| 10:00–15:00 | Witching Hours | Changelings (11:00)                                             | Layered formations; elites common                               | 150 → 300        | \~8 arrows by 12:00; build absurd by 13:00                                 |
+| 15:00       | —              | —                                                               | **The Night Hag** → relic                                       | 40 (boss arena)  | Third evolution window                                                     |
+| 15:00–19:00 | False Dawn     | All types, elite-heavy                                          | Swarm crescendo                                                 | 300 → 350        | \~20 arrows; Deadeye clears screens by 16:00; pressure catches up at 18:00 |
+| 19:00–20:00 | The Final Hunt | Spawns stop                                                     | **The Huntmaster**                                              | —                | The final test                                                             |
 
 ### Spawn rules
 
@@ -283,26 +298,26 @@ XP to next level = 5 + 4 × level^1.35. Targets: level 5 by 2:00, 12 by 5:00, 28
 
 ### Victory and defeat
 
-| Outcome | Condition | Reward |
-| --- | --- | --- |
-| **Hunt Complete** | Kill the Huntmaster | Full Moonsilver payout ×1.5, completion Deeds |
-| **Survived Until Dawn** | Reach 20:00 alive without killing him; he flees at sunrise | Full Moonsilver payout |
-| **The Hunter Falls** | HP reaches 0 | Moonsilver earned so far |
+| Outcome                 | Condition                                                  | Reward                                        |
+| ----------------------- | ---------------------------------------------------------- | --------------------------------------------- |
+| **Hunt Complete**       | Kill the Huntmaster                                        | Full Moonsilver payout ×1.5, completion Deeds |
+| **Survived Until Dawn** | Reach 20:00 alive without killing him; he flees at sunrise | Full Moonsilver payout                        |
+| **The Hunter Falls**    | HP reaches 0                                               | Moonsilver earned so far                      |
 
 ## 9. Enemies, elites, formations, events
 
 Eight enemy types each carry one readable behavior and one lesson; all are blood-red silhouettes with distinct shapes, and every attack is telegraphed.
 
-| Enemy | First | HP | Speed px/s | Hit | XP | Behavior | Teaches |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| **Husk** | 0:00 | 20 | 55 | 8 | 1 | Shambles toward you in loose clumps | Aim flow, density |
-| **Moonhound** | 1:30 | 26 | 120 | 10 | 1 | Packs of 3–5 circle at \~300 px, crouch 0.5 s (growl + red glint), then lunge together at 320 px/s | Don't stand still drawing |
-| **Wisp** | 3:00 | 18 | 80 | 8 | 2 | Drifts erratically; fades out (untargetable) for 1.5 s every 4 s with a visible shimmer, never moving while faded | Precision aim |
-| **Poacher** | 4:00 | 40 | 60 | 14 | 3 | Stops at 400 px, shows a red draw line for 0.8 s, then looses a single arrow at 380 px/s | Reading telegraphs; it mirrors you |
-| **Hollow Stag** | 6:00 | 120 | 50 | 20 | 4 | Paints a red ground line for 0.9 s, then charges along it at 420 px/s through anything | Dodge timing; lined-up pierce shots |
-| **Barrow Knight** | 7:00 | 90 | 55 | 14 | 4 | Frontal shield blocks arrows in a 120° arc; turns slowly (90°/s) | Flank, pierce, or rain on it |
-| **Barrow Worm** | 9:00 | 60 | 140 underground | 22 | 3 | Travels underground as a visible dirt trail, stops at your last position, shows a red ring for 0.8 s, then erupts | Keep moving (replaces the old teleporting Burrower) |
-| **Changeling** | 11:00 | 50 | 0 → 200 | 16 | 5 | Sits disguised as an XP shard with a faint shimmer; springs when you come within 80 px | Greed check |
+| Enemy             | First | HP  | Speed px/s      | Hit | XP  | Behavior                                                                                                          | Teaches                                             |
+| ----------------- | ----- | --- | --------------- | --- | --- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| **Husk**          | 0:00  | 20  | 55              | 8   | 1   | Shambles toward you in loose clumps                                                                               | Aim flow, density                                   |
+| **Moonhound**     | 1:30  | 26  | 120             | 10  | 1   | Packs of 3–5 circle at \~300 px, crouch 0.5 s (growl + red glint), then lunge together at 320 px/s                | Don't stand still drawing                           |
+| **Wisp**          | 3:00  | 18  | 80              | 8   | 2   | Drifts erratically; fades out (untargetable) for 1.5 s every 4 s with a visible shimmer, never moving while faded | Precision aim                                       |
+| **Poacher**       | 4:00  | 40  | 60              | 14  | 3   | Stops at 400 px, shows a red draw line for 0.8 s, then looses a single arrow at 380 px/s                          | Reading telegraphs; it mirrors you                  |
+| **Hollow Stag**   | 6:00  | 120 | 50              | 20  | 4   | Paints a red ground line for 0.9 s, then charges along it at 420 px/s through anything                            | Dodge timing; lined-up pierce shots                 |
+| **Barrow Knight** | 7:00  | 90  | 55              | 14  | 4   | Frontal shield blocks arrows in a 120° arc; turns slowly (90°/s)                                                  | Flank, pierce, or rain on it                        |
+| **Barrow Worm**   | 9:00  | 60  | 140 underground | 22  | 3   | Travels underground as a visible dirt trail, stops at your last position, shows a red ring for 0.8 s, then erupts | Keep moving (replaces the old teleporting Burrower) |
+| **Changeling**    | 11:00 | 50  | 0 → 200         | 16  | 5   | Sits disguised as an XP shard with a faint shimmer; springs when you come within 80 px                            | Greed check                                         |
 
 Pathing: enemies follow a flow field around trees and landmarks, so they never clip through cover.
 
@@ -310,38 +325,38 @@ Pathing: enemies follow a flow field around trees and landmarks, so they never c
 
 Elites appear from 4:00 at 2% of spawns, ramping to 8% by 15:00. They have ×2.5 HP, a violet aura and a unique silhouette ring, and drop a violet shard (×10 XP) plus a 25% chance of 5 Moonsilver.
 
-| Modifier | Effect |
-| --- | --- |
-| Frenzied | +45% speed; attacks 30% faster |
-| Armored | Takes 30% less damage; perfect looses ignore the armor |
-| Regenerating | Heals 4% max HP per second unless hit within the last 2 s |
-| Vampiric | Heals 25% of damage it deals; nearby Husks gain +20% speed |
-| Explosive | Bursts on death: 100 px blast, red warning ring 0.6 s before |
-| Moonwarded | Takes damage only from perfect looses and Deadeye; a silver ward cracks visibly with each hit |
+| Modifier     | Effect                                                                                        |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| Frenzied     | +45% speed; attacks 30% faster                                                                |
+| Armored      | Takes 30% less damage; perfect looses ignore the armor                                        |
+| Regenerating | Heals 4% max HP per second unless hit within the last 2 s                                     |
+| Vampiric     | Heals 25% of damage it deals; nearby Husks gain +20% speed                                    |
+| Explosive    | Bursts on death: 100 px blast, red warning ring 0.6 s before                                  |
+| Moonwarded   | Takes damage only from perfect looses and Deadeye; a silver ward cracks visibly with each hit |
 
 ### Formations
 
 Formations begin at 2:30 (about one per minute, two per minute after 10:00). Each spawns off-screen, advances as its shape, and breaks into normal pursuit at \~250 px.
 
-| Formation | Shape | Counter |
-| --- | --- | --- |
-| Crescent | 9 enemies in an arc | Strafe to an end |
-| Funnel | V shape narrowing toward you | Shoot down the center line |
-| Spear | A single file column | Pierce the whole line |
-| Ring | 12 enemies encircling at 450 px | Dodge out before it closes |
-| Crossfire | Two lines from opposite sides | Break one side first |
-| Pursuit | A tight pack trailing you | Turn and punish |
+| Formation | Shape                           | Counter                    |
+| --------- | ------------------------------- | -------------------------- |
+| Crescent  | 9 enemies in an arc             | Strafe to an end           |
+| Funnel    | V shape narrowing toward you    | Shoot down the center line |
+| Spear     | A single file column            | Pierce the whole line      |
+| Ring      | 12 enemies encircling at 450 px | Dodge out before it closes |
+| Crossfire | Two lines from opposite sides   | Break one side first       |
+| Pursuit   | A tight pack trailing you       | Turn and punish            |
 
 ### Events
 
 One event every 90 s from 6:00, never during a boss. A banner and audio sting announce each.
 
-| Event | Duration | What happens |
-| --- | --- | --- |
-| Migration | 15 s | A herd of 12 Hollow Stags crosses the screen along one axis; big XP if you survive the lanes |
-| The Hunt | Until killed | An elite Poacher band of 4 tracks you across the map |
-| Quiet Grove | 20 s | Spawns pause; a shrine appears nearby and heals 40 HP if you stand in it for 3 s |
-| Fog Bank | 20 s | Visibility drops to silhouettes beyond 250 px; marks and the Lantern cut through it |
+| Event       | Duration     | What happens                                                                                 |
+| ----------- | ------------ | -------------------------------------------------------------------------------------------- |
+| Migration   | 15 s         | A herd of 12 Hollow Stags crosses the screen along one axis; big XP if you survive the lanes |
+| The Hunt    | Until killed | An elite Poacher band of 4 tracks you across the map                                         |
+| Quiet Grove | 20 s         | Spawns pause; a shrine appears nearby and heals 40 HP if you stand in it for 3 s             |
+| Fog Bank    | 20 s         | Visibility drops to silhouettes beyond 250 px; marks and the Lantern cut through it          |
 
 The midnight moon turn at 10:00 is a fixed set piece, not a random event.
 
@@ -380,11 +395,11 @@ A flying hag that splits into illusions; target time-to-kill 45 s. Tests: readin
 
 Leader of the Wild Hunt and your mirror archer; target time-to-kill 70 s across three phases. Tests: everything.
 
-| Phase | HP | Behavior | Your answer |
-| --- | --- | --- | --- |
-| **I. The Duel** | 100–66% | Draws with a visible perfect window (red flash); looses fast, precise arrows | Hit him mid-draw to stagger him 1.2 s: an interrupt duel |
-| **II. The Wild Hunt** | 66–33% | Mounts a spectral stag; phantom riders sweep the arena in telegraphed lanes | Shoot between lanes; he is vulnerable at each lane's end |
-| **III. Last Light** | 33–0% | The moon sets. He uses *his* Deadeye: time slows, red marks paint on you and the ground, then his volley fires | Dodge out of every mark. Survive the volley and his guard breaks: your Focus fills to 100 for a final Deadeye exchange |
+| Phase                 | HP      | Behavior                                                                                                       | Your answer                                                                                                            |
+| --------------------- | ------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **I. The Duel**       | 100–66% | Draws with a visible perfect window (red flash); looses fast, precise arrows                                   | Hit him mid-draw to stagger him 1.2 s: an interrupt duel                                                               |
+| **II. The Wild Hunt** | 66–33%  | Mounts a spectral stag; phantom riders sweep the arena in telegraphed lanes                                    | Shoot between lanes; he is vulnerable at each lane's end                                                               |
+| **III. Last Light**   | 33–0%   | The moon sets. He uses _his_ Deadeye: time slows, red marks paint on you and the ground, then his volley fires | Dodge out of every mark. Survive the volley and his guard breaks: your Focus fills to 100 for a final Deadeye exchange |
 
 If 20:00 arrives first, dawn breaks and he flees (Survived Until Dawn).
 
@@ -398,16 +413,16 @@ Each hunt takes place in the Hollowmoor, a bounded forest about 8 × 8 screens (
 - **Cover:** tree trunks and standing stones block movement and arrows (piercing arrows stop at cover unless an evolution says otherwise). Cover density is roughly 1 obstacle per 400 × 400 px, clustered into groves with open lanes between them.
 - **Edges:** the forest boundary is a dense treeline wall; no invisible walls.
 
-| Landmark | Role |
-| --- | --- |
-| Moonwell Clearing | Run start; the largest open space |
-| Standing Stones | A ring of cover for fighting Barrow Knights from angles |
-| Old Lodge | Ruined hunting lodge; a Moonberry spawn point |
-| Dead Grove | Dense trees; tight lanes that reward pierce |
-| Watchtower | Raised ruin with open sight lines in all directions |
-| The Mire | Shallow water that slows everyone (you and enemies) by 25% |
-| Barrow Mounds | Burial hills; Barrow Knights and Worms favor this area |
-| Shrine of the Silver Order | Quiet Grove events always use this shrine when in range |
+| Landmark                   | Role                                                       |
+| -------------------------- | ---------------------------------------------------------- |
+| Moonwell Clearing          | Run start; the largest open space                          |
+| Standing Stones            | A ring of cover for fighting Barrow Knights from angles    |
+| Old Lodge                  | Ruined hunting lodge; a Moonberry spawn point              |
+| Dead Grove                 | Dense trees; tight lanes that reward pierce                |
+| Watchtower                 | Raised ruin with open sight lines in all directions        |
+| The Mire                   | Shallow water that slows everyone (you and enemies) by 25% |
+| Barrow Mounds              | Burial hills; Barrow Knights and Worms favor this area     |
+| Shrine of the Silver Order | Quiet Grove events always use this shrine when in range    |
 
 ### Camera
 
@@ -419,33 +434,33 @@ Hunter's Camp is a small walkable hub between hunts, and full unlocks should tak
 
 ### Stations
 
-| Station | Purpose |
-| --- | --- |
-| **The Trail** | Start a hunt: pick bow, then Moon Phase, then go |
+| Station          | Purpose                                                                        |
+| ---------------- | ------------------------------------------------------------------------------ |
+| **The Trail**    | Start a hunt: pick bow, then Moon Phase, then go                               |
 | **The Fletcher** | Bow rack: view, choose, and preview unlocked bows; locked bows show their Deed |
-| **The Range** | Target-dummy practice with any unlocked bow, plus timed challenges |
-| **Silver Altar** | Spend Moonsilver on boons |
-| **Trophy Wall** | Deeds (achievements), with progress bars |
-| **Hunter's Log** | Bestiary, evolution codex, run history, build fingerprints |
+| **The Range**    | Target-dummy practice with any unlocked bow, plus timed challenges             |
+| **Silver Altar** | Spend Moonsilver on boons                                                      |
+| **Trophy Wall**  | Deeds (achievements), with progress bars                                       |
+| **Hunter's Log** | Bestiary, evolution codex, run history, build fingerprints                     |
 
 ### Moonsilver and boons
 
 Moonsilver is earned per run: 1 per 10 kills, 5 per elite, 50 per boss, plus a time bonus of 5 per minute survived. Boons are modest and ranked, in the genre tradition.
 
-| Boon | Ranks | Effect per rank |
-| --- | --- | --- |
-| Might | 5 | +4% damage |
-| Vigor | 5 | +10 max HP |
-| Swiftness | 3 | +4% move speed |
-| Keen Eye | 3 | +3% crit chance |
-| Greed | 5 | +8% Moonsilver earned |
-| Growth | 5 | +5% XP |
-| Magnet | 3 | +20% pickup radius |
-| Reroll | 3 | +1 reroll per run |
-| Banish | 3 | +1 banish per run |
-| Skip | 3 | +1 skip per run |
-| Fourth Card | 1 | Level-ups offer 4 cards |
-| Second Wind | 1 | Once per run, survive a lethal hit at 1 HP |
+| Boon        | Ranks | Effect per rank                            |
+| ----------- | ----- | ------------------------------------------ |
+| Might       | 5     | +4% damage                                 |
+| Vigor       | 5     | +10 max HP                                 |
+| Swiftness   | 3     | +4% move speed                             |
+| Keen Eye    | 3     | +3% crit chance                            |
+| Greed       | 5     | +8% Moonsilver earned                      |
+| Growth      | 5     | +5% XP                                     |
+| Magnet      | 3     | +20% pickup radius                         |
+| Reroll      | 3     | +1 reroll per run                          |
+| Banish      | 3     | +1 banish per run                          |
+| Skip        | 3     | +1 skip per run                            |
+| Fourth Card | 1     | Level-ups offer 4 cards                    |
+| Second Wind | 1     | Once per run, survive a lethal hit at 1 HP |
 
 ### Deeds
 
@@ -462,12 +477,24 @@ Practice with no fail state, plus challenges that pay 10–30 Moonsilver the fir
 
 ### Moon Phases (difficulty)
 
-| Phase | Unlocks after | Changes |
-| --- | --- | --- |
-| Crescent | Default | Base game |
-| Half Moon | Survive until dawn once | +25% enemy HP, +15% density |
-| Full Moon | Complete a hunt on Half | Elites ×2 frequency; bosses gain one new attack each |
+| Phase      | Unlocks after           | Changes                                                       |
+| ---------- | ----------------------- | ------------------------------------------------------------- |
+| Crescent   | Default                 | Base game                                                     |
+| Half Moon  | Survive until dawn once | +25% enemy HP, +15% density                                   |
+| Full Moon  | Complete a hunt on Half | Elites ×2 frequency; bosses gain one new attack each          |
 | Blood Moon | Complete a hunt on Full | Enemies +15% speed; no Quiet Grove; the moon is red all night |
+
+### Curses
+
+Optional modifiers chosen at the Trail after the third hunt, stacked on top of the Moon Phase; each active curse adds +20% Moonsilver.
+
+| Curse     | Effect                              |
+| --------- | ----------------------------------- |
+| Haste     | Every enemy moves 20% faster        |
+| Glass     | You take 50% more damage            |
+| the Pack  | Moonhound packs run two larger      |
+| Famine    | No Moonberries; shrines do not heal |
+| Champions | Elites appear twice as often        |
 
 ### Nightly Hunt
 
@@ -514,88 +541,88 @@ The perfect-window chime is pitched to the current music key and scale degree, s
 
 ### SFX brief — the bow
 
-| Sound | Trigger | Direction |
-| --- | --- | --- |
-| Draw creak | Draw start → full | Loop of string strain and wood flex; pitch and volume rise with draw %. Unique timbre per bow (Sparrow light and taut, Oathbreaker deep and groaning, Moonbow glassy and resonant) |
-| Perfect window open | Full draw reached | Bright, short, bell-like "ting" in key; the single most important sound in the game |
-| Perfect loose | Release in window | Crisp string snap + silver whoosh + shimmer tail |
-| Full-draw loose | Release after window or auto-loose | Solid snap + whoosh, no shimmer |
-| Quick loose | Release under 50% | Light flick |
-| Overdraw strain | During overdraw | Tightening creak with a faint tremble |
-| Draw cancel | Dodge during draw | String relaxing, soft |
-| Arrow flight | Per volley | Layered whoosh scaled to arrow count; voice-capped (see mix rules) |
-| Multi-arrow fan | Fletcher's Craft and Barrage | Wider stereo spread, flutter layer |
+| Sound               | Trigger                            | Direction                                                                                                                                                                          |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Draw creak          | Draw start → full                  | Loop of string strain and wood flex; pitch and volume rise with draw %. Unique timbre per bow (Sparrow light and taut, Oathbreaker deep and groaning, Moonbow glassy and resonant) |
+| Perfect window open | Full draw reached                  | Bright, short, bell-like "ting" in key; the single most important sound in the game                                                                                                |
+| Perfect loose       | Release in window                  | Crisp string snap + silver whoosh + shimmer tail                                                                                                                                   |
+| Full-draw loose     | Release after window or auto-loose | Solid snap + whoosh, no shimmer                                                                                                                                                    |
+| Quick loose         | Release under 50%                  | Light flick                                                                                                                                                                        |
+| Overdraw strain     | During overdraw                    | Tightening creak with a faint tremble                                                                                                                                              |
+| Draw cancel         | Dodge during draw                  | String relaxing, soft                                                                                                                                                              |
+| Arrow flight        | Per volley                         | Layered whoosh scaled to arrow count; voice-capped (see mix rules)                                                                                                                 |
+| Multi-arrow fan     | Fletcher's Craft and Barrage       | Wider stereo spread, flutter layer                                                                                                                                                 |
 
 ### SFX brief — hits and kills
 
-| Sound | Direction |
-| --- | --- |
-| Hit: flesh (Husk, Moonhound, Poacher) | Muted thud with a dry thunk |
-| Hit: armor (Barrow Knight shield) | Metallic clink with ricochet ping |
-| Hit: spectral (Wisp, Night Hag illusions) | Glassy chime burst |
-| Hit: bone (Hollow Stag) | Hollow knock |
-| Crit | Sharp ring layered over the hit |
-| Sweet-spot hit | Subtle silver sparkle layer |
-| Pierce | Quick ratcheting sequence per enemy passed |
-| Kill pops (×8 families) | Husk crumble, Moonhound mist-yelp, Wisp spark-pop, Poacher collapse, Stag bone-shatter, Knight armor clatter, Worm wet burst, Changeling shriek |
-| Elite kill | Deep impact + violet shimmer rise |
-| Status: burn / frost / storm / venom / bleed | Crackle / crystal tinkle / zap / hiss / drip, all short and quiet |
+| Sound                                        | Direction                                                                                                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hit: flesh (Husk, Moonhound, Poacher)        | Muted thud with a dry thunk                                                                                                                     |
+| Hit: armor (Barrow Knight shield)            | Metallic clink with ricochet ping                                                                                                               |
+| Hit: spectral (Wisp, Night Hag illusions)    | Glassy chime burst                                                                                                                              |
+| Hit: bone (Hollow Stag)                      | Hollow knock                                                                                                                                    |
+| Crit                                         | Sharp ring layered over the hit                                                                                                                 |
+| Sweet-spot hit                               | Subtle silver sparkle layer                                                                                                                     |
+| Pierce                                       | Quick ratcheting sequence per enemy passed                                                                                                      |
+| Kill pops (×8 families)                      | Husk crumble, Moonhound mist-yelp, Wisp spark-pop, Poacher collapse, Stag bone-shatter, Knight armor clatter, Worm wet burst, Changeling shriek |
+| Elite kill                                   | Deep impact + violet shimmer rise                                                                                                               |
+| Status: burn / frost / storm / venom / bleed | Crackle / crystal tinkle / zap / hiss / drip, all short and quiet                                                                               |
 
 ### SFX brief — Focus and Deadeye
 
-| Sound | Direction |
-| --- | --- |
-| Focus gain | Soft rising tone per chunk |
-| Focus full | Resonant chime + low hum that sustains until used |
-| Deadeye enter | Time-slow "whoomph", world muffles (low-pass), heartbeat enters |
-| Mark painted | Tick, pitch rising per mark |
-| Deadeye release | A roaring volley: all strings at once, then a wave of impacts |
-| Deadeye exit | World un-muffles with a breath |
+| Sound           | Direction                                                       |
+| --------------- | --------------------------------------------------------------- |
+| Focus gain      | Soft rising tone per chunk                                      |
+| Focus full      | Resonant chime + low hum that sustains until used               |
+| Deadeye enter   | Time-slow "whoomph", world muffles (low-pass), heartbeat enters |
+| Mark painted    | Tick, pitch rising per mark                                     |
+| Deadeye release | A roaring volley: all strings at once, then a wave of impacts   |
+| Deadeye exit    | World un-muffles with a breath                                  |
 
 ### SFX brief — enemies and telegraphs
 
-| Sound | Direction |
-| --- | --- |
-| Moonhound pack warning | Distant howl when a pack spawns off-screen |
-| Moonhound crouch | Growl on the telegraph |
-| Hollow Stag charge | Snort on the ground line, hoof thunder on the charge |
-| Poacher draw | A reversed, harsher version of your own draw creak |
-| Barrow Worm | Low rumble while burrowing; rising tone on the eruption ring |
-| Changeling reveal | Hiss and snap |
-| Wisp fade | Soft descending chime |
-| Explosive elite | Swelling fuse tone during its warning ring |
-| Elite spawn | Short violet sting |
-| Formation arrival | A horn call; different phrase per formation |
+| Sound                  | Direction                                                    |
+| ---------------------- | ------------------------------------------------------------ |
+| Moonhound pack warning | Distant howl when a pack spawns off-screen                   |
+| Moonhound crouch       | Growl on the telegraph                                       |
+| Hollow Stag charge     | Snort on the ground line, hoof thunder on the charge         |
+| Poacher draw           | A reversed, harsher version of your own draw creak           |
+| Barrow Worm            | Low rumble while burrowing; rising tone on the eruption ring |
+| Changeling reveal      | Hiss and snap                                                |
+| Wisp fade              | Soft descending chime                                        |
+| Explosive elite        | Swelling fuse tone during its warning ring                   |
+| Elite spawn            | Short violet sting                                           |
+| Formation arrival      | A horn call; different phrase per formation                  |
 
 ### SFX brief — tools, player, pickups, world, UI
 
-| Group | Sounds |
-| --- | --- |
-| Tools | Moonraven caw + dive swoosh + hit; Thornsnare place click + snap + bramble burst; Lantern low hum and flare |
-| Player | Footsteps (leaf, mud, stone), dodge cloth whoosh, hurt grunt, low-HP heartbeat (under 25%), death |
-| Pickups | XP shard tones that climb a scale when collected in quick succession; violet shard; Moonsilver coin; Moonberry heal |
-| Level-up | Rising arpeggio; card hover ticks; card select per rarity (Common, Uncommon, Rare, Legendary reveal) |
-| Relic chest | Heavy lid, choral swell on open |
+| Group            | Sounds                                                                                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tools            | Moonraven caw + dive swoosh + hit; Thornsnare place click + snap + bramble burst; Lantern low hum and flare                                                                                       |
+| Player           | Footsteps (leaf, mud, stone), dodge cloth whoosh, hurt grunt, low-HP heartbeat (under 25%), death                                                                                                 |
+| Pickups          | XP shard tones that climb a scale when collected in quick succession; violet shard; Moonsilver coin; Moonberry heal                                                                               |
+| Level-up         | Rising arpeggio; card hover ticks; card select per rarity (Common, Uncommon, Rare, Legendary reveal)                                                                                              |
+| Relic chest      | Heavy lid, choral swell on open                                                                                                                                                                   |
 | World and events | Forest night ambience (wind, insects, distant owls); Migration drum-rumble; The Hunt horn; Fog rolling; Quiet Grove wind chimes; midnight 12 bell tolls; false-dawn birdsong that starts at 18:00 |
-| Bosses | Intro sting + signature telegraph sound per attack, per boss |
-| UI | Menu move, confirm, back, pause, unlock fanfare, Deed earned |
+| Bosses           | Intro sting + signature telegraph sound per attack, per boss                                                                                                                                      |
+| UI               | Menu move, confirm, back, pause, unlock fanfare, Deed earned                                                                                                                                      |
 
 ### Adaptive OST
 
 The score is layered stems that crossfade by night phase and intensity; one motif (the Hunt Moon theme) threads through every cue and becomes the Huntmaster's theme.
 
-| Cue | Time | Direction | Stems |
-| --- | --- | --- | --- |
-| Moonrise | 0:00–2:00 | Sparse, low strings and harp, the motif introduced softly | Base, pad |
-| First Howl | 2:00–5:00 | Frame drum and pulse enter | + percussion |
-| Deep Night | 5:00–10:00 | Full motif on a lead voice; driving | + melody |
-| Midnight | 10:00 | 12 bells, then a key change to the relative minor | Transition cue |
-| Witching Hours | 10:00–15:00 | Darker, heavier, choir layer | + danger layer |
-| False Dawn | 15:00–19:00 | Fastest and densest; motif in counterpoint | All layers |
-| The Huntmaster | 19:00 | The motif as a duel theme; phase III drops to near silence, then everything returns on the final exchange | Boss cue with 3 sections |
-| Dawn | Victory | The motif resolved in major | Stinger + loop |
-| Camp | Hub | Warm, acoustic version of the motif | Loop |
-| The Range | Practice | Minimal rhythmic bed in a fixed key so perfect chimes sing | Loop |
+| Cue            | Time        | Direction                                                                                                 | Stems                    |
+| -------------- | ----------- | --------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Moonrise       | 0:00–2:00   | Sparse, low strings and harp, the motif introduced softly                                                 | Base, pad                |
+| First Howl     | 2:00–5:00   | Frame drum and pulse enter                                                                                | + percussion             |
+| Deep Night     | 5:00–10:00  | Full motif on a lead voice; driving                                                                       | + melody                 |
+| Midnight       | 10:00       | 12 bells, then a key change to the relative minor                                                         | Transition cue           |
+| Witching Hours | 10:00–15:00 | Darker, heavier, choir layer                                                                              | + danger layer           |
+| False Dawn     | 15:00–19:00 | Fastest and densest; motif in counterpoint                                                                | All layers               |
+| The Huntmaster | 19:00       | The motif as a duel theme; phase III drops to near silence, then everything returns on the final exchange | Boss cue with 3 sections |
+| Dawn           | Victory     | The motif resolved in major                                                                               | Stinger + loop           |
+| Camp           | Hub         | Warm, acoustic version of the motif                                                                       | Loop                     |
+| The Range      | Practice    | Minimal rhythmic bed in a fixed key so perfect chimes sing                                                | Loop                     |
 
 **Intensity layer:** a danger stem fades in with enemy density and when HP drops under 25%. Each phase cue runs at a fixed tempo so transitions land on bar lines.
 
@@ -622,17 +649,17 @@ The HUD stays minimal so the eye lives on the reticle; the most important inform
 
 ### HUD
 
-| Element | Position | Notes |
-| --- | --- | --- |
-| Reticle | Cursor / aim point | A ring that closes as you draw; flashes silver during the perfect window; sways in overdraw |
-| Focus | Arc around the reticle | Fills silver; pulses when full |
-| Moon clock | Top center | The moon travels across a thin sky arc as the run's timer; minutes shown beneath. Turns red at midnight |
-| HP | Top left, plus a thin arc under the hunter when damaged | Bar with numeric value |
-| XP | Bottom edge, full width | Thin silver bar; level number at left |
-| Dodge | Small pip beside the hunter | Visible only while on cooldown |
-| Tools and evolutions | Top right | Small icons with rank pips |
-| Boss bar | Top center, below the moon clock | Name card + phase markers |
-| Event banner | Upper third, 2 s | Name and one-line hint |
+| Element              | Position                                                | Notes                                                                                                   |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Reticle              | Cursor / aim point                                      | A ring that closes as you draw; flashes silver during the perfect window; sways in overdraw             |
+| Focus                | Arc around the reticle                                  | Fills silver; pulses when full                                                                          |
+| Moon clock           | Top center                                              | The moon travels across a thin sky arc as the run's timer; minutes shown beneath. Turns red at midnight |
+| HP                   | Top left, plus a thin arc under the hunter when damaged | Bar with numeric value                                                                                  |
+| XP                   | Bottom edge, full width                                 | Thin silver bar; level number at left                                                                   |
+| Dodge                | Small pip beside the hunter                             | Visible only while on cooldown                                                                          |
+| Tools and evolutions | Top right                                               | Small icons with rank pips                                                                              |
+| Boss bar             | Top center, below the moon clock                        | Name card + phase markers                                                                               |
+| Event banner         | Upper third, 2 s                                        | Name and one-line hint                                                                                  |
 
 ### Level-up overlay
 
@@ -646,14 +673,14 @@ Master/music/SFX volumes; screen shake slider; damage numbers toggle; colorblind
 
 The first hunt teaches everything through its spawn script, with no tutorial popups; one-line diegetic prompts appear near the hunter and fade after the action is done once.
 
-| Time | What spawns | Prompt (fades once done) | Lesson |
-| --- | --- | --- | --- |
-| 0:00 | Nothing for 4 s; 3 still Husks at sweet-spot range | "Hold to draw" | Draw and loose |
-| 0:10 | 5 Husks in a slow line | "Release at the chime" | The perfect window, by ear |
-| 0:25 | Husks from two sides | "Space to dodge" | Dodge, and that dodge cancels the draw |
-| 0:40 | A loose clump approaches | (none; the sweet-spot ring glows once) | Range bands |
-| \~1:00 | First level-up | Card overlay explains itself | Upgrades |
-| First time Focus hits 100 | A dense Husk wave is scripted to arrive | "Deadeye ready: right-click" | Deadeye |
+| Time                      | What spawns                                        | Prompt (fades once done)               | Lesson                                 |
+| ------------------------- | -------------------------------------------------- | -------------------------------------- | -------------------------------------- |
+| 0:00                      | Nothing for 4 s; 3 still Husks at sweet-spot range | "Hold to draw"                         | Draw and loose                         |
+| 0:10                      | 5 Husks in a slow line                             | "Release at the chime"                 | The perfect window, by ear             |
+| 0:25                      | Husks from two sides                               | "Space to dodge"                       | Dodge, and that dodge cancels the draw |
+| 0:40                      | A loose clump approaches                           | (none; the sweet-spot ring glows once) | Range bands                            |
+| \~1:00                    | First level-up                                     | Card overlay explains itself           | Upgrades                               |
+| First time Focus hits 100 | A dense Husk wave is scripted to arrive            | "Deadeye ready: right-click"           | Deadeye                                |
 
 After the first hunt, onboarding never repeats; the Range covers practice. Prompts also show for gamepad glyphs when a pad is active.
 
@@ -663,14 +690,14 @@ Arrowfall ships on Steam and Steam Deck; the same codebase runs in the browser f
 
 ### Stack
 
-| Layer | Choice | Why |
-| --- | --- | --- |
-| Language / build | TypeScript + Vite | Fast iteration, typed data tables |
-| Rendering | PixiJS v8 (WebGL, WebGPU when available) | Batched sprites with additive blending for thousands of glow elements at 60 fps |
-| Audio | Web Audio API with a small layered-stem mixer | Key-aware perfect chime, stem crossfades, voice caps |
-| Input | Keyboard, mouse, Gamepad API | Deck and controllers first-class |
-| Desktop wrapper | Tauri | Small builds; Steamworks bridge for achievements and cloud saves |
-| Hosting (dev/demo) | Vercel | Matches the existing workflow |
+| Layer              | Choice                                        | Why                                                                             |
+| ------------------ | --------------------------------------------- | ------------------------------------------------------------------------------- |
+| Language / build   | TypeScript + Vite                             | Fast iteration, typed data tables                                               |
+| Rendering          | PixiJS v8 (WebGL, WebGPU when available)      | Batched sprites with additive blending for thousands of glow elements at 60 fps |
+| Audio              | Web Audio API with a small layered-stem mixer | Key-aware perfect chime, stem crossfades, voice caps                            |
+| Input              | Keyboard, mouse, Gamepad API                  | Deck and controllers first-class                                                |
+| Desktop wrapper    | Tauri                                         | Small builds; Steamworks bridge for achievements and cloud saves                |
+| Hosting (dev/demo) | Vercel                                        | Matches the existing workflow                                                   |
 
 ### Architecture rules
 
@@ -705,13 +732,13 @@ FPS and frame-time graph; entity counts (enemies, arrows, projectiles, particles
 
 ### Automated checks (run on every commit)
 
-| Check | Asserts |
-| --- | --- |
-| Smoke run | A scripted bot launches the game, reaches Camp, starts a hunt, holds draw while circling, gets a level-up and picks a card, reaches results. Fails on any console error |
-| Set-piece run | With the dev time-skip, each boss spawns, takes damage, changes phase, and dies |
-| Evolution run | Each of the 10 evolutions is granted and fires its effect at least once |
-| Save round-trip | Profile saves, reloads, and matches |
-| Perf run | 350-enemy stress scene holds the performance budget |
+| Check           | Asserts                                                                                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Smoke run       | A scripted bot launches the game, reaches Camp, starts a hunt, holds draw while circling, gets a level-up and picks a card, reaches results. Fails on any console error |
+| Set-piece run   | With the dev time-skip, each boss spawns, takes damage, changes phase, and dies                                                                                         |
+| Evolution run   | Each of the 10 evolutions is granted and fires its effect at least once                                                                                                 |
+| Save round-trip | Profile saves, reloads, and matches                                                                                                                                     |
+| Perf run        | 350-enemy stress scene holds the performance budget                                                                                                                     |
 
 The bot tests use Playwright against the web build and screenshot each checkpoint, so every build reports what it actually did.
 

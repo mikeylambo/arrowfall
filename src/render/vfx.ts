@@ -201,6 +201,29 @@ export class Vfx {
         this.budget += 20;
         this.ring(e.x, e.y, RED, 1.2, 0.5, 8, 0.9);
         this.bloom(e.x, e.y, RED, 1.2, 1, 4, 0.7);
+      } else if (id === 'upgrade.starfall') {
+        // A star drops onto the aim point: a white column flash and a blast ring.
+        this.budget += 20;
+        this.bloom(e.x, e.y - 60, SILVER, 0.35, 0.4, 2.6, 1);
+        this.ring(e.x, e.y, SILVER, 0.4, 0.3, 2.4, 1);
+        this.ring(e.x, e.y, VIOLET, 0.55, 0.2, 3, 0.8);
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2;
+          this.emit(
+            'spark',
+            e.x,
+            e.y,
+            SILVER,
+            0.35,
+            1.3,
+            0.3,
+            1,
+            Math.cos(a) * 340,
+            Math.sin(a) * 340,
+          );
+        }
+      } else if (id === 'upgrade.ricochet') {
+        this.ring(e.x, e.y, SILVER, 0.18, 0.15, 0.6, 0.9);
       } else if (id === 'streak.tier') {
         // Streak milestone: a violet crown of light around the hunter.
         this.budget += 24;

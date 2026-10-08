@@ -29,6 +29,7 @@ import { decorateLevelUp, decorateResults, type Recap } from './ui/cards';
 import { Coach } from './ui/coach';
 import { decorateMenus } from './ui/menus';
 import { TOOLS } from './data/tools';
+import { CURSES, CURSE_BONUS, CURSES_UNLOCK_RUNS } from './data/curses';
 import type { Profile, RunRecord } from './sim/types';
 const $ = (id: string) => document.getElementById(id)!;
 const profileStore = new SaveManager<Profile>(new BrowserStorage('arrowfall'), 'hunter-profile', 2);
@@ -192,6 +193,8 @@ function begin(next: string) {
     view.camera.y = 430;
   }
   view.attach(game, next === 'camp');
+  // Each bow announces what makes it different as the hunt begins.
+  if (next === 'hunt') game.announce(`${game.bow.name} · ${game.bow.signature}`);
   if (next === 'hunt' && !profile.onboarded) coach.begin(game);
   else coach.finish();
   $('hud').classList.toggle('visible', next !== 'camp');
@@ -233,6 +236,16 @@ function trail() {
         description: ['Crescent', 'Half Moon', 'Full Moon', 'Blood Moon'][phase],
       },
       {
+        id: 'curses',
+        label: `Curses · ${profile.curses.length ? '+' + Math.round(profile.curses.length * CURSE_BONUS * 100) + '% Moonsilver' : 'None'}`,
+        description:
+          profile.runs.length >= CURSES_UNLOCK_RUNS
+            ? profile.curses.map((c) => CURSES.find((x) => x.id === c)?.name).join(' · ') ||
+              'Make the night harder for more Moonsilver'
+            : `Unlocks after ${CURSES_UNLOCK_RUNS} hunts`,
+        disabled: profile.runs.length < CURSES_UNLOCK_RUNS,
+      },
+      {
         id: 'nightly',
         label: nightly ? 'Nightly Hunt · On' : 'Nightly Hunt · Off',
         description: 'A daily seeded forest and card sequence',
@@ -241,6 +254,19 @@ function trail() {
     ],
     undefined,
     'camp',
+  );
+}
+function curses() {
+  show(
+    'curses',
+    'Curses',
+    CURSES.map((c) => ({
+      id: 'curse:' + c.id,
+      label: `${c.name} · ${profile.curses.includes(c.id) ? 'On' : 'Off'}`,
+      description: `${c.effect} · +${Math.round(CURSE_BONUS * 100)}% Moonsilver`,
+    })),
+    'Stack as many as you dare',
+    'trail',
   );
 }
 function station(id: string) {
@@ -364,6 +390,8 @@ function endRun() {
   if (!game || savedRun) return;
   savedRun = true;
   const g = game;
+  // Each active curse adds to the Moonsilver payout.
+  g.earned = Math.round(g.earned * (1 + CURSE_BONUS * g.curses.size));
   const axes = [
     g.damageSources.bow || 0,
     g.damageSources.deadshot || 0,
@@ -496,7 +524,17 @@ app.flow.onActivate = (screen, id) => {
       nightly = !nightly;
       trail();
     }
+    if (id === 'curses') curses();
     if (id === 'begin') void launch();
+    return;
+  }
+  if (screen === 'curses' && id.startsWith('curse:')) {
+    const c = id.slice(6);
+    profile.curses = profile.curses.includes(c)
+      ? profile.curses.filter((x) => x !== c)
+      : [...profile.curses, c];
+    persist();
+    curses();
     return;
   }
   if (screen === 'fletcher' && id.startsWith('bow:')) {
@@ -621,7 +659,7 @@ app.flow.onBack = (screen) => {
     hideUI();
     return;
   }
-  if (screen === 'phase') {
+  if (screen === 'phase' || screen === 'curses') {
     trail();
     return;
   }

@@ -87,6 +87,7 @@ export class Hunt {
     travel: 0,
     hit: new Uint32Array(500),
     hitCount: 0,
+    bounces: 0,
   }));
   readonly particles = new Pool<Particle>(2000, () => ({
     active: false,
@@ -186,6 +187,11 @@ export class Hunt {
   tick = 0;
   /** Landmarks reached this hunt (bit per landmark). */
   discovered = 0;
+  /** Active curses for this hunt (data/curses.ts). */
+  readonly curses: Set<string>;
+  /** Seconds the hunter has stood still (Still Water) and perfects counted for Starfall. */
+  stillTime = 0;
+  starCount = 0;
   lastPlayerX = 0;
   lastPlayerY = 0;
   readonly packAttack: Record<number, number> = {};
@@ -248,6 +254,7 @@ export class Hunt {
     this.directorRng = new DeterministicRng(seed ^ 0x7385ac);
     const worldRng = new DeterministicRng(seed);
     this.world = makeWorld(() => worldRng.next());
+    this.curses = new Set(practice ? [] : profile.curses);
     this.bow = BOWS.find((b) => b.id === bowId) ?? BOWS[0];
     const hp = T.hp + 10 * (profile.boons.Vigor || 0);
     this.player = {
@@ -350,7 +357,11 @@ export class Hunt {
     e.hp = d.hp * scale * mult * (elite >= 0 ? 2.5 : 1);
     e.maxHp = d.hp * scale * mult * (elite >= 0 ? 2.5 : 1);
     e.r = d.radius;
-    e.speed = d.speed * (this.phase === 3 ? 1.15 : 1) * (elite === 0 ? 1.45 : 1);
+    e.speed =
+      d.speed *
+      (this.phase === 3 ? 1.15 : 1) *
+      (elite === 0 ? 1.45 : 1) *
+      (this.curses.has('haste') ? 1.2 : 1);
     e.damage = d.damage * (1 + (0.05 * this.time) / 60);
     e.xp = d.xp * (elite >= 0 ? 10 : 1);
     e.elite = elite;
@@ -506,6 +517,7 @@ export class Hunt {
     const p = this.player;
     if (this.scene === 'hunt' || this.scene === 'range') this.time += dt;
     this.moving = len(input.mx, input.my) > 0.1;
+    this.stillTime = this.moving ? 0 : this.stillTime + dt;
     this.enemyDeadeye = Math.max(0, this.enemyDeadeye - realDt);
     this.bannerTime = Math.max(0, this.bannerTime - realDt);
     this.shake = Math.max(0, this.shake - realDt * T.shakeDecay);
@@ -818,13 +830,15 @@ export class Hunt {
       const chance =
         this.time < 240
           ? 0
-          : Math.min(0.08, 0.02 + ((this.time - 240) / 660) * 0.06) * (this.phase >= 2 ? 2 : 1);
+          : Math.min(0.08, 0.02 + ((this.time - 240) / 660) * 0.06) *
+            (this.phase >= 2 ? 2 : 1) *
+            (this.curses.has('champions') ? 2 : 1);
       if (this.directorRng.next() < chance) elite = Math.floor(this.directorRng.next() * 6);
       const lead = this.spawn(kind, undefined, undefined, false, elite);
       // Moonhounds hunt in packs of 3-5 (GDD 9): the rest arrive beside the first.
       if (lead && kind === 1) {
         const pack = this.nextPack++,
-          size = 3 + Math.floor(this.directorRng.next() * 3);
+          size = 3 + Math.floor(this.directorRng.next() * 3) + (this.curses.has('pack') ? 2 : 0);
         lead.pack = pack;
         lead.slot = 0;
         for (let i = 1; i < size && this.enemies.count < this.cap() + 4; i++) {
@@ -850,7 +864,7 @@ export class Hunt {
       this.eventTimer -= dt;
       if (this.event === 2 && len(this.player.x - this.eventX, this.player.y - this.eventY) < 85) {
         this.groveRest += dt;
-        if (this.groveRest >= 3) {
+        if (this.groveRest >= 3 && !this.curses.has('famine')) {
           this.player.hp = Math.min(this.player.maxHp, this.player.hp + 40);
           this.groveRest = -100;
           this.emit('pickup.heal');
@@ -862,6 +876,7 @@ export class Hunt {
   hurt(amount: number, source = 'The Hollowmoor') {
     const p = this.player;
     if (this.god || p.invuln > 0 || p.dodge > 0 || this.cinematic > 0) return;
+    if (this.curses.has('glass')) amount *= 1.5;
     p.hp -= amount;
     // Death recap: damage taken by source, and the last few hits in order.
     this.damageTaken[source] = (this.damageTaken[source] || 0) + amount;
@@ -889,7 +904,7 @@ export class Hunt {
       drop.value = e.xp;
       drop.kind = e.elite >= 0 ? 1 : 0;
     }
-    if (this.rng.next() < 0.025) {
+    if (this.rng.next() < 0.025 && !this.curses.has('famine')) {
       const berry = this.pickups.acquire();
       if (berry) {
         berry.x = e.x + 12;
@@ -899,6 +914,8 @@ export class Hunt {
       }
     }
     if (this.kills % 10 === 0) this.earned++;
+    if (this.rank('lifedraw') && this.kills % 15 === 0)
+      this.player.hp = Math.min(this.player.maxHp, this.player.hp + 2 * this.rank('lifedraw'));
     if (e.elite >= 0) {
       this.earned += 5;
       this.player.focus = Math.min(100, this.player.focus + T.focusElite);
@@ -1091,6 +1108,12 @@ export class Hunt {
       if (e.active && e.deadmark) {
         e.deadmark = false;
         marked++;
+        // Oathbreaker: Deadeye marks are knocked away from the hunter (GDD 4).
+        if (this.bow.id === 'oathbreaker' && e.boss < 0) {
+          const a = Math.atan2(e.y - this.player.y, e.x - this.player.x);
+          e.x += Math.cos(a) * 90;
+          e.y += Math.sin(a) * 90;
+        }
         this.emit('deadeye.strike', e.x, e.y, marked);
         loose(
           this,

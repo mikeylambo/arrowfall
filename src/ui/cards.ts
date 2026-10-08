@@ -112,6 +112,25 @@ function progression(card: Card) {
     },
   );
 }
+/**
+ * Evolution path for an upgrade card: the evolution it feeds that you are closest to, with
+ * each ingredient ticked when owned (this card counts as owned).
+ */
+function evolutionHint(g: Hunt, id: string) {
+  const paths = EVOLUTIONS.filter((e) => e.ingredients.includes(id) && !g.evolutions.has(e.id));
+  if (!paths.length) return '';
+  const have = (i: string) => i === id || g.rank(i) > 0,
+    best = paths.sort(
+      (a, b) =>
+        b.ingredients.filter(have).length / b.ingredients.length -
+        a.ingredients.filter(have).length / a.ingredients.length,
+    )[0];
+  const name = (i: string) => UPGRADES.find((u) => u.id === i)?.name ?? i.replace(/-/g, ' ');
+  const ready = best.ingredients.every(have);
+  return `<span class="card-evo${ready ? ' ready' : ''}"><b>${ready ? 'Unlocks' : 'Toward'} ${escape(best.name)}</b>${best.ingredients
+    .map((i) => `<i class="${have(i) ? 'on' : ''}">${escape(name(i))}</i>`)
+    .join('')}</span>`;
+}
 const icon = (name: keyof typeof ICONS) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
@@ -149,6 +168,7 @@ export function decorateLevelUp(root: HTMLElement, g: Hunt, reducedMotion: boole
       <span class="card-kind">${escape(card.kind)}</span>
       ${pips}
       <span class="slu-choice-desc card-effect">${progression(card)}</span>
+      ${evolutionHint(g, g.offers[Number(id.slice(5))])}
       <span class="card-rarity">${card.rarity}</span>`;
   });
   if (actions.children.length) choices.after(actions);

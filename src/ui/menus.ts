@@ -10,6 +10,7 @@ const EYEBROW: Record<string, string> = {
   options: 'Settings',
   settings: 'Settings',
   trail: 'Set out',
+  curses: 'Harder nights, richer hunts',
   phase: 'The night ahead',
   fletcher: 'Choose your bow',
   altar: 'Spend Moonsilver',
@@ -50,6 +51,7 @@ function iconFor(screen: string, id: string, disabled: boolean) {
   if (id === 'fletcher' || id.startsWith('bow:')) return 'bow';
   if (id === 'phase' || id.startsWith('phase:')) return 'moon';
   if (id === 'nightly') return 'calendar';
+  if (id === 'curses' || id.startsWith('curse:')) return 'moon';
   if (id.startsWith('challenge') || id === 'free' || id.startsWith('range')) return 'target';
   if (id.startsWith('boon:')) return 'altar';
   if (id.startsWith('entry:') || id.startsWith('run:')) return 'book';

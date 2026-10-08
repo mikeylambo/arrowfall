@@ -178,6 +178,12 @@ export class Synth implements AudioSystem {
       this.lastGrowl = now;
       this.tone(70, 0.5, 'sawtooth', 0.08, 'sfx', 0.8);
       this.tone(105, 0.45, 'sawtooth', 0.04, 'sfx', 0.85);
+    } else if (id === 'upgrade.starfall') {
+      this.tone(1567.98, 0.5, 'sine', 0.08, 'sfx', 0.5);
+      this.noise(0.35, 0.18);
+      this.tone(98, 0.5, 'sine', 0.25, 'sfx', 0.6);
+    } else if (id === 'upgrade.ricochet') {
+      this.tone(2349.32, 0.06, 'triangle', 0.04, 'sfx', 1.3);
     } else if (id === 'streak.tier') {
       // Rising fanfare in key, higher with each tier.
       [587.33, 739.99, 880, 1174.66].forEach((f, i) =>

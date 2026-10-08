@@ -353,6 +353,77 @@ export class View {
     }
     this.landmarks.clear();
   }
+  /**
+   * Elite modifiers read at a glance (GDD 9), each with its own mark at the feet:
+   * Frenzied speed streaks, Armored plate ring, Regenerating mending pulse, Vampiric orbiting
+   * blood, Explosive warning rings that quicken as it weakens, Moonwarded silver ward that
+   * cracks as it takes damage.
+   */
+  eliteMark(tg: Graphics, e: Enemy, t: number) {
+    const r = e.r + 9,
+      x = e.x,
+      y = e.y;
+    switch (e.elite) {
+      case 0:
+        for (let i = -1; i <= 1; i++) {
+          const a = e.angle + Math.PI + i * 0.35,
+            k = (t * 4 + i * 0.3) % 1;
+          tg.moveTo(x + Math.cos(a) * (r + k * 10), y + Math.sin(a) * (r + k * 10))
+            .lineTo(x + Math.cos(a) * (r + 18 + k * 10), y + Math.sin(a) * (r + 18 + k * 10))
+            .stroke({ color: C.threat, width: 2, alpha: 0.8 * (1 - k) });
+        }
+        break;
+      case 1: {
+        const pts: number[] = [];
+        for (let i = 0; i < 6; i++)
+          pts.push(x + Math.cos((i * Math.PI) / 3) * r, y + Math.sin((i * Math.PI) / 3) * r);
+        tg.poly(pts)
+          .stroke({ color: 0x8a2a32, width: 4, alpha: 0.9 })
+          .stroke({ color: C.elite, width: 1.5, alpha: 0.8 });
+        break;
+      }
+      case 2: {
+        const mending = t - e.lastHit > 2 && e.hp < e.maxHp,
+          k = (t * (mending ? 1.6 : 0.6)) % 1;
+        tg.circle(x, y, r - 4 + k * 10).stroke({
+          color: C.elite,
+          width: 2,
+          alpha: (mending ? 0.9 : 0.35) * (1 - k),
+        });
+        break;
+      }
+      case 3:
+        for (let i = 0; i < 3; i++) {
+          const a = t * 2.2 + (i * Math.PI * 2) / 3;
+          tg.circle(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.6, 3.2).fill({
+            color: C.threat,
+            alpha: 0.95,
+          });
+        }
+        break;
+      case 4: {
+        const rate = 1.2 + 4 * (1 - e.hp / e.maxHp),
+          k = (t * rate) % 1;
+        tg.circle(x, y, r).stroke({ color: C.threat, width: 2, alpha: 0.8 });
+        tg.circle(x, y, r + k * 14).stroke({ color: C.threat, width: 1.5, alpha: 0.7 * (1 - k) });
+        break;
+      }
+      case 5: {
+        // Moonward: silver arcs; a segment breaks away for every sixth of health lost.
+        const intact = Math.ceil((e.hp / e.maxHp) * 6);
+        for (let i = 0; i < 6; i++)
+          if (i < intact) {
+            const a = (i * Math.PI) / 3 + t * 0.4;
+            tg.arc(x, y, r, a + 0.08, a + Math.PI / 3 - 0.08).stroke({
+              color: C.silver,
+              width: 2.2,
+              alpha: 0.85,
+            });
+          }
+        break;
+      }
+    }
+  }
   /** Place this frame's lights (pooled additive blooms; budgeted so crowds stay cheap). */
   updateLights(g: Hunt) {
     if (!this.lightSprites.length)
@@ -813,8 +884,7 @@ export class View {
       w.circle(g.eventX, g.eventY, 1050).stroke({ color: 0xb5d2ed, alpha: 0.5, width: 6 });
     for (const e of g.enemies.items)
       if (e.active) {
-        if (e.elite === 5)
-          tg.circle(e.x, e.y, e.r + 9).stroke({ color: C.silver, width: 2, alpha: 0.8 });
+        if (e.elite >= 0) this.eliteMark(tg, e, g.realTime);
         if (e.deadmark || e.mark) {
           tg.circle(e.x, e.y, e.r + 16).stroke({
             color: e.deadmark ? C.focus : C.silver,
