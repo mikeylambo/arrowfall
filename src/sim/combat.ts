@@ -148,7 +148,7 @@ export function updateArrows(g: Hunt, dt: number) {
     a.y += a.vy * dt;
     a.travel += len(a.vx, a.vy) * dt;
     if (!(worldpiercer && a.full)) {
-      const n = g.world.hash.query(a.x, a.y, 55, arrowCover);
+      const n = g.world.hash.query(a.x, a.y, 80, arrowCover);
       for (let i = 0; i < n; i++)
         if (distance(a, arrowCover[i]) < arrowCover[i].r) a.active = false;
       for (let w = 0; w < wallCount; w++) {

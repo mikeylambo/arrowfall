@@ -192,6 +192,42 @@ export class Atmosphere {
         this.chunks.push(chunk);
       }
   }
+  /** Screen-space rain for the Witching Hours. */
+  readonly rain = new TilingSprite({ texture: rainTexture(), width: 1, height: 1 });
+  private tintNow = [0.77, 0.83, 1];
+  private mistBoost = 1;
+  private rainAlpha = 0;
+  /**
+   * The night's arc (GDD 8): fog thickens through Deep Night, the moon reddens the moor after
+   * Midnight with rain in the Witching Hours, and False Dawn pales it toward blue-grey.
+   */
+  night(gameTime: number, realTime: number, dt: number, reduced: boolean) {
+    const t = gameTime;
+    const [target, mist, rain] =
+      t < 120
+        ? [[0.77, 0.83, 1], 1, 0]
+        : t < 300
+          ? [[0.74, 0.8, 1], 1.4, 0]
+          : t < 600
+            ? [[0.66, 0.72, 0.95], 1.9, 0]
+            : t < 900
+              ? [[0.86, 0.62, 0.7], 1.4, 0.2]
+              : t < 1140
+                ? [[0.8, 0.86, 1], 2.3, 0]
+                : [[0.9, 0.55, 0.62], 1.6, 0];
+    const k = Math.min(1, dt * 0.5);
+    for (let i = 0; i < 3; i++) this.tintNow[i] += (target[i] - this.tintNow[i]) * k;
+    this.mistBoost += (mist - this.mistBoost) * k;
+    this.rainAlpha += ((reduced ? rain * 0.5 : rain) - this.rainAlpha) * k;
+    const [r, g, b] = this.tintNow;
+    this.ground.tint =
+      (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
+    this.mistLow.alpha = ATMOSPHERE.mistLow.alpha * this.mistBoost;
+    this.mistHigh.alpha = ATMOSPHERE.mistHigh.alpha * this.mistBoost;
+    this.rain.visible = this.enabled && this.rainAlpha > 0.01;
+    this.rain.alpha = this.rainAlpha;
+    if (this.rain.visible) this.rain.tilePosition.set(realTime * -120, realTime * 900);
+  }
   /** Fit world-space sheets to the camera; drift fog; cull decal chunks. */
   update(view: Camera, time: number) {
     const visible = this.enabled;
@@ -220,6 +256,8 @@ export class Atmosphere {
     }
     this.vignette.width = view.width;
     this.vignette.height = view.height;
+    this.rain.width = view.width;
+    this.rain.height = view.height;
     const size = ATMOSPHERE.chunk;
     const x0 = Math.floor(left / size),
       x1 = Math.floor((left + halfW * 2) / size),
@@ -231,4 +269,26 @@ export class Atmosphere {
       this.chunks[i].visible = cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1;
     }
   }
+}
+
+/** Rain: thin slanted silver streaks on transparent, tiled across the screen. */
+function rainTexture() {
+  const size = 256,
+    el = document.createElement('canvas');
+  el.width = el.height = size;
+  const c = el.getContext('2d')!;
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  c.strokeStyle = 'rgba(196,212,255,0.55)';
+  c.lineWidth = 1;
+  for (let i = 0; i < 70; i++) {
+    const x = rnd() * size,
+      y = rnd() * size,
+      l = 10 + rnd() * 16;
+    c.beginPath();
+    c.moveTo(x, y);
+    c.lineTo(x - l * 0.13, y + l);
+    c.stroke();
+  }
+  return Texture.from(el);
 }

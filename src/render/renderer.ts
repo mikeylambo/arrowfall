@@ -13,6 +13,7 @@ import { Vfx } from './vfx';
 import { Diegetic } from './diegetic';
 import { loadSheet, type Sheet } from './sheets';
 import { Atmosphere } from './ground';
+import { landmarkArt, WorldDressing } from './landmarks';
 
 import { UNIT } from './silhouettes';
 import { BOSSES } from '../data/bosses';
@@ -142,6 +143,10 @@ export class View {
   weakPoint = new Sprite();
   raven = new Sprite();
   ghostSprites: Sprite[] = [];
+  world!: WorldDressing;
+  /** Additive light on the ground: the hunter's moonlight, glowing arrows, lantern, well, shrine. */
+  readonly lights = new Container();
+  private lightSprites: Sprite[] = [];
   camera = { x: 7500, y: 4250 };
   zoom = 1;
   width = 1400;
@@ -166,7 +171,8 @@ export class View {
       autoDensity: true,
       preference: 'webgl',
     });
-    this.art = bakeArt();
+    this.art = { ...bakeArt(), ...landmarkArt() };
+    this.world = new WorldDressing(this.art);
     for (const [id, path] of Object.entries(ART_PATHS))
       this.art[id] = await Assets.load<Texture>(path);
     this.atmosphere = new Atmosphere(this.art, T.worldWidth, T.worldHeight);
@@ -174,6 +180,8 @@ export class View {
     this.root.addChild(
       this.atmosphere.ground,
       this.atmosphere.decals,
+      this.world.ground,
+      this.lights,
       this.atmosphere.mistLow,
       this.cover,
       this.landmarks,
@@ -189,8 +197,8 @@ export class View {
     this.weakPoint.tint = tint(PALETTE.weak);
     this.weakPoint.visible = false;
     this.threatLayer.addChild(this.weakPoint);
-    this.root.addChild(this.hero, this.atmosphere.mistHigh);
-    this.app.stage.addChild(this.atmosphere.vignette, this.overlay);
+    this.root.addChild(this.hero, this.world.plates, this.atmosphere.mistHigh);
+    this.app.stage.addChild(this.atmosphere.rain, this.atmosphere.vignette, this.overlay);
     this.hunter.texture = this.art.hunter;
     this.hunter.anchor.set(0.5);
     this.hunter.scale.set(0.7);
@@ -283,12 +291,27 @@ export class View {
     this.camera.y = g.player.y;
     this.cover.removeChildren().forEach((c) => c.destroy());
     this.coverSprites = [];
+    // Cover art by kind (sim/world.ts COVER); scaled so the art sits on the collision circle.
+    const COVER_ART: [string, number][] = [
+      ['tree', 22],
+      ['menhir', 27],
+      ['mound', 64],
+      ['dead', 26],
+      ['wall', 22],
+      ['tower', 56],
+      ['shrine', 30],
+      ['well', 34],
+    ];
     for (const o of g.world.obstacles) {
-      const s = this.sprite(this.art[o.kind ? 'stone' : 'tree'], this.cover);
+      const [tex, base] = COVER_ART[o.kind] ?? COVER_ART[0];
+      const s = this.sprite(this.art[tex], this.cover);
       s.position.set(o.x, o.y);
-      s.scale.set(o.kind ? o.r / 24 : o.r / 22);
+      s.scale.set(o.r / base);
+      if (o.kind === 3 || o.kind === 4) s.rotation = ((o.x * 13 + o.y * 7) % 628) / 100;
       this.coverSprites.push(s);
     }
+    if (camp) this.world.clear();
+    else this.world.build(g);
     // The Hollow's edge: a dense treeline over a dark band, so the world boundary reads as
     // forest you cannot enter instead of an invisible wall.
     if (!camp) {
@@ -329,20 +352,44 @@ export class View {
       }
     }
     this.landmarks.clear();
-    for (const l of g.world.landmarks) {
-      this.landmarks.circle(l.x, l.y, l.name === 'Moonwell Clearing' ? 260 : 130).stroke({
-        color: 0x6685a5,
-        alpha: 0.14,
-        width: 2,
-      });
-      for (let i = 0; i < 6; i++) {
-        const a = (i * Math.PI) / 3;
-        this.landmarks
-          .moveTo(l.x + Math.cos(a) * 120, l.y + Math.sin(a) * 120)
-          .lineTo(l.x + Math.cos(a) * 145, l.y + Math.sin(a) * 145)
-          .stroke({ color: 0x879bbb, alpha: 0.2, width: 2 });
+  }
+  /** Place this frame's lights (pooled additive blooms; budgeted so crowds stay cheap). */
+  updateLights(g: Hunt) {
+    if (!this.lightSprites.length)
+      for (let i = 0; i < 56; i++) {
+        const l = new Sprite(this.art.bloom);
+        l.anchor.set(0.5);
+        l.blendMode = 'add';
+        l.visible = false;
+        this.lights.addChild(l);
+        this.lightSprites.push(l);
+      }
+    let n = 0;
+    const put = (x: number, y: number, scale: number, color: number, alpha: number) => {
+      if (n >= this.lightSprites.length) return;
+      const l = this.lightSprites[n++];
+      l.visible = true;
+      l.position.set(x, y);
+      l.scale.set(scale);
+      l.tint = color;
+      l.alpha = alpha;
+    };
+    const p = g.player;
+    if (!this.camp) {
+      put(p.x, p.y, 2.6, C.silver, 0.13);
+      const lantern = g.rank('lantern');
+      if (lantern) put(p.x, p.y, (140 + 20 * (lantern - 1)) / 45, 0xdceeff, 0.12);
+      const L = g.world.landmarks,
+        pulse = 0.85 + 0.15 * Math.sin(g.realTime * 1.7);
+      put(L[0].x, L[0].y - 170, 3.2, 0xc4d4ff, 0.3 * pulse);
+      put(L[7].x, L[7].y - 40, 2.4, 0xc4d4ff, 0.2 * pulse);
+      for (const a of g.arrows.items) {
+        if (n >= this.lightSprites.length) break;
+        if (a.active && (a.perfect || a.source === 'deadeye'))
+          put(a.x, a.y, 1.1, C.focus, a.source === 'deadeye' ? 0.45 : 0.3);
       }
     }
+    for (let i = n; i < this.lightSprites.length; i++) this.lightSprites[i].visible = false;
   }
   screenToWorld(x: number, y: number) {
     return {
@@ -379,8 +426,11 @@ export class View {
       this.width / 2 - this.camera.x * this.zoom + sx,
       this.height / 2 - this.camera.y * this.zoom + sy,
     );
+    if (!this.camp) this.world.update(g);
     const atmosphereStart = performance.now();
     this.atmosphere.update(this, this.reducedMotion ? 0 : g.realTime);
+    this.atmosphere.night(this.camp ? 0 : g.time, g.realTime, realDt, this.reducedMotion);
+    this.updateLights(g);
     this.timing.atmosphere += (performance.now() - atmosphereStart - this.timing.atmosphere) * 0.1;
     for (let i = 0; i < this.coverSprites.length; i++) {
       const s = this.coverSprites[i];

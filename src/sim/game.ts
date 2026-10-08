@@ -184,6 +184,8 @@ export class Hunt {
   nextPack = 0;
   /** Sim ticks, for staggering per-enemy work across frames. */
   tick = 0;
+  /** Landmarks reached this hunt (bit per landmark). */
+  discovered = 0;
   lastPlayerX = 0;
   lastPlayerY = 0;
   readonly packAttack: Record<number, number> = {};
@@ -452,6 +454,12 @@ export class Hunt {
     this.eventTimer = EVENTS[id].duration;
     this.eventX = this.player.x + 160;
     this.eventY = this.player.y + 80;
+    // Quiet Grove always uses the Shrine of the Silver Order when it is within reach.
+    const shrine = this.world.landmarks[7];
+    if (id === 2 && distance(this.player, shrine) < 1400) {
+      this.eventX = shrine.x;
+      this.eventY = shrine.y + 30;
+    }
     this.groveRest = 0;
     this.announce(`${EVENTS[id].name} · ${EVENTS[id].hint}`);
     if (id === 0)
@@ -772,6 +780,18 @@ export class Hunt {
       this.finish('Survived Until Dawn');
       return;
     }
+    // Landmarks announce themselves the first time the hunter reaches them each hunt.
+    if (this.scene === 'hunt')
+      for (let i = 0; i < this.world.landmarks.length; i++) {
+        const l = this.world.landmarks[i];
+        if (!(this.discovered & (1 << i)) && distance(this.player, l) < 480) {
+          this.discovered |= 1 << i;
+          if (i > 0) {
+            this.announce('Discovered · ' + l.name);
+            this.emit('world.discover', l.x, l.y, i);
+          }
+        }
+      }
     if (this.freezeSpawns || this.time >= 1140) return;
     // Pacing: each cycle ends in a lull (the forest holds its breath) and then a swarm.
     const before = this.pace;

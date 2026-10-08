@@ -111,7 +111,12 @@ export function updateEnemies(g: Hunt, dt: number) {
         d = len(dx, dy),
         aim = Math.atan2(dy, dx),
         def = ENEMIES[e.kind];
-      let speed = e.speed * (e.slow > 0 ? 0.7 : 1),
+      const mire = g.world.landmarks[5];
+      let speed =
+          e.speed *
+          (e.slow > 0 ? 0.7 : 1) *
+          // The Mire slows everyone, hunter and hunted alike (GDD 11).
+          (Math.abs(e.x - mire.x) < 300 && distance(e, mire) < 300 ? 0.75 : 1),
         move = true;
       if (e.kind === 5) {
         const diff = Math.atan2(Math.sin(aim - e.angle), Math.cos(aim - e.angle));
@@ -337,7 +342,7 @@ export function updateThreats(g: Hunt, dt: number) {
           g.hurt(t.damage, attacker(g, owner(g, t.owner), 'bolt'));
           t.active = false;
         }
-        const found = g.world.hash.query(t.x, t.y, 50, threatCover);
+        const found = g.world.hash.query(t.x, t.y, 80, threatCover);
         for (let i = 0; i < found; i++)
           if (distance(t, threatCover[i]) < threatCover[i].r) t.active = false;
       }
