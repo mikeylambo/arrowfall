@@ -31,6 +31,7 @@ import { decorateMenus } from './ui/menus';
 import { TOOLS } from './data/tools';
 import { CURSES, CURSE_BONUS, CURSES_UNLOCK_RUNS } from './data/curses';
 import type { Profile, RunRecord } from './sim/types';
+import { Playtest, openNoteBox, playtestEnabled } from './playtest';
 const $ = (id: string) => document.getElementById(id)!;
 const profileStore = new SaveManager<Profile>(new BrowserStorage('arrowfall'), 'hunter-profile', 2);
 const recovered = await profileStore.loadWithRecovery();
@@ -53,6 +54,19 @@ let game: Hunt | null = null,
 const touchDevice = matchMedia('(pointer: coarse)').matches;
 /** Seconds of the death beat before results (the death clip, a slow push-in). */
 const DEATH_BEAT = 1.8;
+/** Playtest kit (?playtest=1): records runs, frame timing and notes; see src/playtest.ts. */
+const playtestLabel = playtestEnabled();
+const playtest = playtestLabel
+  ? new Playtest(
+      playtestLabel,
+      __BUILD__,
+      BOSSES.map((b) => b.name),
+    )
+  : null;
+if (playtest) document.documentElement.classList.add('playtesting');
+$('playtest-note').onclick = () => playtestNote(true);
+let noteOpen = false,
+  padNotePrevious = false;
 /** How close the hunter must stand to use a camp station (its label sits just below it). */
 const STATION_REACH = 140;
 let deathClock = 0;
@@ -253,6 +267,8 @@ addEventListener('visibilitychange', () => {
 });
 addEventListener('pagehide', saveRun);
 function begin(next: string) {
+  // A hunt left before its end (quit, restart) is still reported.
+  if (playtest?.run && game) playtest.finish(game);
   scene = next;
   const resuming = next === 'hunt' ? resumeSave : null;
   resumeSave = null;
@@ -322,6 +338,7 @@ function begin(next: string) {
   app.shell.session.setPhase('playing');
   hideUI();
   accumulator = 0;
+  if (playtest && next !== 'camp') playtest.begin(next, game, selected);
 }
 async function launch(next = 'hunt') {
   audio.unlock();
@@ -454,6 +471,15 @@ function settings() {
     'options',
     'Options',
     [
+      ...(playtest
+        ? [
+            {
+              id: 'option:playtest',
+              label: 'Playtest Report',
+              description: `${playtest.session.runs.length} runs recorded on ${playtest.session.label}`,
+            },
+          ]
+        : []),
       {
         id: 'option:preset',
         label: `Preset · ${options.preset}`,
@@ -537,6 +563,7 @@ function levelUp() {
   show('levelup', 'Moonlight Answers', choices, `Level ${game.level} · choose one`);
   decorateLevelUp($('ui'), game, view.reducedMotion);
 }
+let showResults = () => {};
 function endRun() {
   if (!game || savedRun) return;
   savedRun = true;
@@ -571,37 +598,43 @@ function endRun() {
   };
   const unlocks = bankRun(profile, record, g.maxStreak, g.sweetKills);
   persist();
+  playtest?.finish(g);
   const results = new ResultsManager().build(
     { kills: g.kills, perfects: g.perfects, shots: g.shots },
     { timeMs: g.time * 1000, metadata: { outcome: g.outcome } },
   );
   app.shell.studio.telemetry.record('run.result', { kills: results.stats.kills });
   app.flow.showResults();
-  show(
-    'results',
-    g.outcome,
-    [
-      { id: 'retry', label: 'Hunt Again' },
-      { id: 'camp', label: 'Return to Camp' },
-      { id: 'fingerprint', label: 'Share Fingerprint' },
-    ],
-    `${fmt(g.time)} survived · ${g.kills} hunted · ${Math.round((g.perfects / Math.max(1, g.shots)) * 100)}% perfect`,
-  );
-  decorateResults(
-    $('ui'),
-    [
-      { label: 'Survived', value: fmt(g.time) },
-      { label: 'Hunted', value: String(g.kills) },
-      { label: 'Perfect', value: Math.round((g.perfects / Math.max(1, g.shots)) * 100) + '%' },
-      { label: 'Level', value: String(g.level) },
-      { label: 'Best streak', value: String(g.maxStreak) },
-      { label: 'Moonsilver', value: '+' + g.earned },
-    ],
-    record.evolutions.map((id) => EVOLUTIONS.find((e) => e.id === id)?.name ?? id),
-    fingerprint(record),
-    g.outcome === 'The Hunter Falls' ? recapFor(g) : undefined,
-    unlocks,
-  );
+  // Kept so the results can be shown again (coming back from the playtest report).
+  showResults = () => {
+    show(
+      'results',
+      g.outcome,
+      [
+        { id: 'retry', label: 'Hunt Again' },
+        { id: 'camp', label: 'Return to Camp' },
+        { id: 'fingerprint', label: 'Share Fingerprint' },
+        ...(playtest ? [{ id: 'playtest', label: 'Playtest Report' }] : []),
+      ],
+      `${fmt(g.time)} survived · ${g.kills} hunted · ${Math.round((g.perfects / Math.max(1, g.shots)) * 100)}% perfect`,
+    );
+    decorateResults(
+      $('ui'),
+      [
+        { label: 'Survived', value: fmt(g.time) },
+        { label: 'Hunted', value: String(g.kills) },
+        { label: 'Perfect', value: Math.round((g.perfects / Math.max(1, g.shots)) * 100) + '%' },
+        { label: 'Level', value: String(g.level) },
+        { label: 'Best streak', value: String(g.maxStreak) },
+        { label: 'Moonsilver', value: '+' + g.earned },
+      ],
+      record.evolutions.map((id) => EVOLUTIONS.find((e) => e.id === id)?.name ?? id),
+      fingerprint(record),
+      g.outcome === 'The Hunter Falls' ? recapFor(g) : undefined,
+      unlocks,
+    );
+  };
+  showResults();
 }
 const today = () => new Date().toISOString().slice(0, 10);
 /** Death recap: what killed the hunter, one targeted tip, and how close the next goal was. */
@@ -640,6 +673,93 @@ function recapFor(g: Hunt): Recap {
     tip,
     nudge,
   };
+}
+let reportFrom = 'options';
+/** The playtest report screen: copy or save the session, or start a fresh one. */
+function playtestReport(from: string) {
+  if (!playtest) return;
+  reportFrom = from;
+  const s = playtest.session,
+    notes = s.runs.reduce((n, r) => n + r.notes.length, s.notes.length);
+  const canShare = !!navigator.canShare?.({
+    files: [new File(['{}'], 'x.json', { type: 'application/json' })],
+  });
+  show(
+    'playtest',
+    'Playtest Report',
+    [
+      { id: 'copy', label: 'Copy Report', description: 'Summary and full data, ready to paste' },
+      canShare
+        ? { id: 'share', label: 'Share Report File', description: playtest.fileName() }
+        : { id: 'download', label: 'Download Report File', description: playtest.fileName() },
+      {
+        id: 'clear',
+        label: 'Start a New Session',
+        description: 'Clears the recorded runs on this device',
+      },
+    ],
+    `${s.label} · ${s.runs.length} runs · ${notes} notes · build ${s.build}`,
+    from === 'results' ? 'results' : 'options',
+  );
+}
+async function playtestAction(id: string) {
+  if (!playtest) return;
+  const report = playtest.markdown() + '\n\n```json\n' + playtest.json() + '\n```\n',
+    file = new File([playtest.json()], playtest.fileName(), { type: 'application/json' });
+  let done = '';
+  try {
+    if (id === 'copy') {
+      await navigator.clipboard.writeText(report);
+      done = 'Report copied';
+    } else if (id === 'share') {
+      await navigator.share({ files: [file], title: 'Arrowfall playtest' });
+      done = 'Report shared';
+    } else if (id === 'download') {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file);
+      a.download = file.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      done = 'Report saved';
+    } else if (id === 'clear') {
+      playtest.clear();
+      done = 'New session started';
+    }
+  } catch {
+    done = id === 'copy' ? 'Copy blocked: use Download instead' : '';
+  }
+  if (done) toast('Playtest', done);
+  playtestReport(reportFrom);
+}
+/** Stamp a playtest note at this moment; `ask` opens the text box (keyboard and touch). */
+function playtestNote(ask: boolean) {
+  if (!playtest || noteOpen) return;
+  const g = game,
+    stamp = {
+      t: g && scene !== 'camp' ? Math.round(g.time) : -1,
+      scene,
+      fps: Math.round(view.fps),
+      enemies: g?.enemies.count ?? 0,
+      hp: Math.round(g?.player.hp ?? 0),
+      level: g?.level ?? 0,
+      boss: g?.boss ? (BOSSES[g.boss.boss]?.name ?? '') : '',
+      device: controls.device,
+    };
+  if (!ask) {
+    playtest.note('', stamp);
+    toast('Playtest', 'Marker saved');
+    return;
+  }
+  noteOpen = true;
+  controls.clear();
+  openNoteBox((text) => {
+    noteOpen = false;
+    controls.clear();
+    if (text !== null) {
+      playtest.note(text, stamp);
+      toast('Playtest', 'Note saved');
+    }
+  });
 }
 app.flow.onActivate = (screen, id) => {
   audio.unlock();
@@ -752,6 +872,10 @@ app.flow.onActivate = (screen, id) => {
   if (screen === 'results') {
     if (id === 'retry') void launch();
     if (id === 'camp') void launch('camp');
+    if (id === 'playtest') {
+      playtestReport('results');
+      return;
+    }
     if (id === 'fingerprint') {
       const c = fingerprint(profile.runs[0]),
         a = document.createElement('a');
@@ -759,6 +883,14 @@ app.flow.onActivate = (screen, id) => {
       a.href = c.toDataURL();
       a.click();
     }
+    return;
+  }
+  if (screen === 'playtest') {
+    void playtestAction(id);
+    return;
+  }
+  if (screen === 'options' && id === 'option:playtest') {
+    playtestReport('options');
     return;
   }
   if (screen === 'options') {
@@ -870,6 +1002,11 @@ app.flow.onBack = (screen) => {
   }
   if (screen === 'phase' || screen === 'curses') {
     trail();
+    return;
+  }
+  if (screen === 'playtest') {
+    if (reportFrom === 'results') showResults();
+    else settings();
     return;
   }
   if (screen === 'options') {
@@ -1031,6 +1168,7 @@ if (devMode) {
     timeline: () => game?.timeline.slice(),
     sim: () => game,
     view: () => view,
+    playtest: () => playtest,
   };
 }
 $('dev').innerHTML =
@@ -1050,6 +1188,10 @@ $('dev').onclick = (e) => {
   if (d.dev === 'grant') game.grant(($('dev-grant') as HTMLSelectElement).value);
 };
 addEventListener('keydown', (e) => {
+  if (e.code === 'KeyN' && playtest && !e.repeat) {
+    e.preventDefault();
+    playtestNote(true);
+  }
   if (e.code === 'F3' && devMode) {
     e.preventDefault();
     document.documentElement.classList.toggle('grayscale');
@@ -1261,12 +1403,13 @@ const CONTROL_HINTS = {
 };
 let shownDevice = '';
 function tick(now: number) {
-  const dt = Math.min(0.1, (now - last) / 1000);
+  const rawMs = now - last,
+    dt = Math.min(0.1, rawMs / 1000);
   last = now;
   view.fps += (1 / Math.max(0.001, dt) - view.fps) * 0.04;
   const g = game ?? menuBackdrop;
   if (game && app.shell.session.phase === 'playing') {
-    if (uiScreen === 'gameplay-placeholder') {
+    if (uiScreen === 'gameplay-placeholder' && !noteOpen) {
       const input = controls.sample(view, g.player, g.enemies.items);
       if (scene === 'camp') {
         if (input.dodge) {
@@ -1360,6 +1503,22 @@ function tick(now: number) {
     );
   }
   view.render(g, dt);
+  if (playtest && game) {
+    playtest.frame(rawMs, {
+      scene,
+      playing: app.shell.session.phase === 'playing' && uiScreen === 'gameplay-placeholder',
+      t: game.time,
+      device: controls.device,
+      enemies: game.enemies.count,
+      arrows: game.arrows.count,
+      particles: game.particles.count,
+    });
+    for (const event of game.events) playtest.event(event.id, event.value, game.time);
+    // Pad Back / View button drops a marker (no typing on a pad).
+    const back = !!Array.from(navigator.getGamepads?.() ?? []).find(Boolean)?.buttons[8]?.pressed;
+    if (back && !padNotePrevious) playtestNote(false);
+    padNotePrevious = back;
+  }
   for (const event of g.events) {
     if (event.id === 'number.crit' || event.id === 'number.deadeye') audio.playSfx('hit.crit');
     else if (!event.id.startsWith('number.')) audio.playSfx(event.id);

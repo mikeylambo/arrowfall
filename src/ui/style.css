@@ -2410,3 +2410,53 @@ html.touch .station.near::after {
   height: 100%;
   border-radius: 50%;
 }
+
+/* Playtest kit (?playtest=1): the note button doubles as the "recording" indicator. */
+#playtest-note {
+  display: none;
+}
+.playtesting #playtest-note {
+  display: grid;
+  place-items: center;
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 132px);
+  right: calc(env(safe-area-inset-right) + 12px);
+  z-index: 23;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #c8323c88;
+  background: #0a1020cc;
+  color: var(--silver);
+  font-size: 18px;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.playtesting #playtest-note::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.playtest-note {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 24px);
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(560px, calc(100vw - 32px));
+}
+.playtest-note input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #c6b2ffaa;
+  background: #0a1020f2;
+  color: var(--silver);
+  font: inherit;
+  font-size: 16px;
+}
