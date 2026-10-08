@@ -14,6 +14,7 @@ import { Diegetic } from './diegetic';
 import { loadSheet, type Sheet } from './sheets';
 import { Atmosphere } from './ground';
 import { landmarkArt, WorldDressing } from './landmarks';
+import { buildCamp, campArt, CAMPFIRE } from './camp';
 
 import { UNIT } from './silhouettes';
 import { BOSSES } from '../data/bosses';
@@ -113,6 +114,8 @@ export class View {
   readonly deadeyeFilter = new ColorMatrixFilter();
   /** Accessibility: no shake, no scale pulses, no fog drift, dimmed flashes. */
   reducedMotion = false;
+  /** The camp's campfire flame (flickered each frame), when the camp is shown. */
+  private campFlame: Sprite | null = null;
   /** Performance mode: native resolution 1, fewer lights, no high mist, half the particles. */
   lowPower = false;
   setLowPower(on: boolean) {
@@ -185,7 +188,7 @@ export class View {
       autoDensity: true,
       preference: 'webgl',
     });
-    this.art = { ...bakeArt(), ...landmarkArt() };
+    this.art = { ...bakeArt(), ...landmarkArt(), ...campArt() };
     this.world = new WorldDressing(this.art);
     for (const [id, path] of Object.entries(ART_PATHS))
       this.art[id] = await Assets.load<Texture>(path);
@@ -333,8 +336,11 @@ export class View {
       if (o.kind === 3 || o.kind === 4) s.rotation = ((o.x * 13 + o.y * 7) % 628) / 100;
       this.coverSprites.push(s);
     }
-    if (camp) this.world.clear();
-    else this.world.build(g);
+    this.campFlame = null;
+    if (camp) {
+      this.world.clear();
+      this.campFlame = buildCamp(this.cover, this.art);
+    } else this.world.build(g);
     // The Hollow's edge: a dense treeline over a dark band, so the world boundary reads as
     // forest you cannot enter instead of an invisible wall.
     if (!camp) {
@@ -519,6 +525,14 @@ export class View {
       l.alpha = alpha;
     };
     const p = g.player;
+    if (this.camp) {
+      const flicker = this.reducedMotion
+        ? 1
+        : 0.85 + 0.1 * Math.sin(g.realTime * 9) + 0.05 * Math.sin(g.realTime * 23);
+      put(CAMPFIRE.x, CAMPFIRE.y - 10, 5.2 * flicker, 0xffa060, 0.22 * flicker);
+      put(CAMPFIRE.x, CAMPFIRE.y - 10, 2.2, 0xffd9a0, 0.25);
+      put(p.x, p.y, 2.2, C.silver, 0.1);
+    }
     if (!this.camp) {
       put(p.x, p.y, 2.6, C.silver, 0.13);
       const lantern = g.rank('lantern');
@@ -587,6 +601,14 @@ export class View {
     this.atmosphere.update(this, this.reducedMotion ? 0 : g.realTime);
     this.atmosphere.night(this.camp ? 0 : g.time, g.realTime, realDt, this.reducedMotion);
     this.updateLights(g);
+    if (this.campFlame && !this.reducedMotion) {
+      const t = g.realTime;
+      this.campFlame.scale.set(
+        0.9 + 0.08 * Math.sin(t * 11),
+        0.85 + 0.15 * Math.sin(t * 7.3) + 0.06 * Math.sin(t * 19),
+      );
+      this.campFlame.skew.x = 0.08 * Math.sin(t * 3.1);
+    }
     if (this.lowPower) this.atmosphere.mistHigh.visible = false;
     this.timing.atmosphere += (performance.now() - atmosphereStart - this.timing.atmosphere) * 0.1;
     for (let i = 0; i < this.coverSprites.length; i++) {
@@ -971,19 +993,15 @@ export class View {
       w.circle(p.x, p.y, g.bow.far).stroke({ color: 0x98c7e6, alpha: 0.11, width: 1 });
     }
     if (this.camp) {
+      // Each station is its prop (render/camp.ts); the one in reach gets a moonlit ground ring.
       for (const s of STATIONS) {
-        w.circle(s.x, s.y, 45).stroke({
-          color: 0x8aaccc,
-          alpha: 0.5,
-          width: 2,
+        const near = Math.hypot(s.x - p.x, s.y - p.y) < 140;
+        w.ellipse(s.x, s.y + 30, 64, 24).stroke({
+          color: near ? 0xc4d4ff : 0x8aaccc,
+          alpha: near ? 0.55 : 0.14,
+          width: near ? 2 : 1.5,
         });
-        w.poly([s.x, s.y - 32, s.x + 20, s.y, s.x, s.y + 32, s.x - 20, s.y])
-          .fill({ color: 0x213248, alpha: 0.8 })
-          .stroke({ color: 0xb5d4eb, alpha: 0.4, width: 2 });
       }
-      w.circle(600, 430, 45)
-        .fill({ color: 0xaba4ff, alpha: 0.07 })
-        .stroke({ color: 0xaba4ff, alpha: 0.4, width: 2 });
     }
     if (g.rank('lantern'))
       w.circle(p.x, p.y, 140 + 20 * (g.rank('lantern') - 1))

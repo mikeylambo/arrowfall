@@ -189,6 +189,10 @@ export class Synth implements AudioSystem {
       [587.33, 739.99, 880, 1174.66].forEach((f, i) =>
         setTimeout(() => this.tone(f, 0.35, 'triangle', 0.08), i * 50),
       );
+    } else if (id === 'boss.fullmoon') {
+      // Full Moon attack sting: a cold, rising fifth over a low swell.
+      this.tone(220, 0.9, 'triangle', 0.07, 'sfx', 1.5);
+      setTimeout(() => this.tone(329.63, 0.8, 'sine', 0.06, 'sfx', 1.4), 120);
     } else if (id === 'pace.lull') {
       this.tone(196, 2.2, 'sine', 0.08, 'sfx', 0.98);
     } else if (id === 'pace.swarm') {

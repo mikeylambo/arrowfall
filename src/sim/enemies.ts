@@ -400,6 +400,21 @@ export function updateThreats(g: Hunt, dt: number) {
       }
     }
 }
+/** True on the step where `e.age` crosses a multiple of `period` seconds. */
+function every(e: Enemy, period: number, dt: number, offset = 0) {
+  return (
+    Math.floor((e.age - offset) / period) > Math.floor((e.age - offset - dt) / period) &&
+    e.age > offset
+  );
+}
+/** Full Moon (GDD 13): each boss gains one attack. Named once, on its first use. */
+function fullMoonAttack(g: Hunt, name: string) {
+  if (!g.fullMoonSeen.has(name)) {
+    g.fullMoonSeen.add(name);
+    g.announce(name);
+  }
+  g.emit('boss.fullmoon');
+}
 export function updateBoss(g: Hunt, e: Enemy, dt: number) {
   const p = g.player,
     dx = p.x - e.x,
@@ -429,6 +444,16 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
         e.clock = 0.7;
         e.tx = aim;
         telegraph(g, e, 0, 0.7, 35, 700);
+        // Full Moon · Ghost Pack: every other lunge, two spectral hounds run lanes either side
+        // of his, a beat later, so the safe dodge is through his line, not beside it.
+        // (Bosses use `slot` as an attack counter; only pack hounds use it as a ring slot.)
+        if (g.phase >= 2 && (e.slot = (e.slot + 1) % 2) === 0) {
+          for (const side of [-1, 1]) {
+            const t = telegraph(g, e, 1, 1.05, 30, 760, aim + side * 0.42);
+            if (t) t.damage = Math.round(e.damage * 0.7);
+          }
+          fullMoonAttack(g, 'Ghost Pack');
+        }
       } else {
         e.state = 2;
         e.clock = 1;
@@ -453,10 +478,38 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
         }
       }
     }
+    // Full Moon · Thorn Bloom: thorns erupt in a chain along where the hunter is heading,
+    // each a little later, so running straight on is the wrong answer.
+    if (g.phase >= 2 && every(e, 7, dt, 1.5)) {
+      const v = g.playerVelocity,
+        speed = len(v.x, v.y);
+      for (let i = 0; i < 5; i++) {
+        const lead = 0.25 + i * 0.22,
+          t = telegraph(g, e, 2, 0.8 + i * 0.16, 62);
+        if (t) {
+          t.x = p.x + (speed > 40 ? v.x * lead : Math.cos(e.age + i * 1.26) * 120 * (i ? 1 : 0));
+          t.y = p.y + (speed > 40 ? v.y * lead : Math.sin(e.age + i * 1.26) * 120 * (i ? 1 : 0));
+        }
+      }
+      fullMoonAttack(g, 'Thorn Bloom');
+    }
     e.x += (dx / (d || 1)) * 30 * dt;
     e.y += (dy / (d || 1)) * 30 * dt;
   }
   if (e.boss === 2) {
+    // Full Moon · Moonfall: a spiral of falling moon-shards closes in on the hunter.
+    if (g.phase >= 2 && every(e, 8, dt, 4.5)) {
+      for (let i = 0; i < 8; i++) {
+        const a = e.age + i * 0.785,
+          radius = 300 - i * 34,
+          t = telegraph(g, e, 2, 0.75 + i * 0.12, 54);
+        if (t) {
+          t.x = p.x + Math.cos(a) * radius;
+          t.y = p.y + Math.sin(a) * radius;
+        }
+      }
+      fullMoonAttack(g, 'Moonfall');
+    }
     e.x += Math.cos(e.age * 0.7) * 65 * dt;
     e.y += Math.sin(e.age * 0.8) * 65 * dt;
     if (e.clock <= 0) {
@@ -485,7 +538,7 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
         e.state = 1;
         e.clock = e.phase === 1 ? 0.8 : 1.2;
         if (e.phase === 1) telegraph(g, e, 0, 0.8, 10, 1100, aim);
-        if (e.phase === 2)
+        if (e.phase === 2) {
           for (let i = -2; i <= 2; i++) {
             const t = telegraph(g, e, 1, 1.2, 26, 1600, 0);
             if (t) {
@@ -493,6 +546,19 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
               t.y = p.y + i * 150;
             }
           }
+          // Full Moon · Crosshatch: a second wave of riders runs north to south, offset half
+          // a lane, half a second later; the safe cells are the corners of the grid.
+          if (g.phase >= 2) {
+            for (let i = -2; i <= 2; i++) {
+              const t = telegraph(g, e, 1, 1.7, 26, 1600, Math.PI / 2);
+              if (t) {
+                t.x = p.x + i * 150 + 75;
+                t.y = p.y - 800;
+              }
+            }
+            fullMoonAttack(g, 'Crosshatch');
+          }
+        }
         if (e.phase === 3) {
           g.enemyDeadeye = 1.2;
           g.emit('boss.deadeye');
@@ -508,7 +574,14 @@ export function updateBoss(g: Hunt, e: Enemy, dt: number) {
       } else {
         e.state = 0;
         e.clock = e.phase === 3 ? 4 : 2.2;
-        if (e.phase === 1) projectile(g, e, aim, 600);
+        if (e.phase === 1) {
+          projectile(g, e, aim, 600);
+          // Full Moon · Split Arrow: his shot breaks into a fan; the gaps widen with range.
+          if (g.phase >= 2) {
+            for (const spread of [-0.2, -0.1, 0.1, 0.2]) projectile(g, e, aim + spread, 540);
+            fullMoonAttack(g, 'Split Arrow');
+          }
+        }
         if (e.phase === 3) {
           p.focus = 100;
           g.announce('His guard breaks · Deadeye ready');

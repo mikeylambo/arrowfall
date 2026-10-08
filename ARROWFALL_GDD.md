@@ -403,6 +403,17 @@ Leader of the Wild Hunt and your mirror archer; target time-to-kill 70 s across 
 
 If 20:00 arrives first, dawn breaks and he flees (Survived Until Dawn).
 
+### Full Moon attacks
+
+On the Full Moon phase and above, each boss adds one attack, built from the same telegraph vocabulary (named on first use):
+
+| Boss           | Attack                   | What happens                                                                                   | Answer                                   |
+| -------------- | ------------------------ | ---------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Black Shuck    | Ghost Pack               | Every other lunge, two spectral hounds run lanes ±24° either side of his, 0.35 s later         | Dodge through his line, not beside it    |
+| Bramble King   | Thorn Bloom              | Every 7 s, five thorn bursts chain along your movement path, each a little later               | Turn; don't keep running straight        |
+| Night Hag      | Moonfall                 | Every 8 s, eight moon-shards fall in a spiral closing on you                                   | Step out against the spiral              |
+| The Huntmaster | Split Arrow / Crosshatch | Phase I shots split into a 5-arrow fan; Phase II rider lanes gain a second, perpendicular wave | Range out the fan; stand in grid corners |
+
 ## 11. World
 
 Each hunt takes place in the Hollowmoor, a bounded forest about 8 × 8 screens (roughly 15,000 × 8,500 px at 1080p) with authored landmarks, sparse cover, and open clearings for kiting.

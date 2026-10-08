@@ -127,6 +127,8 @@ export class Hunt {
   readonly hash = new Grid<Enemy>(T.worldWidth, T.worldHeight, 96, 500);
   readonly ranks: Record<string, number> = {};
   readonly evolutions = new Set<string>();
+  /** Full Moon boss attacks already named this hunt. */
+  readonly fullMoonSeen = new Set<string>();
   readonly banished = new Set<string>();
   readonly player: Player;
   /** Consumers drain this and truncate it (`events.length = 0`); event objects are recycled. */

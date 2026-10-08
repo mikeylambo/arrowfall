@@ -53,6 +53,8 @@ let game: Hunt | null = null,
 const touchDevice = matchMedia('(pointer: coarse)').matches;
 /** Seconds of the death beat before results (the death clip, a slow push-in). */
 const DEATH_BEAT = 1.8;
+/** How close the hunter must stand to use a camp station (its label sits just below it). */
+const STATION_REACH = 140;
 let deathClock = 0;
 /** Gamepad rebinding in progress: actions still to bind, and last frame's buttons. */
 let padRebind: ('draw' | 'dodge' | 'deadeye')[] = [];
@@ -255,10 +257,11 @@ function begin(next: string) {
     game.scene = 'camp';
     game.freezeSpawns = true;
     game.god = true;
+    // The hunter starts just south of the campfire.
     game.player.x = 600;
-    game.player.y = 430;
+    game.player.y = 500;
     view.camera.x = 600;
-    view.camera.y = 430;
+    view.camera.y = 470;
   }
   view.attach(game, next === 'camp');
   deathClock = 0;
@@ -868,6 +871,14 @@ const menuBackdrop = new Hunt(4421, profile);
 view.attach(menuBackdrop);
 menuBackdrop.freezeSpawns = true;
 $('camp-menu').onclick = settings;
+// Camp has no hunt to pause: Escape / Start only closes a station menu (the shell would
+// otherwise show the hunt's Pause screen right after the pause event).
+const shellPause = app.flow.showPause.bind(app.flow);
+app.flow.showPause = () => {
+  if (scene !== 'camp') return shellPause();
+  app.shell.resume();
+  hideUI();
+};
 app.shell.events.on('game:pause', () => {
   uiScreen = 'pause';
   saveRun();
@@ -923,6 +934,7 @@ if (devMode) {
     startRun: (config: any = {}) => {
       seedOverride = config.seed ?? 1313;
       selected = config.bow ?? 'recurve';
+      if (config.phase !== undefined) phase = config.phase;
       void launch(config.range ? 'range' : 'hunt');
     },
     skipTutorial: () => {
@@ -1018,7 +1030,7 @@ addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyF' && scene === 'camp' && game && uiScreen === 'gameplay-placeholder') {
     const nearest = STATIONS.find(
-      (s) => Math.hypot(s.x - game!.player.x, s.y - game!.player.y) < 110,
+      (s) => Math.hypot(s.x - game!.player.x, s.y - game!.player.y) < STATION_REACH,
     );
     if (nearest) station(nearest.id);
   }
@@ -1174,6 +1186,7 @@ const CAPTIONS: Record<string, string> = {
   'world.discover': '[A landmark chimes]',
   'boss.intro': '[War drums]',
   'boss.phase': '[The beast roars]',
+  'boss.fullmoon': '[The full moon answers]',
   'boss.fall': '[A great beast falls]',
   'boss.bramble.wall': '[Roots tear the earth]',
   'boss.hag.threefold': '[The Hag laughs, threefold]',
@@ -1224,11 +1237,15 @@ function tick(now: number) {
       if (scene === 'camp') {
         if (input.dodge) {
           const nearest = STATIONS.find(
-            (s) => Math.hypot(s.x - g.player.x, s.y - g.player.y) < 110,
+            (s) => Math.hypot(s.x - g.player.x, s.y - g.player.y) < STATION_REACH,
           );
           if (nearest) station(nearest.id);
         }
-        g.player.aim = Math.atan2(input.ay - g.player.y, input.ax - g.player.x);
+        // Camp walking faces where the hunter goes (the bow is lowered here) and plays the run.
+        g.moving = Math.hypot(input.mx, input.my) > 0.1;
+        g.player.aim = g.moving
+          ? Math.atan2(input.my, input.mx)
+          : Math.atan2(input.ay - g.player.y, input.ax - g.player.x);
         g.player.x += input.mx * 240 * dt;
         g.player.y += input.my * 240 * dt;
         g.realTime += dt;
@@ -1270,12 +1287,17 @@ function tick(now: number) {
       if (!el) continue;
       el.style.left = view.width / 2 + (s.x - view.camera.x) * view.zoom + 'px';
       el.style.top = view.height / 2 + (s.y - view.camera.y) * view.zoom + 62 + 'px';
-      el.classList.toggle('near', Math.hypot(s.x - game.player.x, s.y - game.player.y) < 110);
+      el.classList.toggle(
+        'near',
+        Math.hypot(s.x - game.player.x, s.y - game.player.y) < STATION_REACH,
+      );
     }
     if (uiScreen === 'gameplay-placeholder')
       $('hint').textContent = controls.touching
         ? 'Drag on the left to walk · tap a station'
-        : 'WASD to walk · F at a station';
+        : controls.usingPad
+          ? 'Left stick to walk · A at a station'
+          : 'WASD to walk · F or Space at a station';
     else $('hint').textContent = '';
   }
   if (game && scene !== 'camp') hud(g);
