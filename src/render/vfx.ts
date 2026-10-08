@@ -201,6 +201,25 @@ export class Vfx {
         this.budget += 20;
         this.ring(e.x, e.y, RED, 1.2, 0.5, 8, 0.9);
         this.bloom(e.x, e.y, RED, 1.2, 1, 4, 0.7);
+      } else if (id === 'streak.tier') {
+        // Streak milestone: a violet crown of light around the hunter.
+        this.budget += 24;
+        this.ring(p.x, p.y, VIOLET, 0.5, 0.4, 3.5, 1);
+        for (let i = 0; i < 16; i++) {
+          const a = (i / 16) * Math.PI * 2;
+          this.emit(
+            'spark',
+            p.x,
+            p.y,
+            i % 2 ? VIOLET : SILVER,
+            0.4,
+            1.2,
+            0.3,
+            1,
+            Math.cos(a) * 380,
+            Math.sin(a) * 380,
+          );
+        }
       } else if (id === 'deadeye.enter') {
         this.ring(p.x, p.y, VIOLET, 0.45, 0.3, 2.6, 0.7);
       } else if (id === 'deadeye.release') {

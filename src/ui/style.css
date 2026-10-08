@@ -1942,3 +1942,36 @@ html.touch .station.near::after {
 #camp-menu:hover {
   border-color: #c6b2ffaa;
 }
+
+/* Perfect streak counter: quiet at first, escalating by tier. */
+.streak {
+  position: absolute;
+  left: 50%;
+  bottom: 120px;
+  transform: translateX(-50%);
+  font:
+    400 18px Georgia,
+    serif;
+  letter-spacing: 0.06em;
+  color: #c6b2ff;
+  text-shadow: 0 0 14px #9b6bff88;
+  transition:
+    font-size 0.15s,
+    color 0.15s;
+}
+.streak[data-tier='1'] {
+  font-size: 22px;
+  color: #e6d7ff;
+}
+.streak[data-tier='2'] {
+  font-size: 26px;
+  color: #fff;
+  text-shadow: 0 0 22px #9b6bff;
+}
+.streak[data-tier='3'] {
+  font-size: 30px;
+  color: #fff;
+  text-shadow:
+    0 0 26px #9b6bff,
+    0 0 50px #c4d4ff;
+}

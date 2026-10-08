@@ -96,6 +96,9 @@ export interface Player {
   focus: number;
   dodge: number;
   cooldown: number;
+  /** Dodge charges ready, and post-roll sprint seconds left. */
+  charges: number;
+  sprint: number;
   dx: number;
   dy: number;
   invuln: number;

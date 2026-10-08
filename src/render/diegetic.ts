@@ -115,14 +115,40 @@ export class Diegetic {
     const pulse = focus >= 1 && !this.reducedMotion ? 0.08 * Math.sin(g.realTime * 4) : 0;
     this.halo.scale.set(0.45 + 0.3 * focus + (focus >= 1 ? 0.15 : 0) + pulse);
     this.halo.alpha = focus >= 1 ? 0.85 : focus * 0.3;
-    // Dodge recovery: a thin arc at the hunter's feet that fills, then disappears when ready.
     this.pip.clear();
-    if (p.cooldown > 0 && g.scene !== 'camp') {
-      const left = 1 - p.cooldown / T.dodgeCooldown,
-        start = Math.PI * 0.62;
-      this.pip
-        .arc(p.x, p.y, 24, start, start + Math.PI * 0.76 * left)
-        .stroke({ color: SILVER, width: 2, alpha: 0.6 });
+    if (g.scene === 'camp') return;
+    // Perfect window: a ring closes on the hunter as the bow draws; it locks violet while the
+    // window is open and greys out once it has passed.
+    if (p.draw > 0) {
+      const target = 30,
+        r = target + (1 - progress) * 46;
+      this.pip.circle(p.x, p.y, target).stroke({
+        color: perfect ? VIOLET_LIGHT : SILVER,
+        width: perfect ? 3 : 1,
+        alpha: perfect ? 1 : 0.35,
+      });
+      if (!perfect && !over)
+        this.pip
+          .circle(p.x, p.y, r)
+          .stroke({ color: SILVER, width: 2, alpha: 0.25 + progress * 0.6 });
+      if (perfect) this.pip.circle(p.x, p.y, target).fill({ color: VIOLET, alpha: 0.18 });
+      if (over)
+        this.pip.circle(p.x, p.y, target + 4).stroke({ color: 0x6f829c, width: 1, alpha: 0.5 });
+    }
+    // Dodge charges: one pip per charge at the hunter's feet; a recharging pip fills as an arc.
+    for (let i = 0; i < T.dodgeCharges; i++) {
+      const x = p.x + (i - (T.dodgeCharges - 1) / 2) * 12,
+        y = p.y + 20;
+      if (i < p.charges) this.pip.circle(x, y, 3.2).fill({ color: SILVER, alpha: 0.9 });
+      else {
+        this.pip.circle(x, y, 3.2).stroke({ color: SILVER, width: 1, alpha: 0.35 });
+        if (i === p.charges && p.cooldown > 0) {
+          const left = 1 - p.cooldown / T.dodgeCooldown;
+          this.pip
+            .arc(x, y, 3.2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left)
+            .stroke({ color: SILVER, width: 1.6, alpha: 0.8 });
+        }
+      }
     }
   }
 }

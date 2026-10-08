@@ -22,7 +22,7 @@ import { ENEMIES } from './data/enemies';
 import { DEEDS } from './data/meta';
 import { deedProgress } from './sim/profile';
 import { STATIONS } from './data/world';
-import { xpNeeded } from './data/tuning';
+import { T, xpNeeded } from './data/tuning';
 import { loadProfile, saveProfile, bankRun, boonCost } from './sim/profile';
 import { fmt, bowChoices, offerChoices, altarChoices, logChoices, fingerprint } from './ui/screens';
 import { decorateLevelUp, decorateResults, type Recap } from './ui/cards';
@@ -51,10 +51,12 @@ let game: Hunt | null = null,
   seedOverride: number | null = null;
 const touchDevice = matchMedia('(pointer: coarse)').matches;
 let options = {
-  version: 2,
+  version: 3,
   autoLoose: false,
-  // Touch players hold to fire by default; on PC it is an option (tap/hold-release otherwise).
-  holdFire: touchDevice,
+  // Hold to fire is the default (GDD 3: holding is a steady stream, the window is the skill).
+  holdFire: true,
+  /** Performance mode: fewer effects and lower resolution; on by default for phones. */
+  lowPower: touchDevice,
   colorblind: false,
   bands: true,
   numbers: true,
@@ -71,7 +73,9 @@ try {
   const saved = JSON.parse(localStorage.getItem('arrowfall.options') || '{}');
   // v2: damage numbers on every hit became the default; older saves had it off.
   if ((saved.version ?? 1) < 2) delete saved.numbers;
-  options = { ...options, ...saved, version: 2 };
+  // v3: Hold to Fire became the default everywhere.
+  if ((saved.version ?? 1) < 3) delete saved.holdFire;
+  options = { ...options, ...saved, version: 3 };
 } catch {}
 controls.toggle = options.toggle;
 controls.bindings = options.bindings;
@@ -794,6 +798,11 @@ function hud(g: Hunt) {
   $('hp').textContent = String(Math.max(0, Math.ceil(p.hp)));
   $('hp-fill').style.width = (p.hp / p.maxHp) * 100 + '%';
   $('hp-fill').parentElement!.classList.toggle('low', p.hp / p.maxHp < 0.3);
+  // Perfect streak: appears at 3, escalates in tiers (5 / 10 / 20).
+  const streakEl = $('streak'),
+    tier = T.streakTiers.filter((n) => p.streak >= n).length;
+  streakEl.textContent = p.streak >= 3 ? `Perfect ×${p.streak}` : '';
+  streakEl.dataset.tier = String(tier);
   const ready = p.focus >= 100;
   $('focus-fill').style.width = Math.min(100, p.focus) + '%';
   $('focus').classList.toggle('ready', ready);

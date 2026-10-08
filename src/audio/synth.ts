@@ -170,6 +170,17 @@ export class Synth implements AudioSystem {
       this.noise(0.06, 0.06);
     } else if (id === 'deadeye.strike') {
       return;
+    } else if (id === 'streak.tier') {
+      // Rising fanfare in key, higher with each tier.
+      [587.33, 739.99, 880, 1174.66].forEach((f, i) =>
+        setTimeout(() => this.tone(f, 0.35, 'triangle', 0.08), i * 50),
+      );
+    } else if (id === 'pace.lull') {
+      this.tone(196, 2.2, 'sine', 0.08, 'sfx', 0.98);
+    } else if (id === 'pace.swarm') {
+      // A hunting horn: two low swelling notes.
+      this.tone(110, 0.9, 'sawtooth', 0.07, 'sfx', 1.02);
+      setTimeout(() => this.tone(146.83, 1.1, 'sawtooth', 0.07, 'sfx', 1.02), 450);
     } else if (id === 'coach.step') {
       this.tone(659.25, 0.35, 'sine', 0.1);
       setTimeout(() => this.tone(987.77, 0.5, 'sine', 0.09), 90);

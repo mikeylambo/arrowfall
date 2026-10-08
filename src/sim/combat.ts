@@ -32,6 +32,8 @@ export function loose(
       0.04 * (g.profile.boons.Might || 0) +
       0.25 * g.rank('heavy-bow'));
   damage *= crit ? (perfect && g.bow.id === 'letoff' ? 3 : 2) + 0.2 * g.rank('broadhead') : 1;
+  // Perfect streaks escalate: each tier reached adds to perfect damage.
+  if (perfect) damage *= 1 + T.streakBonus * T.streakTiers.filter((n) => p.streak >= n).length;
   damage *= 1 + 0.04 * g.chain + (p.apex > 0 ? 0.15 : 0);
   damage *= multiplier;
   if (g.rank('last-arrow') && (g.shots + 1) % 10 === 0) damage *= 3;
@@ -41,6 +43,8 @@ export function loose(
       g.perfects++;
       p.streak++;
       g.maxStreak = Math.max(g.maxStreak, p.streak);
+      if (T.streakTiers.includes(p.streak) || (p.streak > 20 && p.streak % 10 === 0))
+        g.emit('streak.tier', p.x, p.y, p.streak);
       p.focus = Math.min(100, p.focus + T.focusPerfect * (1 + 0.25 * g.rank('moonwell')));
       g.emit('bow.perfect');
       g.hitstop = T.hitstopPerfect;
@@ -228,11 +232,18 @@ export function updateArrows(g: Hunt, dt: number) {
       damageEnemy(g, e, a.damage * multiplier, a, a.source);
       if (a.full) g.player.focus = Math.min(100, g.player.focus + focusPerHit);
       if (g.bow.id === 'moonbow') g.player.focus = Math.min(100, g.player.focus + 1);
-      if (g.bow.id === 'oathbreaker') {
-        e.x += Math.cos(Math.atan2(a.vy, a.vx)) * 25;
-        e.y += Math.sin(Math.atan2(a.vy, a.vx)) * 25;
-        if (a.perfect) e.root = 0.6;
+      // Knockback: every hit shoves along the arrow's flight; heavier for full draws and
+      // perfects, far heavier for the Oathbreaker. Bosses do not budge.
+      if (e.boss < 0) {
+        const angle = Math.atan2(a.vy, a.vx),
+          push =
+            T.knockback[a.perfect ? 2 : a.full ? 1 : 0] *
+            (g.bow.id === 'oathbreaker' ? 2.5 : 1) *
+            (e.kind === 4 || e.kind === 5 ? 0.4 : 1);
+        e.x += Math.cos(angle) * push;
+        e.y += Math.sin(angle) * push;
       }
+      if (g.bow.id === 'oathbreaker' && a.perfect) e.root = 0.6;
       a.pierce--;
       if (a.pierce < 0) a.active = false;
     }

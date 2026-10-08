@@ -20,6 +20,22 @@ export const T = {
   dodgeTime: 0.18,
   /** Time between dodges (s). */
   dodgeCooldown: 1.2,
+  /** Dodge charges held at once; each recharges over dodgeCooldown. */
+  dodgeCharges: 2,
+  /** After a roll the hunter sprints: seconds and speed bonus. */
+  sprintTime: 0.6,
+  sprintBoost: 0.3,
+  /** Hit knockback (px) for quick, full-draw and perfect arrows; bosses are immovable. */
+  knockback: [4, 10, 18] as number[],
+  /** Perfect-streak tiers: streak lengths and the perfect-damage bonus each tier adds. */
+  streakTiers: [5, 10, 20] as number[],
+  streakBonus: 0.05,
+  /** Pacing: every cycle (s) ends with a lull then a swarm (s), scaling the enemy cap. */
+  paceCycle: 150,
+  lull: 18,
+  swarm: 14,
+  lullScale: 0.45,
+  swarmScale: 1.6,
   /** Invulnerability after taking a hit (s). */
   invulnerability: 0.5,
   /** Deadeye duration (s). */

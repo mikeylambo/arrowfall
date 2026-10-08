@@ -165,6 +165,11 @@ export class Hunt {
   pendingLevels = 0;
   /** Real seconds left in the level-up surge (slow motion); cards wait for it to end. */
   levelSurge = 0;
+  /** Current draw profile (full-draw time and perfect window), for presentation. */
+  drawFull = 0.6;
+  drawWindow = 0.11;
+  /** Pacing phase: 0 normal, 1 lull, 2 swarm. */
+  pace = 0;
   /** Boss cinematic: real seconds left, kind, and the point the camera frames. */
   cinematic = 0;
   cinematicKind: 'intro' | 'fall' = 'intro';
@@ -242,6 +247,8 @@ export class Hunt {
       focus: 0,
       dodge: 0,
       cooldown: 0,
+      charges: T.dodgeCharges,
+      sprint: 0,
       dx: 0,
       dy: 0,
       invuln: 0,
@@ -383,6 +390,7 @@ export class Hunt {
     if (this.boss) return [20, 30, 40, 0][this.boss.boss];
     const t = this.time;
     return (
+      (this.pace === 1 ? T.lullScale : this.pace === 2 ? T.swarmScale : 1) *
       Math.round(
         t < 120
           ? 8 + (t / 120) * 7
@@ -393,7 +401,8 @@ export class Hunt {
               : t < 900
                 ? 150 + ((t - 600) / 300) * 150
                 : 300 + ((t - 900) / 240) * 50,
-      ) * (this.phase >= 1 ? 1.15 : 1)
+      ) *
+      (this.phase >= 1 ? 1.15 : 1)
     );
   }
   formation(id = Math.floor(this.rng.next() * 6)) {
@@ -483,7 +492,7 @@ export class Hunt {
     this.aim.x = input.ax;
     this.aim.y = input.ay;
     p.aim = Math.atan2(input.ay - p.y, input.ax - p.x);
-    for (const key of ['cooldown', 'invuln', 'evade', 'wind', 'predator', 'apex'] as const)
+    for (const key of ['invuln', 'evade', 'wind', 'predator', 'apex', 'sprint'] as const)
       p[key] = Math.max(0, p[key] - dt);
     this.chainTime -= dt;
     if (this.chainTime <= 0) this.chain = 0;
@@ -494,12 +503,24 @@ export class Hunt {
       this.rank('heavy-bow'),
       this.rank('swift-bow'),
     );
-    if (dodgeRequest && p.cooldown <= 0) {
+    // Dodge charges recharge one at a time.
+    if (p.charges < T.dodgeCharges) {
+      p.cooldown -= dt;
+      if (p.cooldown <= 0) {
+        p.charges++;
+        p.cooldown = p.charges < T.dodgeCharges ? T.dodgeCooldown : 0;
+      }
+    }
+    // Remember the draw window so presentation can show it.
+    this.drawFull = profile.full;
+    this.drawWindow = profile.window;
+    if (dodgeRequest && p.charges > 0 && p.dodge <= 0) {
+      p.charges--;
+      if (p.cooldown <= 0) p.cooldown = T.dodgeCooldown;
       const l = len(input.mx, input.my);
       p.dx = l ? input.mx / l : Math.cos(p.aim);
       p.dy = l ? input.my / l : Math.sin(p.aim);
       p.dodge = T.dodgeTime;
-      p.cooldown = T.dodgeCooldown;
       p.invuln = T.dodgeTime;
       p.draw = 0;
       p.evade = 0.5;
@@ -523,6 +544,7 @@ export class Hunt {
       p.x += ((p.dx * T.dodgeDistance) / T.dodgeTime) * dodgeDt;
       p.y += ((p.dy * T.dodgeDistance) / T.dodgeTime) * dodgeDt;
       p.dodge -= dt;
+      if (p.dodge <= 0) p.sprint = T.sprintTime;
     } else {
       const l = len(input.mx, input.my) || 1;
       const drawMove = p.draw > 0 ? this.bow.mobility : 1;
@@ -530,6 +552,7 @@ export class Hunt {
         T.speed *
         (1 + 0.08 * this.rank('lightfoot') + 0.04 * (this.profile.boons.Swiftness || 0)) *
         (p.wind > 0 ? 1.2 : 1) *
+        (p.sprint > 0 ? 1 + T.sprintBoost : 1) *
         (p.predator > 0 ? 1 + 0.03 * this.rank('predator') * 5 : 1) *
         drawMove;
       const mire = this.world.landmarks[5];
@@ -730,7 +753,22 @@ export class Hunt {
       return;
     }
     if (this.freezeSpawns || this.time >= 1140) return;
-    this.spawnClock -= dt;
+    // Pacing: each cycle ends in a lull (the forest holds its breath) and then a swarm.
+    const before = this.pace;
+    if (this.time < 120 || this.boss) this.pace = 0;
+    else {
+      const c = (this.time - 120) % T.paceCycle;
+      this.pace = c > T.paceCycle - T.swarm ? 2 : c > T.paceCycle - T.swarm - T.lull ? 1 : 0;
+    }
+    if (this.pace !== before && this.pace === 1) {
+      this.announce('The forest holds its breath');
+      this.emit('pace.lull');
+    }
+    if (this.pace !== before && this.pace === 2) {
+      this.announce('They come');
+      this.emit('pace.swarm');
+    }
+    this.spawnClock -= dt * (this.pace === 2 ? 2 : 1);
     if (this.spawnClock <= 0 && this.enemies.count < this.cap() && this.event !== 2) {
       this.spawnClock = Math.max(0.035, 0.7 - this.time / 1600);
       const available = ENEMIES.filter((e) => e.first <= this.time);
