@@ -2370,3 +2370,43 @@ html.touch .station.near::after {
 .caption.on {
   opacity: 1;
 }
+
+/* Painted icons (GPT batch 4): one sprite atlas, positioned per id. */
+.gicon {
+  display: block;
+  background: url('/art/gpt/icons.webp') no-repeat;
+  border-radius: 22%;
+}
+.card-icon .gicon {
+  width: 64px;
+  height: 64px;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tone) 45%, transparent);
+}
+.build-chip .gicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.build-evos .gicon,
+.star-detail .gicon {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  vertical-align: middle;
+  border-radius: 5px;
+}
+
+/* Painted menu backdrops (GPT batch 5): the left side stays dark for the panel. */
+#ui .slu-screen.painted-bg {
+  background:
+    linear-gradient(90deg, #05080ff2 0%, #05080fcc 38%, #05080f55 75%, #05080f33),
+    var(--bg) 70% 50% / cover no-repeat !important;
+}
+
+.star .menu-icon .gicon {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}

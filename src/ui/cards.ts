@@ -131,6 +131,26 @@ function evolutionHint(g: Hunt, id: string) {
     .map((i) => `<i class="${have(i) ? 'on' : ''}">${escape(name(i))}</i>`)
     .join('')}</span>`;
 }
+/**
+ * Painted icons (GPT batch 4, public/art/gpt/icons.*): one per upgrade, tool, evolution and boon,
+ * keyed by id. Ids without a painted icon keep their family's line icon.
+ */
+let paintedIcons: Record<string, [number, number, number, number]> = {},
+  atlas = [1, 1];
+void fetch('/art/gpt/icons.json')
+  .then((r) => r.json())
+  .then((m: { size: [number, number]; frames: typeof paintedIcons }) => {
+    paintedIcons = m.frames;
+    atlas = m.size;
+  })
+  .catch(() => {});
+export function paintedIcon(id: string, fallback = '') {
+  const f = paintedIcons[id.replace(/^evo:/, '')];
+  if (!f) return fallback;
+  const [x, y, w, h] = f,
+    [aw, ah] = atlas;
+  return `<i class="gicon" style="background-size:${(aw / w) * 100}% ${(ah / h) * 100}%;background-position:${(x / (aw - w)) * 100}% ${(y / (ah - h)) * 100}%"></i>`;
+}
 const icon = (name: keyof typeof ICONS) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
@@ -163,7 +183,7 @@ export function decorateLevelUp(root: HTMLElement, g: Hunt, reducedMotion: boole
       card.rarity === 'legendary' ? 'Evolution' : card.rank === 1 && card.cap > 0 ? 'New' : '';
     button.innerHTML = `
       <span class="card-top"><kbd>${Number(id.slice(5)) + 1}</kbd>${ribbon ? `<span class="card-ribbon">${ribbon}</span>` : ''}</span>
-      <span class="card-icon">${icon(card.icon)}</span>
+      <span class="card-icon">${paintedIcon(g.offers[Number(id.slice(5))], icon(card.icon))}</span>
       <span class="slu-choice-label card-name">${escape(card.name)}</span>
       <span class="card-kind">${escape(card.kind)}</span>
       ${pips}
@@ -291,7 +311,7 @@ export function buildPanel(g: Hunt) {
         ? owned
             .map(([id, r]) => {
               const u = UPGRADES.find((x) => x.id === id);
-              return `<span class="build-chip" data-rarity="${(u?.rarity ?? 'Uncommon').toLowerCase()}">${icon((u?.family ?? 'Tool') as keyof typeof ICONS)}<b>${escape(name(id))}</b><i>${r}/${cap(id)}</i></span>`;
+              return `<span class="build-chip" data-rarity="${(u?.rarity ?? 'Uncommon').toLowerCase()}">${paintedIcon(id, icon((u?.family ?? 'Tool') as keyof typeof ICONS))}<b>${escape(name(id))}</b><i>${r}/${cap(id)}</i></span>`;
             })
             .join('')
         : '<em>No upgrades yet</em>'
@@ -299,7 +319,10 @@ export function buildPanel(g: Hunt) {
     ${
       g.evolutions.size
         ? `<h4>Evolutions</h4><div class="build-evos">${[...g.evolutions]
-            .map((id) => `<span>${escape(EVOLUTIONS.find((e) => e.id === id)?.name ?? id)}</span>`)
+            .map(
+              (id) =>
+                `<span>${paintedIcon(id)}${escape(EVOLUTIONS.find((e) => e.id === id)?.name ?? id)}</span>`,
+            )
             .join('')}</div>`
         : ''
     }

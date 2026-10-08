@@ -16,6 +16,7 @@ import { Atmosphere } from './ground';
 import { landmarkArt, WorldDressing } from './landmarks';
 import { buildCamp, campArt, CAMPFIRE } from './camp';
 import { Arena } from './arena';
+import { loadGptArt, type GptArt } from './gptArt';
 
 import { UNIT } from './silhouettes';
 import { BOSSES } from '../data/bosses';
@@ -23,6 +24,7 @@ import { T } from '../data/tuning';
 import { ART_PATHS } from '../data/artPaths';
 import { bakeArt, BOSS_HALF } from './art';
 import type { Hunt } from '../sim/game';
+import { COVER } from '../sim/world';
 import type { Enemy } from '../sim/types';
 import { ENEMIES } from '../data/enemies';
 import { STATIONS } from '../data/world';
@@ -159,6 +161,8 @@ export class View {
   private canopySprites: Sprite[] = [];
   /** Rendered forest prop sheets (art-source/kaykit, CC0); ?forest=classic keeps the baked art. */
   private propSheets: Record<string, Sheet | null> = {};
+  /** Painted world art (GPT batches); ?ground=classic keeps the procedural ground and landmarks. */
+  private painted: GptArt | null = null;
   hunter = new Sprite();
   /** 3/4 sprite sheet for the hunter, when one is rendered (dev preview: ?sprites=<sheet id>). */
   hunterSheet: Sheet | null = null;
@@ -249,6 +253,13 @@ export class View {
     const override = new URLSearchParams(location.search).get('sprites');
     if (override !== 'off') this.hunterSheet = await loadSheet(override ?? SHEETS.hunter);
     this.diegetic.sheetBow = !!this.hunterSheet;
+    if (new URLSearchParams(location.search).get('ground') !== 'classic') {
+      this.painted = await loadGptArt();
+      if (this.painted) {
+        this.atmosphere.usePainted(this.painted);
+        this.world.painted = this.painted;
+      }
+    }
     if (new URLSearchParams(location.search).get('forest') !== 'classic')
       for (const id of ['props-trees', 'props-rocks']) this.propSheets[id] = await loadSheet(id);
     // Enemy and boss sheets (most of the ~19 MB) stream in behind the menu; each character
@@ -326,6 +337,7 @@ export class View {
   attach(g: Hunt, camp = false) {
     this.camp = camp;
     this.atmosphere.bloodMoon = !camp && g.phase === 3;
+    this.atmosphere.setGround(camp ? 'camp' : 'moor');
     this.arena.clear();
     this.camera.x = g.player.x;
     this.camera.y = g.player.y;
@@ -349,6 +361,8 @@ export class View {
       shadows = new Graphics();
     this.cover.addChild(shadows);
     for (const o of g.world.obstacles) {
+      // The camp clearing keeps only its own props (camp movement ignores cover anyway).
+      if (camp && o.x < 1300 && o.y < 1000) continue;
       // Forest props: living trees (one in five a boulder) and dead trees from rendered sheets.
       const hash = Math.abs(Math.floor(o.x * 7 + o.y * 13)),
         flip = hash & 1 ? -1 : 1;
@@ -372,6 +386,32 @@ export class View {
         this.coverSprites.push(s);
         continue;
       }
+      // Painted landmarks: the Moonwell, the Shrine, the Watchtower and the Barrow mounds.
+      const lm = this.painted?.landmark,
+        paint: [Texture | undefined, number, number, boolean] | null = !lm
+          ? null
+          : o.kind === COVER.well
+            ? [lm.moonwell, 300, 0.62, false]
+            : o.kind === COVER.shrine
+              ? [lm.shrine, 190, 0.86, true]
+              : o.kind === COVER.tower
+                ? [lm.tower, 250, 0.84, true]
+                : o.kind === COVER.mound
+                  ? [lm.barrow, 300, 0.7, false]
+                  : null;
+      if (paint?.[0]) {
+        const [texture, width, foot, tall] = paint,
+          s = new Sprite(texture),
+          k = width / texture.width;
+        s.anchor.set(0.5, foot);
+        s.position.set(o.x, o.y + o.r * 0.3);
+        s.scale.set(o.kind === COVER.mound && hash & 1 ? -k : k, k);
+        shadows.ellipse(o.x + 8, o.y + o.r * 0.35, width * 0.42, width * 0.14);
+        (tall ? this.canopy : this.cover).addChild(s);
+        if (tall) this.canopySprites.push(s);
+        this.coverSprites.push(s);
+        continue;
+      }
       const [tex, base] = COVER_ART[o.kind] ?? COVER_ART[0];
       const s = this.sprite(this.art[tex], this.cover);
       s.position.set(o.x, o.y);
@@ -383,7 +423,14 @@ export class View {
     this.campFlame = null;
     if (camp) {
       this.world.clear();
-      const camp = buildCamp(this.cover, this.art, g.profile);
+      const camp = buildCamp(
+        this.cover,
+        this.art,
+        g.profile,
+        this.painted
+          ? { tent: this.painted.landmark.tent, fire: this.painted.landmark.campfire }
+          : undefined,
+      );
       this.campFlame = camp.flame;
       this.campFire = camp.size;
     } else this.world.build(g);
@@ -575,8 +622,10 @@ export class View {
       const flicker = this.reducedMotion
         ? 1
         : 0.85 + 0.1 * Math.sin(g.realTime * 9) + 0.05 * Math.sin(g.realTime * 23);
-      put(CAMPFIRE.x, CAMPFIRE.y - 10, 5.2 * flicker, 0xffa060, 0.22 * flicker);
-      put(CAMPFIRE.x, CAMPFIRE.y - 10, 2.2, 0xffd9a0, 0.25);
+      const fx = this.campFlame?.x ?? CAMPFIRE.x,
+        fy = (this.campFlame?.y ?? CAMPFIRE.y) - 14;
+      put(fx, fy, 5.2 * flicker, 0xffa060, 0.22 * flicker);
+      put(fx, fy, 2.2, 0xffd9a0, 0.25);
       put(p.x, p.y, 2.2, C.silver, 0.1);
     }
     if (!this.camp) {

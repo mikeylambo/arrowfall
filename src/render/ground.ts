@@ -1,5 +1,6 @@
 import { Container, Sprite, Texture, TilingSprite } from 'pixi.js';
 import { PALETTE, ATMOSPHERE, tint } from '../data/art';
+import type { GptArt } from './gptArt';
 
 /** Seamless value noise on a periodic lattice: wraps exactly at `size`. */
 function periodicNoise(size: number, cells: number, seed: number) {
@@ -165,11 +166,29 @@ export class Atmosphere {
     }
     this.vignette = new Sprite(vignetteTexture());
     this.vignette.alpha = ATMOSPHERE.vignette;
-    const size = ATMOSPHERE.chunk,
-      kinds = ATMOSPHERE.decals;
-    this.chunkCols = Math.ceil(worldWidth / size);
-    const rows = Math.ceil(worldHeight / size),
-      cell = ATMOSPHERE.decalSpacing;
+    this.worldWidth = worldWidth;
+    this.worldHeight = worldHeight;
+    const kinds = ATMOSPHERE.decals;
+    this.buildDecals(ATMOSPHERE.decalSpacing, ATMOSPHERE.decalDensity, (gx, gy, s) => {
+      s.texture = art[kinds[Math.floor(hash2(gx, gy, 2) * kinds.length)]];
+      s.rotation = hash2(gx, gy, 5) * Math.PI * 2;
+      s.scale.set(0.5 + hash2(gx, gy, 6) * 0.5);
+      s.alpha = 0.35 + hash2(gx, gy, 7) * 0.4;
+    });
+  }
+  private readonly worldWidth: number;
+  private readonly worldHeight: number;
+  /** Scatter decals over the world in culled chunks; `dress` picks each one's look. */
+  private buildDecals(
+    cell: number,
+    density: number,
+    dress: (gx: number, gy: number, s: Sprite) => void,
+  ) {
+    this.decals.removeChildren().forEach((c) => c.destroy({ children: true }));
+    this.chunks = [];
+    const size = ATMOSPHERE.chunk;
+    this.chunkCols = Math.ceil(this.worldWidth / size);
+    const rows = Math.ceil(this.worldHeight / size);
     for (let cy = 0; cy < rows; cy++)
       for (let cx = 0; cx < this.chunkCols; cx++) {
         const chunk = new Container();
@@ -178,19 +197,61 @@ export class Atmosphere {
           for (let x = cx * size; x < (cx + 1) * size; x += cell) {
             const gx = x / cell,
               gy = y / cell;
-            if (hash2(gx, gy, 1) > ATMOSPHERE.decalDensity) continue;
-            const kind = kinds[Math.floor(hash2(gx, gy, 2) * kinds.length)];
-            const s = new Sprite(art[kind]);
+            if (hash2(gx, gy, 1) > density) continue;
+            const s = new Sprite();
             s.anchor.set(0.5);
             s.position.set(x + hash2(gx, gy, 3) * cell, y + hash2(gx, gy, 4) * cell);
-            s.rotation = hash2(gx, gy, 5) * Math.PI * 2;
-            s.scale.set(0.5 + hash2(gx, gy, 6) * 0.5);
-            s.alpha = 0.35 + hash2(gx, gy, 7) * 0.4;
+            dress(gx, gy, s);
             chunk.addChild(s);
           }
         this.decals.addChild(chunk);
         this.chunks.push(chunk);
       }
+  }
+  private painted: GptArt | null = null;
+  /**
+   * Painted ground (GPT batch 1 and 2): the moor tile replaces the procedural noise and the
+   * decal atlas replaces the vector tufts. Decals are painted lit from the moon, so they flip
+   * but never rotate; quiet kinds are common, loud ones (bones, mushrooms) rare.
+   */
+  usePainted(art: GptArt) {
+    this.painted = art;
+    this.setGround('moor');
+    const weights: [string, number][] = [
+      ['ferns', 5],
+      ['leaves', 5],
+      ['stones', 4],
+      ['roots', 3],
+      ['puddles', 1.2],
+      ['mushrooms', 1],
+      ['bones', 0.8],
+    ];
+    const pool = weights.filter(([k]) => art.decals[k]?.length),
+      total = pool.reduce((n, [, w]) => n + w, 0);
+    if (!total) return;
+    this.buildDecals(230, 0.42, (gx, gy, s) => {
+      let pick = hash2(gx, gy, 2) * total,
+        kind = pool[0][0];
+      for (const [k, w] of pool) {
+        if ((pick -= w) <= 0) {
+          kind = k;
+          break;
+        }
+      }
+      const frames = art.decals[kind];
+      s.texture = frames[Math.floor(hash2(gx, gy, 5) * frames.length)];
+      const k = 0.38 + hash2(gx, gy, 6) * 0.26;
+      s.scale.set(hash2(gx, gy, 8) > 0.5 ? k : -k, k);
+      s.alpha = 0.55 + hash2(gx, gy, 7) * 0.35;
+    });
+  }
+  /** Which painted tile carpets the scene (the camp has its own trampled earth). */
+  setGround(name: string) {
+    const tex = this.painted?.ground[name];
+    if (!tex) return;
+    this.ground.texture = tex;
+    // 1024 px tiles at half scale: a grass tuft sits at about a third of the hunter's height.
+    this.ground.tileScale.set(0.5);
   }
   /** Screen-space rain for the Witching Hours. */
   readonly rain = new TilingSprite({ texture: rainTexture(), width: 1, height: 1 });
@@ -229,7 +290,9 @@ export class Atmosphere {
     this.vignette.tint = this.bloodMoon ? 0xff6070 : 0xffffff;
     this.mistBoost += (mist - this.mistBoost) * k;
     this.rainAlpha += ((reduced ? rain * 0.5 : rain) - this.rainAlpha) * k;
-    const [r, g, b] = this.tintNow;
+    // The painted ground carries its own detail; it sits a step darker so actors stay on top.
+    const dim = this.painted ? 0.82 : 1,
+      [r, g, b] = this.tintNow.map((v) => v * dim);
     this.ground.tint =
       (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
     this.mistLow.alpha = ATMOSPHERE.mistLow.alpha * this.mistBoost;

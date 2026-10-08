@@ -108,7 +108,31 @@ await view.init($('game-canvas') as HTMLCanvasElement);
 // Installable and playable offline (production builds only; dev keeps hot reload clean).
 if (import.meta.env.PROD && 'serviceWorker' in navigator)
   void navigator.serviceWorker.register('/sw.js').catch(() => {});
+/** Painted backdrops (GPT batch 5) behind the menus that have a place of their own. */
+const BACKDROPS: Record<string, string> = {
+  trail: 'bg-trail',
+  phase: 'bg-trail',
+  curses: 'bg-trail',
+  nightly: 'bg-trail',
+  altar: 'bg-altar',
+  fletcher: 'bg-camp',
+  trophies: 'bg-camp',
+  log: 'bg-camp',
+  'range-setup': 'bg-camp',
+};
 decorateMenus($('ui'), (screen, section) => {
+  const backdrop =
+    screen === 'results'
+      ? game?.outcome === 'The Hunter Falls'
+        ? 'bg-fallen'
+        : 'bg-trail'
+      : screen === 'options' && scene === 'camp'
+        ? 'bg-camp'
+        : BACKDROPS[screen];
+  if (backdrop) {
+    section.classList.add('painted-bg');
+    section.style.setProperty('--bg', `url('/art/gpt/${backdrop}.webp')`);
+  }
   // Pause shows the run's build beside the menu.
   if (screen === 'pause' && game && scene === 'hunt') {
     section.classList.add('with-build');
@@ -259,9 +283,9 @@ function begin(next: string) {
     game.god = true;
     // The hunter starts just south of the campfire.
     game.player.x = 600;
-    game.player.y = 500;
+    game.player.y = 540;
     view.camera.x = 600;
-    view.camera.y = 470;
+    view.camera.y = 480;
   }
   view.attach(game, next === 'camp');
   deathClock = 0;

@@ -123,3 +123,7 @@ Clips are rendered at 12 fps.
 ## Bought-in models
 
 Forest props (trees, dead trees, rocks, graveyard pieces) come from KayKit's Halloween Bits and Medieval Hexagon packs (CC0, `art-source/kaykit/`, licence files alongside). They go through the same render pipeline as the characters, with `desaturate` (0.9) and a cool `albedo` tint so no foreign hue enters the palette, and darker `brightness` so nothing competes with the silver hunter. Trees draw above actors and fade to 35% when the hunter stands behind them. `?forest=classic` shows the earlier baked art for comparison.
+
+## Painted art (GPT batches)
+
+Ground tiles, scatter decals, landmark sprites, icons and menu backdrops were painted with GPT image from `art-source/GPT_IMAGE_SPEC.md`; sources live in `art-source/gpt/` and `python3 tools/art/gpt.py` turns them into `public/art/gpt/` (seamless tiles, sliced and trimmed decal and icon atlases, keyed and recoloured landmarks with an ink outline). Landmarks are used as 2D sprites, not 3D models: they never turn, so one painted view is enough. `?ground=classic` shows the earlier procedural ground and landmarks.

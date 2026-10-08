@@ -1,3 +1,4 @@
+import { paintedIcon } from './cards';
 /**
  * One design for every menu (title, pause, options, camp stations): an eyebrow over the title,
  * an icon per row, values as pills, toggles as switches and ranks as pips. The shell renders
@@ -235,12 +236,18 @@ function constellation(section: HTMLElement) {
       at = STARS[name];
     if (!at) return;
     b.classList.add('star');
+    // The boon's painted icon replaces the generic altar glyph when it has one.
+    const glyph = b.querySelector('.menu-icon'),
+      painted = paintedIcon(b.dataset.choiceId ?? '');
+    if (glyph && painted) glyph.innerHTML = painted;
     b.style.left = at[0] * 100 + '%';
     b.style.top = at[1] * 100 + '%';
     const on = b.querySelectorAll('.menu-pips i.on').length;
     b.classList.toggle('lit', on > 0);
-    const show = () =>
-      (detail.textContent = `${name} · ${b.querySelector('.slu-choice-desc')?.textContent ?? ''}`);
+    const show = () => {
+      detail.textContent = `${name} · ${b.querySelector('.slu-choice-desc')?.textContent ?? ''}`;
+      detail.insertAdjacentHTML('afterbegin', paintedIcon('boon:' + name));
+    };
     b.addEventListener('mouseenter', show);
     b.addEventListener('focus', show);
   });

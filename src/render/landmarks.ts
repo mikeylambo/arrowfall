@@ -3,7 +3,8 @@
  * plates that fade in nearby, and the light sources that sit in the world (moonwell, shrine).
  * Everything here is static per hunt except the plates; it is built once in attach().
  */
-import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture, TilingSprite } from 'pixi.js';
+import { softDisc, type GptArt } from './gptArt';
 import type { Hunt } from '../sim/game';
 
 type Ctx = CanvasRenderingContext2D;
@@ -280,7 +281,22 @@ export class WorldDressing {
   /** Above actors: name plates. */
   readonly plates = new Container();
   private readonly plateText: Text[] = [];
+  /** Painted ground tiles (render/gptArt.ts); null keeps the procedural paths and floors. */
+  painted: GptArt | null = null;
   constructor(private readonly art: Record<string, Texture>) {}
+  /** A patch of a painted tile around a landmark, fading into the moor at its edge. */
+  private region(tile: Texture, x: number, y: number, r: number) {
+    const patch = new TilingSprite({ texture: tile, width: r * 2, height: r * 2 });
+    patch.tileScale.set(0.5);
+    patch.position.set(x - r, y - r);
+    // Tile in world space so neighbouring patches and the moor line up.
+    patch.tilePosition.set(-(x - r), -(y - r));
+    const mask = new Sprite(softDisc());
+    mask.position.set(x - r, y - r);
+    mask.width = mask.height = r * 2;
+    patch.mask = mask;
+    this.ground.addChild(patch, mask);
+  }
   clear() {
     this.ground.removeChildren().forEach((c) => c.destroy());
     this.plates.removeChildren().forEach((c) => c.destroy());
@@ -305,11 +321,23 @@ export class WorldDressing {
         }
       order.push(best);
     }
+    const P = this.painted?.ground;
+    // Each landmark's ground: moss under the Dead Grove, bog under the Mire, stony burial
+    // ground under the Barrows, trampled earth inside the Lodge.
+    if (P) {
+      this.region(P.moss, L[3].x, L[3].y, 560);
+      this.region(P.mire, L[5].x, L[5].y, 380);
+      this.region(P.mire, L[5].x, L[5].y, 300);
+      this.region(P.barrow, L[6].x, L[6].y, 480);
+      this.region(P.camp, L[2].x, L[2].y, 300);
+    }
     const paths = new Graphics();
-    for (const [w, color, alpha] of [
-      [86, 0x0d1626, 0.55],
-      [54, 0x18263b, 0.45],
-    ] as const) {
+    for (const [w, color, alpha] of (P
+      ? [[96, 0x0d1626, 0.5]]
+      : [
+          [86, 0x0d1626, 0.55],
+          [54, 0x18263b, 0.45],
+        ]) as [number, number, number][]) {
       for (let k = 0; k < order.length; k++) {
         const a = L[order[k]],
           b = L[order[(k + 1) % order.length]],
@@ -319,8 +347,25 @@ export class WorldDressing {
       }
       paths.stroke({ color, width: w, alpha, cap: 'round' });
     }
+    if (P)
+      for (let k = 0; k < order.length; k++) {
+        const a = L[order[k]],
+          b = L[order[(k + 1) % order.length]],
+          mx = (a.x + b.x) / 2 + (b.y - a.y) * 0.15,
+          my = (a.y + b.y) / 2 - (b.x - a.x) * 0.15;
+        paths.moveTo(a.x, a.y).quadraticCurveTo(mx, my, b.x, b.y);
+        // The painted footpath, laid in world space so it runs on without seams.
+        paths.stroke({
+          texture: P.path,
+          textureSpace: 'global',
+          width: 64,
+          alpha: 0.85,
+          cap: 'round',
+        });
+      }
     this.ground.addChild(paths);
     const mire = new Sprite(this.art.mire);
+    if (P) mire.alpha = 0.55;
     mire.anchor.set(0.5);
     mire.position.set(L[5].x, L[5].y);
     const floor = new Sprite(this.art.floor);

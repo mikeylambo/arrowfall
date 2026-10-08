@@ -430,11 +430,16 @@ export const CAMPFIRE = { x: 600, y: 400 };
 
 /** Builds the camp props into a container; returns the flame sprite for the renderer to animate. */
 let baked: Record<string, Texture> = {};
-export function buildCamp(layer: Container, art: Record<string, Texture>, profile: Profile) {
+export function buildCamp(
+  layer: Container,
+  art: Record<string, Texture>,
+  profile: Profile,
+  painted?: { tent: Texture; fire: Texture },
+) {
   // The station props show the hunter's progress, so they are re-baked on every camp visit.
   for (const t of Object.values(baked)) t.destroy(true);
   baked = campArt(profile);
-  art = { ...art, ...baked };
+  art = { ...art, ...baked, ...painted };
   const put = (tex: Texture, x: number, y: number, scale = 1, flip = false) => {
     const s = new Sprite(tex);
     s.anchor.set(0.5, 0.78);
@@ -443,15 +448,24 @@ export function buildCamp(layer: Container, art: Record<string, Texture>, profil
     layer.addChild(s);
     return s;
   };
-  for (const t of TENTS) put(art.tent, t.x, t.y, 1, t.flip);
+  // Painted props (render/gptArt.ts) arrive large; fit them to the camp's scale.
+  const fit = (tex: Texture, width: number) => (tex.width > 300 ? width / tex.width : 1);
+  for (const t of TENTS) put(art.tent, t.x, t.y, fit(art.tent, 170), t.flip);
   for (const s of STATIONS) if (art[s.id]) put(art[s.id], s.x, s.y + 14);
   // The campfire burns bigger the more hunts the hunter has come home from.
   const fire = 0.85 + Math.min(0.35, profile.runs.length * 0.02);
-  const base = put(art.fire, CAMPFIRE.x, CAMPFIRE.y, 0.9 * fire);
+  const paintedFire = art.fire.width > 300,
+    scale = paintedFire ? fit(art.fire, 260) : 0.9 * fire;
+  const base = put(art.fire, CAMPFIRE.x, CAMPFIRE.y, scale);
   base.anchor.set(0.5, 0.5);
-  const flame = put(art.flame, CAMPFIRE.x, CAMPFIRE.y + 4);
+  // The painted campfire has its fire left of centre (the bedroll and log sit to the right).
+  const fx = paintedFire ? CAMPFIRE.x - 0.2 * art.fire.width * scale : CAMPFIRE.x,
+    fy = paintedFire ? CAMPFIRE.y + 0.08 * art.fire.height * scale : CAMPFIRE.y + 4;
+  const flame = put(art.flame, fx, fy);
   flame.anchor.set(0.5, 0.95);
   flame.blendMode = 'add';
-  flame.scale.set(fire);
-  return { flame, size: fire };
+  // Over the painted fire the flame is a soft extra flicker, not a second fire.
+  if (paintedFire) flame.alpha = 0.55;
+  flame.scale.set(paintedFire ? 0.7 * fire : fire);
+  return { flame, size: paintedFire ? 0.7 * fire : fire };
 }
