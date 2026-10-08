@@ -14,7 +14,7 @@ import { Diegetic } from './diegetic';
 import { loadSheet, type Sheet } from './sheets';
 import { Atmosphere } from './ground';
 import { landmarkArt, WorldDressing } from './landmarks';
-import { buildCamp, campArt, CAMPFIRE } from './camp';
+import { buildCamp, campArt, CAMP_BOUNDS, CAMPFIRE } from './camp';
 import { Arena } from './arena';
 import { loadGptArt, type GptArt } from './gptArt';
 
@@ -27,7 +27,6 @@ import type { Hunt } from '../sim/game';
 import { COVER } from '../sim/world';
 import type { Enemy } from '../sim/types';
 import { ENEMIES } from '../data/enemies';
-import { STATIONS } from '../data/world';
 import { PALETTE, JUICE, SHEETS, tint } from '../data/art';
 
 /**
@@ -323,6 +322,17 @@ export class View {
       this.threatLayer.addChild(text);
       this.numberSlots.push({ text, life: 0, kind });
     }
+  }
+  /**
+   * The camp camera follows the hunter but never shows past the clearing's props, so tall
+   * stations at the edge (the Range) stay whole; a view bigger than the camp centres on it.
+   */
+  frameCamp(x: number, y: number): [number, number] {
+    const hw = this.width / 2 / this.zoom,
+      hh = this.height / 2 / this.zoom,
+      fit = (v: number, lo: number, hi: number, half: number) =>
+        hi - lo <= half * 2 ? (lo + hi) / 2 : Math.min(hi - half, Math.max(lo + half, v));
+    return [fit(x, CAMP_BOUNDS.x0, CAMP_BOUNDS.x1, hw), fit(y, CAMP_BOUNDS.y0, CAMP_BOUNDS.y1, hh)];
   }
   sprite(texture: Texture, parent: Container) {
     const s = new Sprite(texture);
@@ -766,8 +776,9 @@ export class View {
             ? p.y + (g.cinematicY - 70 - p.y) * 0.8
             : p.y + Math.sin(p.aim) * look,
       follow = Math.min(1, realDt * (cine ? 3 : 8));
-    this.camera.x += (targetX - this.camera.x) * follow;
-    this.camera.y += (targetY - this.camera.y) * follow;
+    const [cx, cy] = this.camp ? this.frameCamp(targetX, targetY) : [targetX, targetY];
+    this.camera.x += (cx - this.camera.x) * follow;
+    this.camera.y += (cy - this.camera.y) * follow;
     const shake = this.reducedMotion ? 0 : Math.min(g.shake, T.maxShake) * this.shake,
       sx = Math.sin(g.realTime * 89) * shake,
       sy = Math.cos(g.realTime * 113) * shake;
@@ -1179,17 +1190,6 @@ export class View {
     if (this.showBands && !this.camp) {
       w.circle(p.x, p.y, g.bow.near).stroke({ color: 0x98c7e6, alpha: 0.06, width: 1 });
       w.circle(p.x, p.y, g.bow.far).stroke({ color: 0x98c7e6, alpha: 0.11, width: 1 });
-    }
-    if (this.camp) {
-      // Each station is its prop (render/camp.ts); the one in reach gets a moonlit ground ring.
-      for (const s of STATIONS) {
-        const near = Math.hypot(s.x - p.x, s.y - p.y) < 140;
-        w.ellipse(s.x, s.y + 30, 64, 24).stroke({
-          color: near ? 0xc4d4ff : 0x8aaccc,
-          alpha: near ? 0.55 : 0.14,
-          width: near ? 2 : 1.5,
-        });
-      }
     }
     if (g.rank('lantern'))
       w.circle(p.x, p.y, 140 + 20 * (g.rank('lantern') - 1))

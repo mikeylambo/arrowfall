@@ -133,9 +133,16 @@ function stars(c: Ctx, p?: Profile) {
       rank = p?.boons[BOONS[i][0]] ?? 0,
       k = rank / cap;
     if (rank) lit.push([x, y]);
-    c.fillStyle = rank ? FOCUS : 'rgba(120,130,170,0.35)';
+    // Unlit stars stay visible on the dark ground as a pale outline of what can be earned.
+    if (!rank) {
+      c.fillStyle = 'rgba(150,165,215,0.16)';
+      c.beginPath();
+      c.arc(x, y, 4, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.fillStyle = rank ? FOCUS : 'rgba(176,190,235,0.75)';
     c.beginPath();
-    c.arc(x, y, rank ? 2.4 + k * 2.2 : 1.6, 0, Math.PI * 2);
+    c.arc(x, y, rank ? 2.4 + k * 2.2 : 1.9, 0, Math.PI * 2);
     c.fill();
     if (rank) {
       c.fillStyle = `rgba(171,164,255,${0.1 + k * 0.15})`;
@@ -419,11 +426,9 @@ export function campArt(p?: Profile): Record<string, Texture> {
 }
 
 /** Where the camp's non-station props stand (camp space; the clearing spans ~100..1050). */
-const TENTS = [
-  { x: 150, y: 780, flip: false },
-  { x: 1000, y: 760, flip: true },
-  { x: 1060, y: 120, flip: true },
-];
+const TENTS = [{ x: 150, y: 780, flip: false }];
+/** Camp space the camera keeps in view: every prop with a little ground around it. */
+export const CAMP_BOUNDS = { x0: 20, x1: 1180, y0: 20, y1: 880 };
 /** Each bow's finish on the Fletcher's rack. */
 const BOW_FINISH: Record<string, string> = {
   recurve: '#8fa6c4',
