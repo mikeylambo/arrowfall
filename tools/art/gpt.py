@@ -142,7 +142,9 @@ for n in names('landmarks'):
 
 # ---------- icons ----------
 ICON_SHEETS = {
-    # U1 is held back: its "transparent" background is a painted checkerboard (redo pending).
+    # U1 (redo) and U7 are picked up as soon as their files land in art-source/gpt/icons/.
+    'U1': ['quick-nock', 'draw-strength', 'taut-string', 'steady-hand', 'heavy-bow', 'swift-bow', 'eagle-eye', 'broadhead', 'far-sight'],
+    'U7': ['hunter-s-mark', 'fletcher-s-craft', 'heaven-s-volley', None, None, None, None, None, None],
     'U2': ['moonwell', 'executioner', 'piercer', 'longshaft', 'broadshaft', 'barbed-arrow', 'ember-arrow', 'frost-arrow', 'storm-arrow'],
     'U3': ['venom-arrow', 'rupture', 'lightfoot', 'windstep', 'evasive-shot', 'backstep', 'phantom-step', 'blood-trail', 'predator'],
     'U4': ['chain-kill', 'last-arrow', 'ricochet', 'splitshot', 'starfall', 'moonseeker', 'echo-shot', 'still-water', 'briar-shot'],
