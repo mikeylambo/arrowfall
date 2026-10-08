@@ -127,3 +127,5 @@ Forest props (trees, dead trees, rocks, graveyard pieces) come from KayKit's Hal
 ## Painted art (GPT batches)
 
 Ground tiles, scatter decals, landmark sprites, icons and menu backdrops were painted with GPT image from `art-source/GPT_IMAGE_SPEC.md`; sources live in `art-source/gpt/` and `python3 tools/art/gpt.py` turns them into `public/art/gpt/` (seamless tiles, sliced and trimmed decal and icon atlases, keyed and recoloured landmarks with an ink outline). Landmarks are used as 2D sprites, not 3D models: they never turn, so one painted view is enough. `?ground=classic` shows the earlier procedural ground and landmarks.
+
+The forest (batch 6) is painted too: pine and oak stands alternate in broad patches, with boulders and stumps among them, stumps and fallen logs in the Dead Grove and tall standing stones in the circle. Sprites are sized from the collision circle and anchored at the trunk base, so the circle stays the authority. Camp stations (batch 7) are painted empty; progress is drawn over them in code.

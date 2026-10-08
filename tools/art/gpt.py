@@ -5,6 +5,9 @@ Run: python3 tools/art/gpt.py   (needs Pillow, numpy, scipy)
 - ground/*      -> seamless 1024 tiles (half-offset cross-blend), slightly darkened
 - decals/*      -> 3x3 grids sliced, trimmed, packed into one atlas + manifest
 - landmarks/*   -> grey background keyed out, recoloured toward the palette, ink outline
+- forest/*      -> nine-up transparent sheets split by connected alpha, trimmed, packed into one atlas
+                   + manifest with each sprite's foot (trunk base) for anchoring
+- camp/*        -> camp station props, keyed and recoloured like the landmarks
 - icons/*       -> 3x3 grids sliced into 128 px icons in one atlas + manifest (id map below)
 - backgrounds/* -> WebP for menu screens
 Sources are kept as WebP (lossless for alpha sheets) to stay small in git.
@@ -59,7 +62,7 @@ def trim(img, pad=4):
     x0, y0, x1, y1 = box
     return img.crop((max(0, x0 - pad), max(0, y0 - pad), min(img.width, x1 + pad), min(img.height, y1 + pad)))
 
-def pack(items, out_name, width=2048):
+def pack(items, out_name, width=2048, extra=None):
     """Shelf-pack (name, image) pairs into one atlas; returns the manifest."""
     items = sorted(items, key=lambda kv: -kv[1].height)
     x = y = shelf = 0
@@ -75,7 +78,8 @@ def pack(items, out_name, width=2048):
         fx, fy, _, _ = frames[name]
         atlas.paste(im, (fx, fy))
     atlas.save(f'{OUT}/{out_name}.webp', quality=90, alpha_quality=95, method=6)
-    json.dump({'image': f'{out_name}.webp', 'size': list(atlas.size), 'frames': frames}, open(f'{OUT}/{out_name}.json', 'w'), indent=1)
+    manifest = {'image': f'{out_name}.webp', 'size': list(atlas.size), 'frames': frames, **(extra or {})}
+    json.dump(manifest, open(f'{OUT}/{out_name}.json', 'w'), indent=1)
     return frames
 
 def grade(img, desat=0.0, mul=(1, 1, 1), gain=1.0):
@@ -138,6 +142,59 @@ for n in names('landmarks'):
     im.thumbnail((640, 640), Image.LANCZOS)
     keep_warm = n in ('landmark-campfire',)
     im = grade(im, 0.55 if keep_warm else 0.82, (0.62, 0.74, 1.0), 0.78)
+    ink(im, 3).save(f'{OUT}/{n}.webp', quality=90, alpha_quality=95, method=6)
+
+# ---------- forest: real alpha; split by connected shape rather than a grid (cells drift) ----------
+def pieces(img, count=9):
+    a = np.asarray(img.getchannel('A')) > 24
+    # Close small gaps so a branch or a fern frond stays with its tree; close less (then fall
+    # back to the grid) when neighbours touch.
+    for grow in (6, 3, 1):
+        labels, n = ndimage.label(ndimage.binary_dilation(a, iterations=grow))
+        sizes = ndimage.sum(a, labels, range(1, n + 1))
+        keep = (np.argsort(-sizes)[:count] + 1).tolist()
+        if len(keep) == count and sizes[keep[-1] - 1] > sizes[keep[0] - 1] * 0.12:
+            break
+    else:
+        return [c for c in cells(img)]
+    boxes = ndimage.find_objects(labels)
+    found = []
+    for lab in keep:
+        ys, xs = boxes[lab - 1]
+        mask = (labels[ys, xs] == lab)
+        crop = np.asarray(img)[ys, xs].copy()
+        crop[..., 3] = np.where(mask, crop[..., 3], 0)
+        found.append((ys.start, xs.start, Image.fromarray(crop)))
+    # Reading order: rows by centre height, then left to right.
+    found.sort(key=lambda f: (round((f[0] + f[2].height / 2) / (img.height / 3)), f[1]))
+    return [f[2] for f in found]
+
+def foot(im):
+    """Fraction down the sprite where its base sits: lowest solid row under the middle third."""
+    a = np.asarray(im.getchannel('A'))[:, im.width // 3: 2 * im.width // 3] > 128
+    rows = np.nonzero(a.any(1))[0]
+    return round(float(rows[-1] + 1) / im.height, 3) if len(rows) else 0.95
+
+forest, feet = [], {}
+for n in names('forest'):
+    kind = n.replace('forest-', '')
+    for i, im in enumerate(pieces(src(f'{SRC}/forest/{n}').convert('RGBA'))):
+        im = trim(im, 2)
+        if im is None:
+            continue
+        im.thumbnail((300, 340), Image.LANCZOS)
+        im = grade(im, 0.15, (0.95, 0.97, 1.0), 0.9)
+        forest.append((f'{kind}-{i}', im))
+        feet[f'{kind}-{i}'] = foot(im)
+if forest:
+    pack(forest, 'forest', 2048, {'feet': feet})
+
+# ---------- camp stations: keyed like the landmarks, wood kept a little warmer ----------
+for n in names('camp'):
+    im = key_background(src(f'{SRC}/camp/{n}'))
+    im = trim(im, 12)
+    im.thumbnail((420, 420), Image.LANCZOS)
+    im = grade(im, 0.7, (0.7, 0.8, 1.0), 0.8)
     ink(im, 3).save(f'{OUT}/{n}.webp', quality=90, alpha_quality=95, method=6)
 
 # ---------- icons ----------

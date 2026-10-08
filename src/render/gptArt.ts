@@ -12,15 +12,20 @@ export interface GptArt {
   landmark: Record<string, Texture>;
   /** Decal frames grouped by kind (ferns, leaves, mushrooms, roots, stones, bones, puddles). */
   decals: Record<string, Texture[]>;
+  /** Forest sprites grouped by kind (pines, oaks, dead, rocks, stumps); foot = base height 0..1. */
+  forest: Record<string, { texture: Texture; foot: number }[]>;
+  /** Camp station props: fletcher, target, altar, trophies, log, signpost, banner. */
+  camp: Record<string, Texture>;
 }
 
 const BASE = '/art/gpt/';
 const GROUND = ['moor', 'moss', 'mire', 'barrow', 'path', 'camp'];
 const LANDMARKS = ['moonwell', 'shrine', 'tower', 'barrow', 'lodge', 'stones', 'campfire', 'tent'];
+const CAMP = ['fletcher', 'target', 'altar', 'trophies', 'log', 'signpost', 'banner'];
 
 export async function loadGptArt(): Promise<GptArt | null> {
   try {
-    const art: GptArt = { ground: {}, landmark: {}, decals: {} };
+    const art: GptArt = { ground: {}, landmark: {}, decals: {}, forest: {}, camp: {} };
     await Promise.all([
       ...GROUND.map(async (n) => {
         const t = await Assets.load<Texture>(`${BASE}ground-${n}.webp`);
@@ -31,6 +36,26 @@ export async function loadGptArt(): Promise<GptArt | null> {
       ...LANDMARKS.map(async (n) => {
         art.landmark[n] = await Assets.load<Texture>(`${BASE}landmark-${n}.webp`);
       }),
+      ...CAMP.map(async (n) => {
+        art.camp[n] = await Assets.load<Texture>(`${BASE}camp-${n}.webp`);
+      }),
+      (async () => {
+        const manifest = (await (await fetch(`${BASE}forest.json`)).json()) as {
+          frames: Record<string, [number, number, number, number]>;
+          feet: Record<string, number>;
+        };
+        const sheet = await Assets.load<Texture>(`${BASE}forest.webp`);
+        // Sorted so each kind keeps the sheet's order (variants are picked by index).
+        for (const name of Object.keys(manifest.frames).sort(
+          (a, b) => parseInt(a.split('-')[1]) - parseInt(b.split('-')[1]),
+        )) {
+          const [x, y, w, h] = manifest.frames[name];
+          (art.forest[name.replace(/-\d+$/, '')] ??= []).push({
+            texture: new Texture({ source: sheet.source, frame: new Rectangle(x, y, w, h) }),
+            foot: manifest.feet[name] ?? 0.95,
+          });
+        }
+      })(),
       (async () => {
         const manifest = (await (await fetch(`${BASE}decals.json`)).json()) as {
           frames: Record<string, [number, number, number, number]>;

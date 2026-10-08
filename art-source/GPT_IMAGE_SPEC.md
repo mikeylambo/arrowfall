@@ -102,6 +102,10 @@ Add to the style block: _"Game UI icon set, consistent line weight, one symbol p
 
 ---
 
+## Status (after round 2)
+
+All seven batches are in the game. The U1 redo and U7 fill the last icon gaps. Batch 6 replaces the forest (trees, boulders, stumps) and the edge treeline. Batch 7 replaces the camp stations; bows, trophies, Altar stars and pages are still drawn on top as the hunter earns them, and one banner goes up by the Trail per Moon Phase. Of the two trophy-wall takes, the single wall was used (the four-object sheet was not needed).
+
 ## Status (after round 1)
 
 Batches 1–5 are in the game. Batches 1, 2, 4 and 5 were used as delivered; batch 3 is used as 2D sprites (no Meshy). Still open: **U1 redo**, **U7** (three icons the first spec missed), **Batch 6** (forest) and **Batch 7** (camp stations). Everything below uses the same style block.

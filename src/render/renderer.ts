@@ -366,6 +366,50 @@ export class View {
       // Forest props: living trees (one in five a boulder) and dead trees from rendered sheets.
       const hash = Math.abs(Math.floor(o.x * 7 + o.y * 13)),
         flip = hash & 1 ? -1 : 1;
+      // Painted forest (GPT batch 6): pine and oak stands in broad patches, boulders and stumps
+      // among them, stumps and fallen logs in the Dead Grove, standing stones in the circle.
+      const forest = this.painted?.forest;
+      if (
+        forest?.pines &&
+        (o.kind === COVER.tree || o.kind === COVER.dead || o.kind === COVER.stone)
+      ) {
+        const nearLandmark = g.world.landmarks.some((l) => Math.hypot(o.x - l.x, o.y - l.y) < 300),
+          roll = hash % 10;
+        let kind: string, size: number, tall: boolean;
+        if (o.kind === COVER.stone) {
+          // Rocks 1 and 5 are the tall standing stones; the rest are boulders and slabs.
+          kind = 'rocks';
+          tall = nearLandmark;
+          size = tall ? 3.4 : 2.7;
+        } else if (o.kind === COVER.dead) {
+          [kind, size, tall] = roll < 3 ? ['stumps', 2.9, false] : ['dead', 6.6, true];
+        } else if (roll < 2) [kind, size, tall] = ['rocks', 2.7, false];
+        else if (roll === 2) [kind, size, tall] = ['stumps', 2.9, false];
+        else {
+          const pinewood = Math.sin(o.x * 0.0009 + Math.cos(o.y * 0.0011) * 2) > -0.15;
+          [kind, size, tall] = pinewood ? ['pines', 8.6, true] : ['oaks', 7.4, true];
+        }
+        const set = forest[kind],
+          pick =
+            kind === 'rocks'
+              ? tall
+                ? [1, 5][hash % 2]
+                : [0, 2, 3, 4, 6, 7, 8][hash % 7]
+              : Math.floor(hash / 10) % set.length,
+          { texture, foot } = set[Math.min(pick, set.length - 1)],
+          // Trees are sized by height (a pine stands about three hunters tall), low props by width.
+          k =
+            tall && kind !== 'rocks' ? (o.r * size) / texture.height : (o.r * size) / texture.width,
+          s = new Sprite(texture);
+        s.anchor.set(0.5, foot);
+        s.position.set(o.x, o.y + o.r * 0.45);
+        s.scale.set(k * flip, k);
+        shadows.ellipse(o.x + 6, o.y + o.r * 0.45, o.r * (tall ? 1.1 : 1.35), o.r * 0.42);
+        (tall ? this.canopy : this.cover).addChild(s);
+        if (tall) this.canopySprites.push(s);
+        this.coverSprites.push(s);
+        continue;
+      }
       if (trees && rocks && (o.kind === 0 || o.kind === 3)) {
         const rock = o.kind === 0 && hash % 5 === 0,
           name = rock
@@ -428,7 +472,11 @@ export class View {
         this.art,
         g.profile,
         this.painted
-          ? { tent: this.painted.landmark.tent, fire: this.painted.landmark.campfire }
+          ? {
+              tent: this.painted.landmark.tent,
+              fire: this.painted.landmark.campfire,
+              stations: this.painted.camp,
+            }
           : undefined,
       );
       this.campFlame = camp.flame;
@@ -453,11 +501,31 @@ export class View {
         return v - Math.floor(v);
       };
       let i = 0;
+      const edgeSprites: Sprite[] = [],
+        edgeTrees = this.painted?.forest.pines
+          ? [...this.painted.forest.pines, ...(this.painted.forest.oaks ?? [])]
+          : null;
       const tree = (x: number, y: number, scale: number) => {
+        const px = x + (jitter(i++) - 0.5) * 50,
+          py = y + (jitter(i++) - 0.5) * 50,
+          size = 0.85 + jitter(i++) * 0.35,
+          turn = jitter(i++);
+        if (edgeTrees) {
+          // Painted pines and oaks, upright, about one and a half times a moor tree.
+          const { texture, foot } = edgeTrees[Math.floor(turn * edgeTrees.length)],
+            k = (scale * size * 105) / texture.height,
+            s = new Sprite(texture);
+          s.anchor.set(0.5, foot);
+          s.position.set(px, py + 40);
+          s.scale.set(turn > 0.5 ? -k : k, k);
+          edgeSprites.push(s);
+          this.coverSprites.push(s);
+          return;
+        }
         const s = this.sprite(this.art.tree, this.cover);
-        s.position.set(x + (jitter(i++) - 0.5) * 50, y + (jitter(i++) - 0.5) * 50);
-        s.scale.set(scale * (0.85 + jitter(i++) * 0.35));
-        s.rotation = jitter(i++) * Math.PI * 2;
+        s.position.set(px, py);
+        s.scale.set(scale * size);
+        s.rotation = turn * Math.PI * 2;
         this.coverSprites.push(s);
       };
       for (let row = 0; row < 2; row++) {
@@ -472,7 +540,12 @@ export class View {
           tree(W + out, y, scale);
         }
       }
+      // Painted trees overlap, so draw them back to front.
+      for (const t of edgeSprites.sort((a, b) => a.y - b.y)) this.cover.addChild(t);
     }
+    // Painted canopies overlap: back to front.
+    for (const c of this.canopy.children) c.zIndex = c.y;
+    this.canopy.sortChildren();
     this.landmarks.clear();
   }
   /**
