@@ -1,0 +1,107 @@
+{
+  "id": "props-trees",
+  "cell": 320,
+  "heightPx": 270,
+  "pivot": [
+    0.5,
+    0.86
+  ],
+  "directions": [
+    2
+  ],
+  "fps": 12,
+  "clips": {
+    "dead_large": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 0,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "dead_medium": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 320,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "dead_small": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 640,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "pine_large": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 960,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "pine_medium": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 1280,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "oak_a": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 1600,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "oak_b": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 0,
+            "y": 320
+          }
+        ]
+      ]
+    }
+  },
+  "pages": 1
+}

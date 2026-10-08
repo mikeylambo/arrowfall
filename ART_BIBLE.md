@@ -119,3 +119,7 @@ Clips are rendered at 12 fps.
 **Credit savers.** Quadrupeds (Moonhound, Hollow Stag) are model-only: no remesh or rig. Their gallop, lunge and charge come from renderer-side motion (`tools/render-sprites/procedural.ts` `RIGID`). The Wisp and Barrow Worm are built in code. The Bramble King and Night Hag are model-only too (the King renders the front view only, since it never turns). Bosses reuse models where the read allows: the Huntmaster reuses the Poacher, and the Black Shuck reuses the Moonhound.
 
 **Gate.** The hunter goes through the whole pipeline first and is judged in-game before any other character is made.
+
+## Bought-in models
+
+Forest props (trees, dead trees, rocks, graveyard pieces) come from KayKit's Halloween Bits and Medieval Hexagon packs (CC0, `art-source/kaykit/`, licence files alongside). They go through the same render pipeline as the characters, with `desaturate` (0.9) and a cool `albedo` tint so no foreign hue enters the palette, and darker `brightness` so nothing competes with the silver hunter. Trees draw above actors and fade to 35% when the hunter stands behind them. `?forest=classic` shows the earlier baked art for comparison.

@@ -85,6 +85,8 @@ export interface SpriteJob {
   glow?: boolean;
   /** Per-channel colour correction toward the palette (linear RGB multipliers). */
   albedo?: [number, number, number];
+  /** Pull bought-in colours toward grey (0..1) before the albedo tint. */
+  desaturate?: number;
   page: number;
 }
 
@@ -98,6 +100,7 @@ function toonMaterial(
   brightness = 1,
   albedo: [number, number, number] = [1, 1, 1],
   glow = false,
+  desaturate = 0,
 ): THREE.Material {
   const src = source as THREE.MeshStandardMaterial;
   const ramp = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 255, 255, 255, 255]), 2, 1);
@@ -124,6 +127,9 @@ function toonMaterial(
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
+        // Bought-in props are pulled toward the moonlit palette: grey them, then let the
+        // albedo multiplier (applied to the material colour) tint them cool.
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), ${desaturate.toFixed(3)});
         #if defined(USE_MAP) && ${glow ? 1 : 0}
         // Pale painted accents (a gold crown, glowing eyes) stay flat and bright: they are
         // emissive in the art bible, so neither the albedo correction nor shading touches them.
@@ -421,8 +427,17 @@ export async function renderJob(job: SpriteJob) {
         const mesh = o as THREE.Mesh;
         if (mesh.isMesh)
           mesh.material = Array.isArray(mesh.material)
-            ? mesh.material.map((m) => toonMaterial(m, rim, job.brightness, job.albedo, job.glow))
-            : toonMaterial(mesh.material, rim, job.brightness, job.albedo, job.glow);
+            ? mesh.material.map((m) =>
+                toonMaterial(m, rim, job.brightness, job.albedo, job.glow, job.desaturate),
+              )
+            : toonMaterial(
+                mesh.material,
+                rim,
+                job.brightness,
+                job.albedo,
+                job.glow,
+                job.desaturate,
+              );
       });
       // Normalise: feet on y=0, centred, scaled to modelHeight.
       const box = new THREE.Box3().setFromObject(src.root);

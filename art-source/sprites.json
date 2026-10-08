@@ -640,6 +640,158 @@
         "note": "Model only; floats via renderer-side motion (RIGID)."
       },
       "glow": true
+    },
+    {
+      "id": "props-trees",
+      "cell": 320,
+      "modelHeight": 1,
+      "heightPx": 270,
+      "pivot": [0.5, 0.86],
+      "directions": [2],
+      "ink": "#060a14",
+      "rim": "#c4d4ff",
+      "albedo": [0.45, 0.58, 1.0],
+      "clips": [
+        {
+          "name": "dead_large",
+          "url": "/art-source/kaykit/halloween/tree_dead_large.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "dead_medium",
+          "url": "/art-source/kaykit/halloween/tree_dead_medium.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "dead_small",
+          "url": "/art-source/kaykit/halloween/tree_dead_small.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "pine_large",
+          "url": "/art-source/kaykit/halloween/tree_pine_yellow_large.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "pine_medium",
+          "url": "/art-source/kaykit/halloween/tree_pine_yellow_medium.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "oak_a",
+          "url": "/art-source/kaykit/hexagon/tree_single_A.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "oak_b",
+          "url": "/art-source/kaykit/hexagon/tree_single_B.gltf",
+          "frames": 1,
+          "loop": false
+        }
+      ],
+      "desaturate": 0.9,
+      "brightness": 0.4
+    },
+    {
+      "id": "props-rocks",
+      "cell": 160,
+      "modelHeight": 1,
+      "heightPx": 72,
+      "pivot": [0.5, 0.75],
+      "directions": [2],
+      "ink": "#060a14",
+      "rim": "#c4d4ff",
+      "albedo": [0.62, 0.72, 1.0],
+      "clips": [
+        {
+          "name": "rock_b",
+          "url": "/art-source/kaykit/hexagon/rock_single_B.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "rock_c",
+          "url": "/art-source/kaykit/hexagon/rock_single_C.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "rock_d",
+          "url": "/art-source/kaykit/hexagon/rock_single_D.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "rock_e",
+          "url": "/art-source/kaykit/hexagon/rock_single_E.gltf",
+          "frames": 1,
+          "loop": false
+        }
+      ],
+      "desaturate": 0.9,
+      "brightness": 0.58
+    },
+    {
+      "id": "props-grave",
+      "cell": 256,
+      "modelHeight": 1,
+      "heightPx": 200,
+      "pivot": [0.5, 0.86],
+      "directions": [2],
+      "ink": "#060a14",
+      "rim": "#c4d4ff",
+      "albedo": [0.62, 0.72, 1.0],
+      "clips": [
+        {
+          "name": "gravestone",
+          "url": "/art-source/kaykit/halloween/gravestone.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "grave",
+          "url": "/art-source/kaykit/halloween/grave_A.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "lantern",
+          "url": "/art-source/kaykit/halloween/lantern_standing.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "shrine",
+          "url": "/art-source/kaykit/halloween/shrine.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "crypt",
+          "url": "/art-source/kaykit/halloween/crypt.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "fence",
+          "url": "/art-source/kaykit/halloween/fence_broken.gltf",
+          "frames": 1,
+          "loop": false
+        },
+        {
+          "name": "post_lantern",
+          "url": "/art-source/kaykit/halloween/post_lantern.gltf",
+          "frames": 1,
+          "loop": false
+        }
+      ],
+      "desaturate": 0.9
     }
   ]
 }

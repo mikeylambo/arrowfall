@@ -154,6 +154,11 @@ export class View {
   pickupSprites: Sprite[] = [];
   particleSprites: Sprite[] = [];
   coverSprites: Sprite[] = [];
+  /** Tall forest props (trees) draw above actors and fade when the hunter is behind them. */
+  readonly canopy = new Container();
+  private canopySprites: Sprite[] = [];
+  /** Rendered forest prop sheets (art-source/kaykit, CC0); ?forest=classic keeps the baked art. */
+  private propSheets: Record<string, Sheet | null> = {};
   hunter = new Sprite();
   /** 3/4 sprite sheet for the hunter, when one is rendered (dev preview: ?sprites=<sheet id>). */
   hunterSheet: Sheet | null = null;
@@ -219,7 +224,7 @@ export class View {
     this.weakPoint.tint = tint(PALETTE.weak);
     this.weakPoint.visible = false;
     this.threatLayer.addChild(this.weakPoint);
-    this.root.addChild(this.hero, this.world.plates, this.atmosphere.mistHigh);
+    this.root.addChild(this.hero, this.canopy, this.world.plates, this.atmosphere.mistHigh);
     this.app.stage.addChild(this.atmosphere.rain, this.atmosphere.vignette, this.overlay);
     this.hunter.texture = this.art.hunter;
     this.hunter.anchor.set(0.5);
@@ -244,6 +249,8 @@ export class View {
     const override = new URLSearchParams(location.search).get('sprites');
     if (override !== 'off') this.hunterSheet = await loadSheet(override ?? SHEETS.hunter);
     this.diegetic.sheetBow = !!this.hunterSheet;
+    if (new URLSearchParams(location.search).get('forest') !== 'classic')
+      for (const id of ['props-trees', 'props-rocks']) this.propSheets[id] = await loadSheet(id);
     // Enemy and boss sheets (most of the ~19 MB) stream in behind the menu; each character
     // shows its baked stand-in until its own sheet arrives.
     if (override !== 'off') {
@@ -335,7 +342,36 @@ export class View {
       ['shrine', 30],
       ['well', 34],
     ];
+    this.canopy.removeChildren().forEach((c) => c.destroy());
+    this.canopySprites = [];
+    const trees = this.propSheets['props-trees'],
+      rocks = this.propSheets['props-rocks'],
+      shadows = new Graphics();
+    this.cover.addChild(shadows);
     for (const o of g.world.obstacles) {
+      // Forest props: living trees (one in five a boulder) and dead trees from rendered sheets.
+      const hash = Math.abs(Math.floor(o.x * 7 + o.y * 13)),
+        flip = hash & 1 ? -1 : 1;
+      if (trees && rocks && (o.kind === 0 || o.kind === 3)) {
+        const rock = o.kind === 0 && hash % 5 === 0,
+          name = rock
+            ? ['rock_b', 'rock_c', 'rock_d', 'rock_e'][hash % 4]
+            : o.kind === 3
+              ? ['dead_large', 'dead_medium', 'dead_small'][hash % 3]
+              : ['pine_large', 'pine_medium', 'oak_a', 'oak_b'][hash % 4],
+          sheet = rock ? rocks : trees,
+          s = new Sprite(sheet.frame(name, Math.PI / 2, 0).texture),
+          k = rock ? 0.5 * (o.r / 22) : o.kind === 3 ? 0.62 * (o.r / 26) : 0.66 * (o.r / 22);
+        s.anchor.set(sheet.manifest.pivot[0], sheet.manifest.pivot[1]);
+        s.position.set(o.x, o.y + o.r * 0.45);
+        s.scale.set(k * flip, k);
+        // A soft contact shadow grounds each prop (one shared Graphics, below the cover).
+        shadows.ellipse(o.x + 6, o.y + o.r * 0.45, o.r * (rock ? 1.3 : 1.1), o.r * 0.4);
+        (rock ? this.cover : this.canopy).addChild(s);
+        if (!rock) this.canopySprites.push(s);
+        this.coverSprites.push(s);
+        continue;
+      }
       const [tex, base] = COVER_ART[o.kind] ?? COVER_ART[0];
       const s = this.sprite(this.art[tex], this.cover);
       s.position.set(o.x, o.y);
@@ -343,6 +379,7 @@ export class View {
       if (o.kind === 3 || o.kind === 4) s.rotation = ((o.x * 13 + o.y * 7) % 628) / 100;
       this.coverSprites.push(s);
     }
+    shadows.fill({ color: 0x02040a, alpha: 0.45 });
     this.campFlame = null;
     if (camp) {
       this.world.clear();
@@ -638,6 +675,13 @@ export class View {
       s.visible =
         Math.abs(s.x - this.camera.x) < this.width / 2 / this.zoom + 150 &&
         Math.abs(s.y - this.camera.y) < this.height / 2 / this.zoom + 150;
+    }
+    // Trees the hunter stands behind turn see-through, so the hunter is never lost.
+    for (const s of this.canopySprites) {
+      if (!s.visible) continue;
+      const w = Math.abs(s.width) * 0.38,
+        behind = Math.abs(p.x - s.x) < w && p.y < s.y && p.y > s.y - s.height * 0.95;
+      s.alpha += ((behind ? 0.35 : 1) - s.alpha) * Math.min(1, realDt * 10);
     }
     const dim = g.crowd > 150 ? 0.7 : 1;
     this.updateCorpses(g, realDt);

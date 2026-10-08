@@ -1,0 +1,68 @@
+{
+  "id": "props-rocks",
+  "cell": 160,
+  "heightPx": 72,
+  "pivot": [
+    0.5,
+    0.75
+  ],
+  "directions": [
+    2
+  ],
+  "fps": 12,
+  "clips": {
+    "rock_b": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 0,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "rock_c": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 160,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "rock_d": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 320,
+            "y": 0
+          }
+        ]
+      ]
+    },
+    "rock_e": {
+      "frames": 1,
+      "loop": false,
+      "cells": [
+        [
+          {
+            "page": 0,
+            "x": 480,
+            "y": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pages": 1
+}
