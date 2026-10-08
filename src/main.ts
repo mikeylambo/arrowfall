@@ -294,11 +294,15 @@ function begin(next: string) {
   if (resuming) checkDeeds(game, 0, true);
   // Each bow announces what makes it different as the hunt begins.
   if (resuming) game.announce(`The hunt resumes · ${fmt(game.time)}`);
-  else if (next === 'hunt')
-    game.announce(
-      (game.phase ? ['', 'Half Moon', 'Full Moon', 'Blood Moon'][game.phase] + ' · ' : '') +
-        `${game.bow.name} · ${game.bow.signature}`,
-    );
+  else if (next === 'hunt') {
+    const line = [
+      game.phase ? ['', 'Half Moon', 'Full Moon', 'Blood Moon'][game.phase] : '',
+      game.bow.signature ? `${game.bow.name} · ${game.bow.signature}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    if (line) game.announce(line);
+  }
   if (next === 'hunt' && !profile.onboarded && !resuming) coach.begin(game);
   else coach.finish();
   $('hud').classList.toggle('visible', next !== 'camp');

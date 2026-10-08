@@ -492,20 +492,19 @@ function paintedStation(
   stations: Record<string, Texture>,
   profile: Profile,
 ) {
+  // One container per station, positioned at the prop's base, so it depth-sorts as a unit.
+  const group = new Container();
+  group.position.set(station.x, station.y + 14);
+  layer.addChild(group);
   const k = PAINTED_WIDTH[station.id] / tex.width,
-    x0 = station.x,
-    y0 = station.y + 14,
     foot = 0.95,
-    // A point on the painted prop, from fractions of its width and height, in camp space.
-    at = (fx: number, fy: number) => [
-      x0 + (fx - 0.5) * tex.width * k,
-      y0 + (fy - foot) * tex.height * k,
-    ],
+    // A point on the painted prop, from fractions of its width and height, relative to its base.
+    at = (fx: number, fy: number) => [(fx - 0.5) * tex.width * k, (fy - foot) * tex.height * k],
     add = (t: Texture, x: number, y: number, ax = 0.5, ay = 0.5) => {
       const s = new Sprite(t);
       s.anchor.set(ax, ay);
       s.position.set(x, y);
-      layer.addChild(s);
+      group.addChild(s);
       extras.push(t);
       return s;
     },
@@ -518,17 +517,16 @@ function paintedStation(
         const b = new Sprite(banner),
           kb = 112 / banner.height;
         b.anchor.set(0.5, foot);
-        b.position.set(x0 + 30 + i * 26, y0 - 10 - i * 6);
+        b.position.set(30 + i * 26, -10 - i * 6);
         b.scale.set(i % 2 ? -kb : kb, kb);
         b.tint = color;
-        layer.addChild(b);
+        group.addChild(b);
       });
   }
   const prop = new Sprite(tex);
   prop.anchor.set(0.5, foot);
-  prop.position.set(x0, y0);
   prop.scale.set(k);
-  layer.addChild(prop);
+  group.addChild(prop);
   if (station.id === 'fletcher') {
     // Six pegs along the sloping rack rail; each unlocked bow hangs from one.
     const bows = profile.unlocked.slice(0, 6);
@@ -580,6 +578,7 @@ function paintedStation(
       0.8,
     );
   }
+  return group;
 }
 /** Overlay textures from the last camp visit (destroyed on the next). */
 let extras: Texture[] = [];
@@ -607,12 +606,14 @@ export function buildCamp(
   };
   // Painted props (render/gptArt.ts) arrive large; fit them to the camp's scale.
   const fit = (tex: Texture, width: number) => (tex.width > 300 ? width / tex.width : 1);
-  for (const t of TENTS) put(art.tent, t.x, t.y, fit(art.tent, 170), t.flip);
+  // Standing props, for depth sorting against the hunter (positions are their bases).
+  const props: Container[] = [];
+  for (const t of TENTS) props.push(put(art.tent, t.x, t.y, fit(art.tent, 170), t.flip));
   const stations = painted?.stations;
   for (const s of STATIONS) {
     const tex = stations?.[PAINTED_STATION[s.id]];
-    if (tex && stations) paintedStation(layer, s, tex, stations, profile);
-    else if (art[s.id]) put(art[s.id], s.x, s.y + 14);
+    if (tex && stations) props.push(paintedStation(layer, s, tex, stations, profile));
+    else if (art[s.id]) props.push(put(art[s.id], s.x, s.y + 14));
   }
   // The campfire burns bigger the more hunts the hunter has come home from.
   const fire = 0.85 + Math.min(0.35, profile.runs.length * 0.02);
@@ -629,5 +630,5 @@ export function buildCamp(
   // Over the painted fire the flame is a soft extra flicker, not a second fire.
   if (paintedFire) flame.alpha = 0.55;
   flame.scale.set(paintedFire ? 0.7 * fire : fire);
-  return { flame, size: paintedFire ? 0.7 * fire : fire };
+  return { flame, size: paintedFire ? 0.7 * fire : fire, props };
 }

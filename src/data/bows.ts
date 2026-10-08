@@ -20,7 +20,8 @@ export const BOWS: Bow[] = [
     far: 460,
     mobility: 0.65,
     marks: 8,
-    signature: 'Balanced moonlight archery',
+    // The baseline bow: nothing to announce.
+    signature: '',
     deed: '',
   },
   {

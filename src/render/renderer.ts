@@ -105,6 +105,15 @@ const C = {
   heal: tint(PALETTE.heal),
   phantom: 0x9fc4ff,
 };
+interface Occluder {
+  node: Container;
+  x: number;
+  /** Base (foot) height in world space. */
+  y: number;
+  half: number;
+  top: number;
+  home: Container;
+}
 export class View {
   readonly app = new Application();
   readonly root = new Container();
@@ -158,6 +167,9 @@ export class View {
   /** Tall forest props (trees) draw above actors and fade when the hunter is behind them. */
   readonly canopy = new Container();
   private canopySprites: Sprite[] = [];
+  /** Low standing props the hunter can walk behind: drawn over the hunter only while behind. */
+  readonly front = new Container();
+  private occluders: Occluder[] = [];
   /** Rendered forest prop sheets (art-source/kaykit, CC0); ?forest=classic keeps the baked art. */
   private propSheets: Record<string, Sheet | null> = {};
   /** Painted world art (GPT batches); ?ground=classic keeps the procedural ground and landmarks. */
@@ -227,7 +239,15 @@ export class View {
     this.weakPoint.tint = tint(PALETTE.weak);
     this.weakPoint.visible = false;
     this.threatLayer.addChild(this.weakPoint);
-    this.root.addChild(this.hero, this.canopy, this.world.plates, this.atmosphere.mistHigh);
+    this.root.addChild(
+      this.hero,
+      this.front,
+      this.canopy,
+      this.world.plates,
+      this.atmosphere.mistHigh,
+    );
+    this.front.sortableChildren = true;
+    this.canopy.sortableChildren = true;
     this.app.stage.addChild(this.atmosphere.rain, this.atmosphere.vignette, this.overlay);
     this.hunter.texture = this.art.hunter;
     this.hunter.anchor.set(0.5);
@@ -323,6 +343,42 @@ export class View {
       this.numberSlots.push({ text, life: 0, kind });
     }
   }
+  /** Register a standing prop (its position is its base) for depth sorting against the hunter. */
+  private occlude(node: Container, tall: boolean) {
+    const b = node.getLocalBounds();
+    node.zIndex = node.y;
+    this.occluders.push({
+      node,
+      x: node.x,
+      y: node.y,
+      half: (Math.abs(b.width * node.scale.x) / 2) * 0.8,
+      top: node.y + b.minY * Math.abs(node.scale.y),
+      home: tall ? this.canopy : this.cover,
+    });
+  }
+  /**
+   * A prop near the hunter draws over them while they stand behind its base and under them
+   * while in front; everything else stays in its home layer (trees above, low props below).
+   */
+  private sortOccluders(px: number, py: number, dt: number) {
+    for (const o of this.occluders) {
+      const near = Math.abs(px - o.x) < o.half + 40 && py > o.top - 20 && py < o.y + 90,
+        layer = !near
+          ? o.home
+          : py < o.y
+            ? o.home === this.canopy
+              ? o.home
+              : this.front
+            : this.cover;
+      if (o.node.parent !== layer) layer.addChild(o.node);
+      // A low prop the hunter stands behind thins out, so the hunter is never lost (trees fade
+      // in the canopy pass below).
+      if (o.home !== this.canopy) {
+        const target = layer === this.front ? 0.6 : 1;
+        o.node.alpha += (target - o.node.alpha) * Math.min(1, dt * 10);
+      }
+    }
+  }
   /**
    * The camp camera follows the hunter but never shows past the clearing's props, so tall
    * stations at the edge (the Range) stay whole; a view bigger than the camp centres on it.
@@ -366,6 +422,8 @@ export class View {
     ];
     this.canopy.removeChildren().forEach((c) => c.destroy());
     this.canopySprites = [];
+    this.front.removeChildren().forEach((c) => c.destroy());
+    this.occluders = [];
     const trees = this.propSheets['props-trees'],
       rocks = this.propSheets['props-rocks'],
       shadows = new Graphics();
@@ -381,12 +439,20 @@ export class View {
       const forest = this.painted?.forest;
       if (
         forest?.pines &&
-        (o.kind === COVER.tree || o.kind === COVER.dead || o.kind === COVER.stone)
+        (o.kind === COVER.tree ||
+          o.kind === COVER.dead ||
+          o.kind === COVER.stone ||
+          o.kind === COVER.wall)
       ) {
         const nearLandmark = g.world.landmarks.some((l) => Math.hypot(o.x - l.x, o.y - l.y) < 300),
           roll = hash % 10;
         let kind: string, size: number, tall: boolean;
-        if (o.kind === COVER.stone) {
+        if (o.kind === COVER.wall) {
+          // The Old Lodge's broken walls: tumbled stone, one boulder cluster per wall segment.
+          kind = 'rocks';
+          tall = false;
+          size = 2.6;
+        } else if (o.kind === COVER.stone) {
           // Rocks 1 and 5 are the tall standing stones; the rest are boulders and slabs.
           kind = 'rocks';
           tall = nearLandmark;
@@ -399,14 +465,20 @@ export class View {
           const pinewood = Math.sin(o.x * 0.0009 + Math.cos(o.y * 0.0011) * 2) > -0.15;
           [kind, size, tall] = pinewood ? ['pines', 8.6, true] : ['oaks', 7.4, true];
         }
-        const set = forest[kind],
-          pick =
-            kind === 'rocks'
-              ? tall
-                ? [1, 5][hash % 2]
-                : [0, 2, 3, 4, 6, 7, 8][hash % 7]
-              : Math.floor(hash / 10) % set.length,
-          { texture, foot } = set[Math.min(pick, set.length - 1)],
+        // Rocks by shape: standing stones are taller than wide; the flattest is the carved slab,
+        // kept out of the Lodge's walls.
+        const rocks = forest.rocks ?? [],
+          aspect = (r: { texture: Texture }) => r.texture.height / r.texture.width,
+          flattest = rocks.reduce((a, r) => (aspect(r) < aspect(a) ? r : a), rocks[0]),
+          set =
+            kind !== 'rocks'
+              ? forest[kind]
+              : rocks.filter((r) =>
+                  tall
+                    ? aspect(r) > 1
+                    : aspect(r) <= 1 && (o.kind !== COVER.wall || r !== flattest),
+                ),
+          { texture, foot } = set[Math.floor(hash / 10) % set.length],
           // Trees are sized by height (a pine stands about three hunters tall), low props by width.
           k =
             tall && kind !== 'rocks' ? (o.r * size) / texture.height : (o.r * size) / texture.width,
@@ -417,6 +489,7 @@ export class View {
         shadows.ellipse(o.x + 6, o.y + o.r * 0.45, o.r * (tall ? 1.1 : 1.35), o.r * 0.42);
         (tall ? this.canopy : this.cover).addChild(s);
         if (tall) this.canopySprites.push(s);
+        this.occlude(s, tall);
         this.coverSprites.push(s);
         continue;
       }
@@ -437,6 +510,7 @@ export class View {
         shadows.ellipse(o.x + 6, o.y + o.r * 0.45, o.r * (rock ? 1.3 : 1.1), o.r * 0.4);
         (rock ? this.cover : this.canopy).addChild(s);
         if (!rock) this.canopySprites.push(s);
+        this.occlude(s, !rock);
         this.coverSprites.push(s);
         continue;
       }
@@ -463,6 +537,7 @@ export class View {
         shadows.ellipse(o.x + 8, o.y + o.r * 0.35, width * 0.42, width * 0.14);
         (tall ? this.canopy : this.cover).addChild(s);
         if (tall) this.canopySprites.push(s);
+        this.occlude(s, tall);
         this.coverSprites.push(s);
         continue;
       }
@@ -490,6 +565,7 @@ export class View {
           : undefined,
       );
       this.campFlame = camp.flame;
+      for (const node of camp.props) this.occlude(node, false);
       this.campFire = camp.size;
     } else this.world.build(g);
     // The Hollow's edge: a dense treeline over a dark band, so the world boundary reads as
@@ -554,8 +630,6 @@ export class View {
       for (const t of edgeSprites.sort((a, b) => a.y - b.y)) this.cover.addChild(t);
     }
     // Painted canopies overlap: back to front.
-    for (const c of this.canopy.children) c.zIndex = c.y;
-    this.canopy.sortChildren();
     this.landmarks.clear();
   }
   /**
@@ -809,6 +883,7 @@ export class View {
         Math.abs(s.x - this.camera.x) < this.width / 2 / this.zoom + 150 &&
         Math.abs(s.y - this.camera.y) < this.height / 2 / this.zoom + 150;
     }
+    this.sortOccluders(p.x, p.y, realDt);
     // Trees the hunter stands behind turn see-through, so the hunter is never lost.
     for (const s of this.canopySprites) {
       if (!s.visible) continue;

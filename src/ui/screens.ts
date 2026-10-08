@@ -14,7 +14,7 @@ export function bowChoices(profile: Profile, selected: string) {
     id: 'bow:' + b.id,
     label: (selected === b.id ? '◆ ' : '') + b.name,
     description: profile.unlocked.includes(b.id)
-      ? `${Math.round(b.draw * 1000)} ms draw · ${Math.round(b.window * 1000)} ms perfect · ${b.near}–${b.far} px · ${b.signature}`
+      ? `${Math.round(b.draw * 1000)} ms draw · ${Math.round(b.window * 1000)} ms perfect · ${b.near}–${b.far} px${b.signature ? ' · ' + b.signature : ''}`
       : b.deed,
     disabled: !profile.unlocked.includes(b.id),
   }));
