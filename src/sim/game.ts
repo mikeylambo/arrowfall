@@ -1146,7 +1146,11 @@ export class Hunt {
       (u) =>
         this.rank(u.id) < u.cap &&
         !this.banished.has(u.id) &&
-        (!u.locked || this.unlockedAll || this.profile.wins > 0 || this.profile.kills >= 1000),
+        (!u.locked ||
+          this.unlockedAll ||
+          this.profile.wins > 0 ||
+          this.profile.kills >= 1000 ||
+          this.profile.runs.length >= 4),
     );
     const choices = [
       ...pool.map((u) => u.id),

@@ -56,7 +56,27 @@ export const BOONS = [
 export function boonCost(rank: number) {
   return 50 + rank * 75;
 }
-export function bankRun(p: Profile, r: RunRecord, streak: number, sweet: number) {
+/**
+ * Unlock pacing for the first hunts: each of the first five gives something new, so early
+ * sessions always end with a reward, then the Deeds take over.
+ */
+export const FIRST_HUNTS: Record<number, string> = {
+  1: 'First hunt · +50 Moonsilver for the Altar',
+  2: 'The Sparrow joins your bow rack',
+  3: 'Curses unlocked at the Trail',
+  4: 'Deed upgrades join the card pool',
+  5: 'The Nightreach joins your bow rack',
+};
+const BOW_NAMES: Record<string, string> = {
+  sparrow: 'Sparrow',
+  nightreach: 'Nightreach',
+  letoff: 'Let-Off',
+  oathbreaker: 'Oathbreaker',
+  moonbow: 'Moonbow',
+};
+/** Bank a finished hunt; returns what it unlocked, for the results screen. */
+export function bankRun(p: Profile, r: RunRecord, streak: number, sweet: number): string[] {
+  const unlocks: string[] = [];
   const economy = new EconomyManager();
   economy.set('moonsilver', p.currency);
   economy.credit('moonsilver', r.currency);
@@ -73,14 +93,30 @@ export function bankRun(p: Profile, r: RunRecord, streak: number, sweet: number)
     p.phase = Math.min(3, p.phase + 1);
   } else if (r.outcome === 'Survived Until Dawn') p.phase = Math.max(1, p.phase);
   const unlock = (id: string, condition: boolean) => {
-    if (condition && !p.unlocked.includes(id)) p.unlocked.push(id);
+    if (condition && !p.unlocked.includes(id)) {
+      p.unlocked.push(id);
+      if (!unlocks.some((u) => u.includes(BOW_NAMES[id])))
+        unlocks.push(`${BOW_NAMES[id]} unlocked`);
+    }
   };
+  const n = p.runs.length;
+  if (FIRST_HUNTS[n]) {
+    if (n === 1) p.currency += 50;
+    if (n === 2 && !p.unlocked.includes('sparrow')) p.unlocked.push('sparrow');
+    if (n === 5 && !p.unlocked.includes('nightreach')) p.unlocked.push('nightreach');
+    unlocks.push(FIRST_HUNTS[n]);
+  }
   unlock('sparrow', p.perfects >= 300);
   unlock('nightreach', p.sweetKills >= 500);
   unlock('letoff', p.maxStreak >= 10);
   unlock('oathbreaker', p.bosses.includes('bramble'));
   unlock('moonbow', p.wins > 0);
-  for (const e of r.evolutions) if (!p.discovered.includes(e)) p.discovered.push(e);
+  for (const e of r.evolutions)
+    if (!p.discovered.includes(e)) {
+      p.discovered.push(e);
+      unlocks.push('Evolution recorded in the Log');
+    }
+  return unlocks;
 }
 export function deedProgress(p: Profile, metric: string): number {
   if (metric.startsWith('boss:')) return Number(p.bosses.includes(metric.slice(5)));

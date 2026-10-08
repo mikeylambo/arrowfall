@@ -197,10 +197,17 @@ export function decorateResults(
   evolutions: string[],
   fingerprint: HTMLCanvasElement,
   recap?: Recap,
+  unlocks: string[] = [],
 ) {
   const screen = root.querySelector<HTMLElement>('[data-screen-id="results"]');
   if (!screen) return;
   const header = screen.querySelector('.slu-header')!;
+  if (unlocks.length) {
+    const strip = document.createElement('div');
+    strip.className = 'results-unlocks';
+    strip.innerHTML = unlocks.map((u) => `<span>${escape(u)}</span>`).join('');
+    header.after(strip);
+  }
   if (recap) header.after(recapPanel(recap));
   header.querySelector('p')?.remove();
   const body = document.createElement('div');

@@ -193,6 +193,7 @@ function begin(next: string) {
     view.camera.y = 430;
   }
   view.attach(game, next === 'camp');
+  if (next === 'hunt') resetDeeds();
   // Each bow announces what makes it different as the hunt begins.
   if (next === 'hunt') game.announce(`${game.bow.name} · ${game.bow.signature}`);
   if (next === 'hunt' && !profile.onboarded) coach.begin(game);
@@ -248,7 +249,14 @@ function trail() {
       {
         id: 'nightly',
         label: nightly ? 'Nightly Hunt · On' : 'Nightly Hunt · Off',
-        description: 'A daily seeded forest and card sequence',
+        description: (() => {
+          const best = profile.runs
+            .filter((r) => r.nightly === today())
+            .sort((a, b) => b.time - a.time || b.kills - a.kills)[0];
+          return best
+            ? `Tonight's best: ${fmt(best.time)} · ${best.kills} hunted`
+            : 'A daily seeded forest and card sequence, the same for everyone';
+        })(),
       },
       { id: 'begin', label: 'Begin the Hunt' },
     ],
@@ -306,6 +314,16 @@ function station(id: string) {
       logChoices(profile),
       `${profile.runs.length} recorded hunts`,
       'camp',
+    );
+    // Each recent hunt carries a thumbnail of its build fingerprint (after the menu decorates).
+    requestAnimationFrame(() =>
+      document.querySelectorAll<HTMLElement>('#ui [data-choice-id^="run:"]').forEach((row) => {
+        const r = profile.runs[Number(row.dataset.choiceId!.slice(4))];
+        if (!r) return;
+        const print = fingerprint(r);
+        print.className = 'run-print';
+        row.querySelector('.menu-icon')?.replaceWith(print);
+      }),
     );
     return;
   }
@@ -411,8 +429,13 @@ function endRun() {
     fingerprint: axes,
     evolutions: [...g.evolutions],
     seed: g.seed,
+    build: Object.entries(g.ranks)
+      .filter(([, r]) => r > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8),
+    nightly: nightly ? today() : undefined,
   };
-  bankRun(profile, record, g.maxStreak, g.sweetKills);
+  const unlocks = bankRun(profile, record, g.maxStreak, g.sweetKills);
   persist();
   const results = new ResultsManager().build(
     { kills: g.kills, perfects: g.perfects, shots: g.shots },
@@ -443,8 +466,10 @@ function endRun() {
     record.evolutions.map((id) => EVOLUTIONS.find((e) => e.id === id)?.name ?? id),
     fingerprint(record),
     g.outcome === 'The Hunter Falls' ? recapFor(g) : undefined,
+    unlocks,
   );
 }
+const today = () => new Date().toISOString().slice(0, 10);
 /** Death recap: what killed the hunter, one targeted tip, and how close the next goal was. */
 function recapFor(g: Hunt): Recap {
   const killer = g.killedBy || 'The Hollowmoor',
@@ -889,6 +914,51 @@ function hud(g: Hunt) {
     if (g.rangeWon) persist();
   } else $('hint').textContent = '';
 }
+/** Deed toasts: completions (and near-completions) announced mid-hunt, top right. */
+const toasts = document.createElement('div');
+toasts.id = 'toasts';
+document.body.append(toasts);
+let deedsDone = new Set<string>(),
+  deedsNear = new Set<string>(),
+  deedClock = 0;
+function toast(kind: string, text: string) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind === 'Deed complete' ? 'done' : '');
+  el.innerHTML = `<small>${kind}</small><b></b>`;
+  el.querySelector('b')!.textContent = text;
+  toasts.append(el);
+  setTimeout(() => el.remove(), 4200);
+}
+function resetDeeds() {
+  deedsDone = new Set(
+    DEEDS.filter((d) => deedProgress(profile, d.metric) >= d.target).map((d) => d.id),
+  );
+  deedsNear = new Set();
+}
+function checkDeeds(g: Hunt, dt: number) {
+  deedClock -= dt;
+  if (deedClock > 0) return;
+  deedClock = 0.5;
+  const live = {
+    ...profile,
+    kills: profile.kills + g.kills,
+    perfects: profile.perfects + g.perfects,
+    sweetKills: profile.sweetKills + g.sweetKills,
+    maxStreak: Math.max(profile.maxStreak, g.maxStreak),
+  };
+  for (const d of DEEDS) {
+    if (deedsDone.has(d.id)) continue;
+    const progress = deedProgress(live, d.metric);
+    if (progress >= d.target) {
+      deedsDone.add(d.id);
+      toast('Deed complete', d.name);
+      audio.playSfx('coach.step');
+    } else if (d.target >= 20 && progress / d.target >= 0.9 && !deedsNear.has(d.id)) {
+      deedsNear.add(d.id);
+      toast('Almost there', `${d.name} · ${progress}/${d.target}`);
+    }
+  }
+}
 /** Level-up surge: a full-screen moonlight flash and a big level numeral over the hunt. */
 const surge = document.createElement('div');
 surge.id = 'surge';
@@ -977,6 +1047,7 @@ function tick(now: number) {
     else $('hint').textContent = '';
   }
   if (game && scene !== 'camp') hud(g);
+  if (game && scene === 'hunt' && uiScreen === 'gameplay-placeholder') checkDeeds(g, dt);
   controls.touch.setActive(
     controls.touching && !!game && uiScreen === 'gameplay-placeholder',
     !!game && game.player.focus >= 100,

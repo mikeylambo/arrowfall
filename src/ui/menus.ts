@@ -4,6 +4,9 @@
  * plain buttons; this rebuilds their insides whenever a screen appears, keeping each
  * data-choice-id (and so keyboard, pad and click handling) untouched.
  */
+import { SHEETS } from '../data/art';
+import type { SheetManifest } from '../render/sheets';
+
 const EYEBROW: Record<string, string> = {
   title: '',
   pause: 'The hunt waits',
@@ -54,7 +57,8 @@ function iconFor(screen: string, id: string, disabled: boolean) {
   if (id === 'curses' || id.startsWith('curse:')) return 'moon';
   if (id.startsWith('challenge') || id === 'free' || id.startsWith('range')) return 'target';
   if (id.startsWith('boon:')) return 'altar';
-  if (id.startsWith('entry:') || id.startsWith('run:')) return 'book';
+  if (id.startsWith('entry:') || id.startsWith('run:') || id.startsWith('beast:')) return 'book';
+  if (id.startsWith('nightly:')) return 'calendar';
   if (id.startsWith('deed')) return 'trophy';
   if (id.startsWith('option:')) {
     const k = id.slice(7);
@@ -102,6 +106,10 @@ function decorate(section: HTMLElement) {
     header.prepend(e);
   }
   if (screen === 'results') return;
+  if (screen === 'altar') {
+    // Decorate rows first (pips, costs), then lay them out as a star map.
+    queueMicrotask(() => constellation(section));
+  }
   section.querySelectorAll<HTMLButtonElement>('.slu-choice').forEach((button) => {
     const id = button.dataset.choiceId ?? '';
     const labelEl = button.querySelector('.slu-choice-label'),
@@ -113,6 +121,12 @@ function decorate(section: HTMLElement) {
     const name = split > 0 ? label.slice(0, split) : label,
       value = split > 0 ? label.slice(split + 3) : '';
     const desc = descEl?.textContent ?? '';
+    if (id.startsWith('section:')) {
+      // Section header rows (Hunter's Log): plain heading, no icon or value.
+      button.classList.add('menu-section');
+      button.innerHTML = `<span class="slu-choice-label">${escape(label)}</span>`;
+      return;
+    }
     button.classList.toggle('selected', selected);
     button.classList.toggle('toggle', value === 'On' || value === 'Off');
     button.innerHTML = `${svg(iconFor(screen, id, button.disabled))}
@@ -120,7 +134,35 @@ function decorate(section: HTMLElement) {
         selected ? ' <em class="menu-tag">Equipped</em>' : ''
       }</span>${desc ? `<span class="slu-choice-desc">${escape(desc)}</span>` : ''}</span>
       ${value ? `<span class="menu-value">${valueHtml(value)}</span>` : ''}`;
+    if (id.startsWith('beast:') && name !== 'Unknown presence') void portrait(button, id.slice(6));
   });
+}
+
+/** Bestiary portrait: the creature's front-facing sprite frame, cropped from its sheet. */
+const manifests = new Map<string, Promise<SheetManifest | null>>();
+async function portrait(button: HTMLElement, enemy: string) {
+  const sheet = SHEETS.enemies[enemy];
+  if (!sheet) return;
+  if (!manifests.has(sheet))
+    manifests.set(
+      sheet,
+      fetch(`/art/sprites/${sheet}.json`)
+        .then((r) => (r.ok ? (r.json() as Promise<SheetManifest>) : null))
+        .catch(() => null),
+    );
+  const m = await manifests.get(sheet);
+  const icon = button.querySelector<HTMLElement>('.menu-icon');
+  if (!m || !icon) return;
+  const clip = m.clips.move ?? Object.values(m.clips)[0],
+    row = Math.max(0, m.directions.indexOf(2)),
+    cell = clip.cells[row][0],
+    size = 56,
+    k = size / m.cell;
+  icon.classList.add('portrait');
+  icon.innerHTML = '';
+  icon.style.backgroundImage = `url(/art/sprites/${sheet}-${cell.page}.png)`;
+  icon.style.backgroundSize = `${2048 * k}px ${2048 * k}px`;
+  icon.style.backgroundPosition = `${-cell.x * k}px ${-cell.y * k}px`;
 }
 
 /** Watch the UI root and decorate every screen as it is rendered. */
@@ -131,4 +173,68 @@ export function decorateMenus(root: HTMLElement) {
   };
   new MutationObserver(run).observe(root, { childList: true });
   run();
+}
+
+/**
+ * The Silver Altar as a constellation (GDD 12): boons are stars in five figures (the Bow,
+ * the Harvest, Fate, the Crown) joined by faint lines; owned ranks light the stars.
+ */
+const STARS: Record<string, [number, number]> = {
+  Might: [0.12, 0.3],
+  Vigor: [0.24, 0.12],
+  Swiftness: [0.36, 0.32],
+  'Keen Eye': [0.24, 0.52],
+  Greed: [0.6, 0.12],
+  Growth: [0.74, 0.26],
+  Magnet: [0.88, 0.12],
+  Reroll: [0.56, 0.62],
+  Banish: [0.7, 0.78],
+  Skip: [0.84, 0.62],
+  'Fourth Card': [0.2, 0.84],
+  'Second Wind': [0.38, 0.72],
+};
+const FIGURES = [
+  ['Might', 'Vigor', 'Swiftness', 'Keen Eye', 'Might'],
+  ['Greed', 'Growth', 'Magnet'],
+  ['Reroll', 'Banish', 'Skip', 'Reroll'],
+  ['Fourth Card', 'Second Wind'],
+];
+function constellation(section: HTMLElement) {
+  const list = section.querySelector<HTMLElement>('.slu-choices');
+  if (!list || list.classList.contains('constellation')) return;
+  list.classList.add('constellation');
+  const ns = 'http://www.w3.org/2000/svg',
+    sky = document.createElementNS(ns, 'svg');
+  sky.setAttribute('viewBox', '0 0 100 100');
+  sky.setAttribute('preserveAspectRatio', 'none');
+  sky.classList.add('sky');
+  for (const figure of FIGURES)
+    for (let i = 0; i < figure.length - 1; i++) {
+      const [x1, y1] = STARS[figure[i]],
+        [x2, y2] = STARS[figure[i + 1]],
+        line = document.createElementNS(ns, 'line');
+      line.setAttribute('x1', String(x1 * 100));
+      line.setAttribute('y1', String(y1 * 100));
+      line.setAttribute('x2', String(x2 * 100));
+      line.setAttribute('y2', String(y2 * 100));
+      sky.append(line);
+    }
+  list.prepend(sky);
+  const detail = document.createElement('p');
+  detail.className = 'star-detail';
+  list.after(detail);
+  list.querySelectorAll<HTMLButtonElement>('.slu-choice').forEach((b) => {
+    const name = (b.dataset.choiceId ?? '').slice(5),
+      at = STARS[name];
+    if (!at) return;
+    b.classList.add('star');
+    b.style.left = at[0] * 100 + '%';
+    b.style.top = at[1] * 100 + '%';
+    const on = b.querySelectorAll('.menu-pips i.on').length;
+    b.classList.toggle('lit', on > 0);
+    const show = () =>
+      (detail.textContent = `${name} · ${b.querySelector('.slu-choice-desc')?.textContent ?? ''}`);
+    b.addEventListener('mouseenter', show);
+    b.addEventListener('focus', show);
+  });
 }

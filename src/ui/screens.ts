@@ -6,6 +6,7 @@ import { ENEMIES } from '../data/enemies';
 import type { Hunt } from '../sim/game';
 import type { Profile, RunRecord } from '../sim/types';
 import { BOONS, boonCost } from '../sim/profile';
+import { BESTIARY } from '../data/bestiary';
 export const fmt = (seconds: number) =>
   `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 export function bowChoices(profile: Profile, selected: string) {
@@ -50,26 +51,71 @@ export function altarChoices(p: Profile) {
     };
   });
 }
+/** The Hunter's Log (GDD 12): bestiary, evolution codex, nightly bests, run history. */
 export function logChoices(p: Profile) {
+  const section = (id: string, label: string) => ({ id: 'section:' + id, label, disabled: true });
+  const nightly = new Map<string, RunRecord>();
+  for (const r of p.runs)
+    if (r.nightly) {
+      const best = nightly.get(r.nightly);
+      if (!best || r.time > best.time || (r.time === best.time && r.kills > best.kills))
+        nightly.set(r.nightly, r);
+    }
+  const name = (id: string) =>
+    UPGRADES.find((u) => u.id === id)?.name ?? TOOLS.find((t) => t.id === id)?.name ?? id;
   return [
-    ...ENEMIES.map((e) => ({
-      id: 'entry:' + e.id,
-      label: p.seen.includes(e.id) ? e.name : 'Unknown presence',
-      description: p.seen.includes(e.id)
-        ? `${e.hp} HP · ${e.speed} px/s · ${e.damage} damage`
-        : 'Not yet encountered',
-      disabled: true,
-    })),
+    section(
+      'bestiary',
+      `Bestiary · ${ENEMIES.filter((e) => p.seen.includes(e.id)).length}/${ENEMIES.length}`,
+    ),
+    ...ENEMIES.map((e) => {
+      const seen = p.seen.includes(e.id),
+        b = BESTIARY[e.id];
+      return {
+        id: 'beast:' + e.id,
+        label: seen ? e.name : 'Unknown presence',
+        description: seen
+          ? `${b.behavior} Teaches: ${b.lesson} — ${e.hp} HP · ${e.speed} px/s · ${e.damage} damage. “${b.lore}”`
+          : 'Not yet encountered',
+        disabled: true,
+      };
+    }),
+    section(
+      'codex',
+      `Evolutions · ${EVOLUTIONS.filter((e) => p.discovered.includes(e.id)).length}/${EVOLUTIONS.length}`,
+    ),
     ...EVOLUTIONS.map((e) => ({
       id: 'entry:' + e.id,
       label: p.discovered.includes(e.id) ? e.name : 'Undiscovered evolution',
-      description: p.discovered.includes(e.id) ? e.effect : e.ingredients[0] + ' + ???',
+      description: p.discovered.includes(e.id)
+        ? `${e.effect} — ${e.ingredients.map(name).join(' + ')}`
+        : name(e.ingredients[0]) + ' + ???',
       disabled: true,
     })),
-    ...p.runs.slice(0, 8).map((r, i) => ({
+    section('nightly', 'Nightly Hunts · your best each night'),
+    ...(nightly.size
+      ? [...nightly.entries()].slice(0, 7).map(([date, r]) => ({
+          id: 'nightly:' + date,
+          label: `${date} · ${fmt(r.time)}`,
+          description: `${r.outcome} · ${r.kills} hunted · ${Math.round((r.perfects / Math.max(1, r.shots)) * 100)}% perfect`,
+          disabled: true,
+        }))
+      : [
+          {
+            id: 'nightly:none',
+            label: 'No nightly hunts yet',
+            description:
+              'Turn on Nightly Hunt at the Trail: one seeded forest a day, the same for everyone.',
+            disabled: true,
+          },
+        ]),
+    section('runs', 'Recent hunts'),
+    ...p.runs.slice(0, 10).map((r, i) => ({
       id: 'run:' + i,
       label: `${r.outcome} · ${fmt(r.time)}`,
-      description: `${r.kills} kills · ${Math.round((r.perfects / Math.max(1, r.shots)) * 100)}% perfect · ${r.currency} Moonsilver`,
+      description: `${BOWS.find((b) => b.id === r.bow)?.name ?? r.bow} · ${r.kills} hunted · ${Math.round((r.perfects / Math.max(1, r.shots)) * 100)}% perfect · ${r.currency} Moonsilver${
+        r.build?.length ? ' — ' + r.build.map(([id, rank]) => `${name(id)} ${rank}`).join(', ') : ''
+      }${r.evolutions.length ? ' · ' + r.evolutions.map((id) => EVOLUTIONS.find((e) => e.id === id)?.name ?? id).join(', ') : ''}`,
       disabled: true,
     })),
   ];

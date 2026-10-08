@@ -130,6 +130,10 @@ export interface RunRecord {
   fingerprint: number[];
   evolutions: string[];
   seed: number;
+  /** Upgrades held at the end (id, rank), strongest first; for the Hunter's Log. */
+  build?: [string, number][];
+  /** Date (YYYY-MM-DD) when this was a Nightly Hunt. */
+  nightly?: string;
 }
 export interface Profile {
   version: number;
