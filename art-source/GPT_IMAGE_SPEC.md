@@ -164,6 +164,38 @@ If you have energy for one extra: `camp-banner.png`, a tall pole with a tattered
 
 ---
 
+## Batch 8 — Enemies, repainted (replaces the all-red characters)
+
+**Why:** every enemy was designed "entirely blood-red", so at play size they are flat red cutouts against the painted world: fur, cloth, bone and armour all disappear. Red stays, but as the **threat accent** (eyes, wounds, cloth trim, glowing cracks, and the red outline I add in rendering), on bodies painted in the world's own dark, moonlit materials. Silhouettes stay exactly as they are; only the surface changes, so each type stays recognisable by shape.
+
+**Pipeline:** each sheet goes to Meshy multi-image-to-3D, gets rigged and animated, and is rendered into 8-direction sprite sheets like the current ones. So each image must be a **turnaround**: the same character three times in a row (**front, side facing right, back**), same pose, same scale, feet on one line.
+
+**Format:** 1536×1024 PNG (landscape), **plain flat light-grey background**, no ground, no shadow, no text, full body with feet visible. Arms slightly away from the body (A-pose) for humanoids; quadrupeds standing square, all four legs visible.
+
+**Style block** (use instead of the earlier one): _"Hand-painted fantasy game character turnaround sheet, front view, side view and back view of the same character in a row, chibi proportions about 2.5 heads tall, bold dark outline, painted texture with soft moonlit shading from the upper left, muted cold palette of charcoal, slate, bone and dark leather, blood-red used only as a small accent (eyes, wounds, cloth trim, glowing cracks), plain flat light grey background, no ground, no shadow, no text."_
+
+| File | Prompt (after the style block) |
+| --- | --- |
+| `enemy-husk.png` | A hunched shambling husk: round lumpy body of grey-brown dead flesh and stitched burlap, long dragging arms, hollow eye holes glowing blood red, a red-stained rag around the waist. Cute-creepy. |
+| `enemy-hound.png` | A lean moonhound, quadruped: low long body, charcoal fur with silver-blue moonlit tips, wedge snout, smoky trailing tail, glowing red eyes and a red-raw scar along the flank. |
+| `enemy-poacher.png` | A gaunt poacher archer: ragged dark leather hood and cloak, bone-white skull mask, a crude bow in the left hand, a quiver of black-fletched arrows, a blood-red sash and red eye glints in the mask. |
+| `enemy-stag.png` | A hollow stag, quadruped: emaciated deer with dark matted hide, exposed bone-white ribs, a bleached skull face with huge antlers, embers of red light inside the ribcage and eye sockets. |
+| `enemy-knight.png` | A barrow knight: squat undead knight in rusted blackened iron plate with horned helm, a tall battered tower shield, a short sword, a tattered blood-red tabard, red light in the visor slit. |
+| `enemy-changeling.png` | A changeling: wiry fey creature of dark bark-grey skin with jagged crystal spikes along the head and back, long clawed arms, glowing red eyes and red light in the cracks between the spikes. |
+
+**Bosses (optional, same format):**
+
+| File | Prompt (after the style block) |
+| --- | --- |
+| `boss-bramble.png` | The Bramble King: a towering mass of black thorny vines and dark wood in a humanoid shape, a crown of bleached antler and bone, blood-red thorns and a red glow deep inside the tangle. Front view only is fine (he never turns). |
+| `boss-hag.png` | The Night Hag: a hunched crone in layered dark grey rags, long thin arms, a pale grey-green face with a hooked nose, holding a lantern that glows violet, red eyes, a red cord at her waist. |
+
+The Black Shuck and the Huntmaster reuse the hound and poacher models (darker, crowned), so they follow automatically. The Wisp and the Barrow Worm are built in code and will be recoloured to match.
+
+**Note for me:** Meshy needs an API key in this environment (or a run of the Meshy step on your machine). The old task IDs are kept, so the current sprites stay as the fallback until the new ones are rendered.
+
+---
+
 ## What happens next
 
 For the remaining batches: drop the PNGs (or a zip) here in chat as before. U1/U7 slot straight into the icon atlas; batch 6 replaces the forest sprites; batch 7 replaces the camp props, with trophies, bows and pennants still added as you progress.
