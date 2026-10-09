@@ -3,7 +3,8 @@ import type { Enemy, Arrow, Threat } from './types';
 import type { Cover } from './world';
 import { BOSSES } from '../data/bosses';
 import { T, distance, len } from '../data/tuning';
-import { drawProfile, drawDamage } from './bow';
+import { drawDamage } from './bow';
+import { arrowSpeed, bowDraw, critChance, critMultiplier, damageMultiplier, pierce } from './stats';
 const starTargets: Enemy[] = [];
 const seekTargets: Enemy[] = [];
 /** A secondary arrow (split shards, echoes): flies straight, no pierce, inherits on-hit rules. */
@@ -66,25 +67,11 @@ export function loose(
   countShot = true,
 ) {
   const p = g.player,
-    profile = drawProfile(
-      g.bow,
-      g.rank('quick-nock'),
-      g.rank('steady-hand'),
-      g.rank('heavy-bow'),
-      g.rank('swift-bow'),
-    );
+    profile = bowDraw(g);
   const full = p.draw >= profile.full || source !== 'bow',
-    crit =
-      perfect ||
-      g.rng.next() < 0.05 + 0.05 * g.rank('eagle-eye') + 0.03 * (g.profile.boons['Keen Eye'] || 0);
-  let damage =
-    T.damage *
-    (countShot ? drawDamage(p.draw, profile.full) : 1) *
-    (1 +
-      0.12 * g.rank('draw-strength') +
-      0.04 * (g.profile.boons.Might || 0) +
-      0.25 * g.rank('heavy-bow'));
-  damage *= crit ? (perfect && g.bow.id === 'letoff' ? 3 : 2) + 0.2 * g.rank('broadhead') : 1;
+    crit = perfect || g.rng.next() < critChance(g);
+  let damage = T.damage * (countShot ? drawDamage(p.draw, profile.full) : 1) * damageMultiplier(g);
+  damage *= crit ? critMultiplier(g, perfect) : 1;
   // Perfect streaks escalate: each tier reached adds to perfect damage.
   if (perfect) damage *= 1 + T.streakBonus * T.streakTiers.filter((n) => p.streak >= n).length;
   damage *= 1 + 0.04 * g.chain + (p.apex > 0 ? 0.15 : 0);
@@ -119,7 +106,7 @@ export function loose(
   const spawn = (x: number, y: number, a: number, origin = source) => {
     const arrow = g.arrows.acquire();
     if (!arrow) return;
-    const speed = T.arrowSpeed * (1 + 0.15 * g.rank('taut-string')) * (perfect ? 1.25 : 1);
+    const speed = arrowSpeed(g) * (perfect ? 1.25 : 1);
     const sway =
       source === 'bow' && p.draw > profile.full + profile.window && g.bow.id !== 'letoff'
         ? Math.sin(g.time * 30) * Math.min(0.18, (p.draw - profile.full - profile.window) * 0.5)
@@ -131,7 +118,7 @@ export function loose(
     arrow.vy = Math.sin(a) * speed;
     arrow.life = (T.arrowRange * (1 + 0.2 * g.rank('longshaft'))) / speed;
     arrow.damage = damage;
-    arrow.pierce = g.rank('piercer') + (perfect ? 1 : 0) + (g.bow.id === 'nightreach' ? 1 : 0);
+    arrow.pierce = pierce(g) + (perfect ? 1 : 0);
     arrow.perfect = perfect;
     arrow.full = full;
     arrow.crit = crit;

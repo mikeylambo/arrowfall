@@ -2235,9 +2235,13 @@ html.touch .station.near::after {
   grid-row: 1 / span 3;
 }
 .build-panel {
-  padding: 4px 0 0 24px;
+  padding: 4px 4px 0 24px;
   border-left: 1px solid #52688433;
   min-width: 0;
+  /* Long builds scroll inside the panel rather than off the screen. */
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 .build-panel h3 {
   margin: 4px 0 12px;
@@ -2501,4 +2505,45 @@ html.touch .station.near::after {
   .playtesting #playtest-note {
     top: calc(env(safe-area-inset-top) + 190px);
   }
+}
+
+/* Pause build panel: the hunter's stats and this hunt's damage sources. */
+.build-stats {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+.build-stats dt {
+  color: #8fa3bd;
+}
+.build-stats dd {
+  margin: 0;
+  color: #e6efff;
+  font-variant-numeric: tabular-nums;
+}
+.build-sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+.build-sources li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 3px;
+}
+.build-sources b {
+  font-weight: 500;
+  color: #e6efff;
+  font-variant-numeric: tabular-nums;
+}
+.build-sources i {
+  grid-column: 1 / -1;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #9fb7d6 var(--share), #ffffff14 var(--share));
 }

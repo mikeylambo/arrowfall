@@ -7,6 +7,17 @@ import type { Hunt } from '../sim/game';
 import { UPGRADES } from '../data/upgrades';
 import { EVOLUTIONS } from '../data/evolutions';
 import { TOOLS, toolEffect, toolEffectText } from '../data/tools';
+import { T } from '../data/tuning';
+import {
+  arrowSpeed,
+  bowDraw,
+  critChance,
+  critMultiplier,
+  damageMultiplier,
+  moveMultiplier,
+  pickupRadius,
+  pierce,
+} from '../sim/stats';
 
 type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 export interface Card {
@@ -302,6 +313,59 @@ function recapPanel(r: Recap) {
 }
 
 /** Pause: the run's build at a glance (bow, upgrades with ranks, evolutions owned and near). */
+/** Damage sources by their in-game names (arrow sources first, then tools and statuses). */
+const SOURCE_NAMES: Record<string, string> = {
+  bow: 'Arrows',
+  deadeye: 'Deadeye',
+  rain: 'Arrow rain',
+  echo: 'Echo Shot',
+  phantom: 'Phantom arrows',
+  status: 'Burn, bleed and venom',
+};
+/**
+ * The hunter's numbers right now (sim/stats.ts, the same formulas combat uses), and where this
+ * hunt's damage has come from.
+ */
+function statsBlock(g: Hunt) {
+  const draw = bowDraw(g),
+    pct = (v: number) => `${Math.round(v * 100)}%`,
+    rows: [string, string][] = [
+      ['Damage', String(Math.round(T.damage * damageMultiplier(g)))],
+      ['Crit', `${pct(critChance(g))} · ×${critMultiplier(g).toFixed(1)}`],
+      ['Full draw', `${Math.round(draw.full * 1000)} ms`],
+      ['Perfect (crits)', `${Math.round(draw.window * 1000)} ms`],
+      ['Arrow speed', `${Math.round(arrowSpeed(g))}`],
+      ['Pierce', String(pierce(g))],
+      ['Move speed', pct(moveMultiplier(g))],
+      ['Pickup radius', `${Math.round(pickupRadius(g))}`],
+      ['Health', `${Math.ceil(g.player.hp)} / ${g.player.maxHp}`],
+      ['Dodges', String(T.dodgeCharges)],
+      ['Deadeye marks', String(g.bow.marks)],
+    ];
+  const total = Object.values(g.damageSources).reduce((a, b) => a + b, 0),
+    sources = Object.entries(g.damageSources)
+      .filter(([, d]) => d > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  const label = (id: string) =>
+    SOURCE_NAMES[id] ??
+    UPGRADES.find((u) => u.id === id)?.name ??
+    TOOLS.find((t) => t.id === id)?.name ??
+    EVOLUTIONS.find((e) => e.id === id)?.name ??
+    id.charAt(0).toUpperCase() + id.slice(1);
+  return `<h4>Stats</h4><dl class="build-stats">${rows
+    .map(([k, v]) => `<dt>${k}</dt><dd>${escape(v)}</dd>`)
+    .join('')}</dl>${
+    sources.length && g.time > 5
+      ? `<h4>Damage this hunt</h4><ul class="build-sources">${sources
+          .map(
+            ([id, d]) =>
+              `<li><span>${escape(label(id))}</span><b>${Math.round(d / g.time)}/s</b><i style="--share:${(d / total) * 100}%"></i></li>`,
+          )
+          .join('')}</ul>`
+      : ''
+  }`;
+}
 export function buildPanel(g: Hunt) {
   const el = document.createElement('div');
   el.className = 'build-panel';
@@ -337,6 +401,7 @@ export function buildPanel(g: Hunt) {
             .join('')}</div>`
         : ''
     }
+    ${statsBlock(g)}
     ${
       near.length
         ? `<h4>Within reach</h4><ul class="build-near">${near

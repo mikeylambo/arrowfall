@@ -10,7 +10,8 @@ import { BOSSES } from '../data/bosses';
 import { ENEMIES, ELITES } from '../data/enemies';
 import { EVENTS } from '../data/events';
 import { makeWorld, blockedMove } from './world';
-import { drawProfile, classifyDraw } from './bow';
+import { classifyDraw } from './bow';
+import { bowDraw, moveMultiplier, pickupRadius } from './stats';
 import { updateEnemies, updateThreats, updateBoss } from './enemies';
 import { loose, updateArrows, damageEnemy, applyEvolutionRules } from './combat';
 import type {
@@ -280,7 +281,8 @@ export class Hunt {
       predator: 0,
       apex: 0,
     };
-    this.rerolls = profile.boons.Reroll || 0;
+    // One reroll every hunt; each Altar Reroll rank adds one.
+    this.rerolls = 1 + (profile.boons.Reroll || 0);
     this.banishes = profile.boons.Banish || 0;
     this.skips = profile.boons.Skip || 0;
     if (practice) {
@@ -589,13 +591,7 @@ export class Hunt {
       p[key] = Math.max(0, p[key] - dt);
     this.chainTime -= dt;
     if (this.chainTime <= 0) this.chain = 0;
-    const profile = drawProfile(
-      this.bow,
-      this.rank('quick-nock'),
-      this.rank('steady-hand'),
-      this.rank('heavy-bow'),
-      this.rank('swift-bow'),
-    );
+    const profile = bowDraw(this);
     // Dodge charges recharge one at a time.
     if (p.charges < T.dodgeCharges) {
       p.cooldown -= dt;
@@ -643,7 +639,7 @@ export class Hunt {
       const drawMove = p.draw > 0 ? this.bow.mobility : 1;
       let speed =
         T.speed *
-        (1 + 0.08 * this.rank('lightfoot') + 0.04 * (this.profile.boons.Swiftness || 0)) *
+        moveMultiplier(this) *
         (p.wind > 0 ? 1.2 : 1) *
         (p.sprint > 0 ? 1 + T.sprintBoost : 1) *
         (p.predator > 0 ? 1 + 0.03 * this.rank('predator') * 5 : 1) *
@@ -1040,7 +1036,7 @@ export class Hunt {
   }
   updatePickups(dt: number) {
     const p = this.player,
-      r = 90 * (1 + 0.2 * (this.profile.boons.Magnet || 0) + 0.3 * this.rank('moonpull'));
+      r = pickupRadius(this);
     for (const q of this.pickups.items)
       if (q.active) {
         const dx = q.x - p.x,
