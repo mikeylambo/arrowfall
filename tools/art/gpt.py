@@ -207,6 +207,8 @@ ICON_SHEETS = {
     'U4': ['chain-kill', 'last-arrow', 'ricochet', 'splitshot', 'starfall', 'moonseeker', 'echo-shot', 'still-water', 'briar-shot'],
     'U5': ['lifedraw', 'moonraven', 'thornsnare', 'lantern', 'boon:Might', 'boon:Vigor', 'boon:Swiftness', 'boon:Keen Eye', 'boon:Greed'],
     'U6': ['boon:Growth', 'boon:Magnet', 'boon:Reroll', 'boon:Banish', 'boon:Skip', 'boon:Fourth Card', 'boon:Second Wind', None, None],
+    # U8: the items added after round 2 (picked up as soon as the sheet lands).
+    'U8': ['moonpull', 'moonblades', 'totem', 'frostward', 'horn', None, None, None, None],
     'E1': ['barrage', 'worldpiercer', 'deadshot', 'hellfire', 'frostbite', 'thunderstorm', 'phantom-hunt', 'red-harvest', 'apex-hunter'],
 }
 NAVY = np.array([7, 11, 22], np.float32)

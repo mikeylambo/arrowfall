@@ -155,6 +155,16 @@ export class Vfx {
         this.bloom(e.x, e.y, RED, JUICE.deathFlash, 0.5, 1.1, 0.85);
         this.ring(e.x, e.y, RED, 0.28, 0.25, 0.9, 0.8);
         this.sparks(e.x, e.y, 6, RED, 240, 0.26);
+      } else if (id === 'tool.ward') {
+        // Frost Ward: a pale ice ring out to the pulse radius.
+        this.ring(e.x, e.y, 0xbfe6ff, 0.45, 0.3, e.value / 40, 0.9);
+        this.bloom(e.x, e.y, 0x9fd8ff, 0.35, 0.5, e.value / 60, 0.5);
+      } else if (id === 'tool.horn') {
+        // Hunting Horn: two quick silver shock rings.
+        this.ring(e.x, e.y, SILVER, 0.35, 0.4, e.value / 40, 1);
+        this.ring(e.x, e.y, SILVER, 0.5, 0.2, (e.value / 40) * 0.7, 0.6);
+      } else if (id === 'tool.totem.place') {
+        this.ring(e.x, e.y, SILVER, 0.3, 0.2, 1, 0.8);
       } else if (id === 'enemy.elite.kill') {
         this.ring(e.x, e.y, ELITE, 0.4, 0.4, 1.6, 0.9);
       } else if (id === 'bow.perfect') {

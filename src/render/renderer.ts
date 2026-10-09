@@ -183,6 +183,9 @@ export class View {
   readonly footShadow = new Sprite();
   weakPoint = new Sprite();
   raven = new Sprite();
+  /** Moonblades orbiting the hunter and Volley Totems in the world (positions from the sim). */
+  bladeSprites: Sprite[] = [];
+  totemSprites: Sprite[] = [];
   ghostSprites: Sprite[] = [];
   world!: WorldDressing;
   /** Additive light on the ground: the hunter's moonlight, glowing arrows, lantern, well, shrine. */
@@ -298,6 +301,9 @@ export class View {
     this.raven.anchor.set(0.5);
     this.raven.scale.set(0.45);
     this.effects.addChild(this.raven);
+    this.bladeSprites = this.pool(4, this.art.blade, this.effects);
+    this.totemSprites = this.pool(3, this.art.totem, this.actors);
+    for (const t of this.totemSprites) t.anchor.set(0.5, 0.85);
     for (let i = 0; i < 3; i++) {
       const s = this.sprite(this.art.hunter, this.actors);
       s.tint = C.phantom;
@@ -1092,10 +1098,16 @@ export class View {
         s = this.pickupSprites[i];
       s.visible = q.active && !(this.lowPower && i & 1);
       if (q.active) {
-        s.texture = this.art[q.kind === 2 ? 'berry' : 'xp'];
+        s.texture = this.art[q.kind === 3 ? 'cache' : q.kind === 2 ? 'berry' : 'xp'];
         s.position.set(q.x, q.y);
-        s.scale.set(0.55 + 0.04 * Math.sin(g.realTime * 3 + i));
-        s.tint = q.kind === 2 ? 0xffffff : q.kind === 1 ? C.elite : C.silver;
+        s.scale.set(
+          q.kind === 3
+            ? 0.9 + 0.08 * Math.sin(g.realTime * 4)
+            : 0.55 + 0.04 * Math.sin(g.realTime * 3 + i),
+        );
+        s.tint = q.kind >= 2 ? 0xffffff : q.kind === 1 ? C.elite : C.silver;
+        // A cache is never thinned out by low-power mode.
+        if (q.kind === 3) s.visible = true;
       }
     }
     for (let i = 0; i < g.particles.items.length; i++) {
@@ -1205,6 +1217,23 @@ export class View {
         this.raven.scale.set(0.45);
       }
     }
+    this.bladeSprites.forEach((s, i) => {
+      const b = g.blades[i];
+      s.visible = !!b;
+      if (!b) return;
+      s.position.set(b.x, b.y);
+      // Each crescent faces along its orbit, cutting edge outward.
+      s.rotation = Math.atan2(b.y - p.y, b.x - p.x) - Math.PI / 2;
+    });
+    this.totemSprites.forEach((s, i) => {
+      const t = g.totems[i];
+      s.visible = !!t;
+      if (!t) return;
+      s.position.set(t.x, t.y);
+      // Fades over its last second.
+      s.alpha = Math.min(1, t.life);
+      s.scale.set(1.15);
+    });
     for (const slot of this.numberSlots) {
       slot.life -= realDt;
       slot.text.visible = slot.life > 0;

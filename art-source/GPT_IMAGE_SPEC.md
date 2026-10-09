@@ -164,6 +164,14 @@ If you have energy for one extra: `camp-banner.png`, a tall pole with a tattered
 
 ---
 
+## Batch 4b — U8 icons (new upgrade and tools)
+
+Same format and rendering as the U1 redo (3×3 grid, each icon on its own solid navy square, no gaps, no checkerboard). Five cells; leave the last four plain navy.
+
+- **U8:** Moonpull (motes of moonlight streaming into an open palm), Moonblades (three silver crescent blades circling a point), Volley Totem (a carved wooden post with a moon on top and a bow lashed across it, an arrow leaving it), Frost Ward (a ring of ice shards bursting outward from a centre), Hunting Horn (a curled hunting horn with sound rings)
+
+---
+
 ## Batch 8 — Enemies, repainted (replaces the all-red characters)
 
 **Why:** every enemy was designed "entirely blood-red", so at play size they are flat red cutouts against the painted world: fur, cloth, bone and armour all disappear. Red stays, but as the **threat accent** (eyes, wounds, cloth trim, glowing cracks, and the red outline I add in rendering), on bodies painted in the world's own dark, moonlit materials. Silhouettes stay exactly as they are; only the surface changes, so each type stays recognisable by shape.

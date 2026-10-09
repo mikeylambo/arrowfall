@@ -271,6 +271,72 @@ export function bakeArt() {
     },
     32,
   );
+  // Moonblades: a silver crescent with a bright cutting edge.
+  bake(
+    'blade',
+    (c) => {
+      glow(c, PALETTE.silver, 10);
+      c.fillStyle = '#c9d6ea';
+      c.beginPath();
+      c.arc(0, 0, 16, -0.2, Math.PI + 0.2);
+      c.arc(0, -6, 12, Math.PI + 0.1, -0.1, true);
+      c.closePath();
+      c.fill();
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.arc(0, 0, 16, 0.1, Math.PI - 0.1);
+      c.stroke();
+    },
+    48,
+  );
+  // Volley Totem: a carved post with a moon on top and a strung bow across it.
+  bake(
+    'totem',
+    (c) => {
+      c.translate(0, 10);
+      glow(c, '#000000', 6);
+      path(c, [-6, 28, -5, -24, 5, -24, 6, 28], '#2a2230', '#05080f', 2.5);
+      c.shadowBlur = 0;
+      c.strokeStyle = '#5e5068';
+      c.lineWidth = 1.5;
+      for (const y of [-12, 2, 16]) {
+        c.beginPath();
+        c.moveTo(-5, y);
+        c.lineTo(5, y);
+        c.stroke();
+      }
+      c.strokeStyle = '#c4d4ff';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.arc(-16, -8, 18, -0.9, 0.9);
+      c.stroke();
+      glow(c, PALETTE.silver, 10);
+      c.fillStyle = PALETTE.silver;
+      c.beginPath();
+      c.arc(0, -32, 7, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = '#2a2230';
+      c.beginPath();
+      c.arc(3, -34, 6, 0, Math.PI * 2);
+      c.fill();
+    },
+    64,
+    96,
+  );
+  // Moon Cache (elite drop): a small iron-bound coffer leaking violet light.
+  bake(
+    'cache',
+    (c) => {
+      glow(c, PALETTE.focus, 16);
+      path(c, [-14, -2, 14, -2, 14, 12, -14, 12], '#2a2440', '#d6c8ff', 2);
+      path(c, [-14, -2, -11, -10, 11, -10, 14, -2], '#3a3058', '#d6c8ff', 2);
+      c.shadowBlur = 0;
+      c.fillStyle = '#ffe9a8';
+      c.fillRect(-2, -3, 4, 6);
+    },
+    64,
+  );
   bake(
     'raven',
     (c) => {

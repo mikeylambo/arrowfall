@@ -1373,6 +1373,7 @@ const CAPTIONS: Record<string, string> = {
   'boss.bramble.wall': '[Roots tear the earth]',
   'boss.hag.threefold': '[The Hag laughs, threefold]',
   'tool.snare.trigger': '[Snare snaps]',
+  'tool.horn': '[Your horn blasts]',
   'player.hurt': '[Hit]',
 };
 /** Haptic weight per event: [strength 0..1, milliseconds]. */

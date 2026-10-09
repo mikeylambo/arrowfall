@@ -7,8 +7,11 @@ import { drawDamage } from './bow';
 import { arrowSpeed, bowDraw, critChance, critMultiplier, damageMultiplier, pierce } from './stats';
 const starTargets: Enemy[] = [];
 const seekTargets: Enemy[] = [];
-/** A secondary arrow (split shards, echoes): flies straight, no pierce, inherits on-hit rules. */
-function shard(
+/**
+ * A secondary arrow (split shards, echoes, totem shots): flies straight, no pierce, inherits
+ * on-hit rules.
+ */
+export function shard(
   g: Hunt,
   x: number,
   y: number,
@@ -16,6 +19,7 @@ function shard(
   damage: number,
   source: string,
   skip = -1,
+  life = 0.45,
 ) {
   const arrow = g.arrows.acquire();
   if (!arrow) return;
@@ -24,7 +28,7 @@ function shard(
   arrow.y = y;
   arrow.vx = Math.cos(angle) * speed;
   arrow.vy = Math.sin(angle) * speed;
-  arrow.life = 0.45;
+  arrow.life = life;
   arrow.damage = damage;
   arrow.pierce = 0;
   arrow.perfect = false;

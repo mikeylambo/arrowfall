@@ -13,7 +13,7 @@ import { makeWorld, blockedMove } from './world';
 import { classifyDraw } from './bow';
 import { bowDraw, moveMultiplier, pickupRadius } from './stats';
 import { updateEnemies, updateThreats, updateBoss } from './enemies';
-import { loose, updateArrows, damageEnemy, applyEvolutionRules } from './combat';
+import { loose, updateArrows, damageEnemy, applyEvolutionRules, shard } from './combat';
 import type {
   Input,
   Enemy,
@@ -217,6 +217,14 @@ export class Hunt {
   groveRest = 0;
   markClock = 0;
   toolClock = 0;
+  /** Moonblades: orbit angle and where each blade is this tick (presentation reads these). */
+  bladeAngle = 0;
+  readonly blades: { x: number; y: number }[] = [];
+  /** Volley Totems standing in the world. */
+  readonly totems: { x: number; y: number; life: number; clock: number }[] = [];
+  totemClock = 0;
+  wardClock = 0;
+  hornClock = 0;
   snareClock = 0;
   snareHeld = 0;
   banner = '';
@@ -969,6 +977,16 @@ export class Hunt {
     if (this.kills % 10 === 0) this.earned++;
     if (this.rank('lifedraw') && this.kills % 15 === 0)
       this.player.hp = Math.min(this.player.maxHp, this.player.hp + 2 * this.rank('lifedraw'));
+    // Elites sometimes leave a Moon Cache: a free card choice, a reroll or Moonsilver.
+    if (e.elite >= 0 && this.rng.next() < 0.4) {
+      const cache = this.pickups.acquire();
+      if (cache) {
+        cache.x = e.x - 10;
+        cache.y = e.y;
+        cache.value = 0;
+        cache.kind = 3;
+      }
+    }
     if (e.elite >= 0) {
       this.earned += 5;
       this.player.focus = Math.min(100, this.player.focus + T.focusElite);
@@ -1050,7 +1068,8 @@ export class Hunt {
             if (q.kind === 2) {
               p.hp = Math.min(p.maxHp, p.hp + q.value);
               this.emit('pickup.heal');
-            } else {
+            } else if (q.kind === 3) this.openCache();
+            else {
               this.gainXp(q.value);
               this.emit('pickup.xp', q.x, q.y);
             }
@@ -1058,8 +1077,24 @@ export class Hunt {
         }
       }
   }
+  /** A Moon Cache: half the time a free card choice, otherwise a reroll or Moonsilver. */
+  openCache() {
+    const roll = this.rng.next();
+    this.emit('relic.open');
+    if (roll < 0.5 && !this.outcome) {
+      this.announce('Moon Cache · choose a gift');
+      this.offer();
+    } else if (roll < 0.8) {
+      this.rerolls++;
+      this.announce('Moon Cache · +1 reroll');
+    } else {
+      this.earned += 10;
+      this.announce('Moon Cache · +10 Moonsilver');
+    }
+  }
   updateTools(dt: number) {
     const p = this.player;
+    this.updateNewTools(dt);
     this.toolClock -= dt;
     this.snareClock -= dt;
     const raven = this.rank('moonraven');
@@ -1115,6 +1150,97 @@ export class Hunt {
           damageEnemy(this, e, dps * dt, undefined, 'lantern');
         }
       }
+    }
+  }
+  /** Moonblades, Volley Totems, Frost Ward and the Hunting Horn (numbers in data/tools.ts). */
+  updateNewTools(dt: number) {
+    const p = this.player;
+    const blades = this.rank('moonblades');
+    this.blades.length = 0;
+    if (blades) {
+      const s = TOOL_STATS.moonblades(blades);
+      this.bladeAngle += dt * 2.6;
+      for (let i = 0; i < s.blades; i++) {
+        const a = this.bladeAngle + (i / s.blades) * Math.PI * 2,
+          bx = p.x + Math.cos(a) * s.orbit,
+          by = p.y + Math.sin(a) * s.orbit;
+        this.blades.push({ x: bx, y: by });
+        const n = this.hash.query(bx, by, 26, near);
+        for (let k = 0; k < n; k++) {
+          const e = near[k];
+          if (e.active && distance(e, { x: bx, y: by }) < 26 + e.r)
+            damageEnemy(this, e, s.dps * dt, undefined, 'moonblades');
+        }
+      }
+    }
+    const totem = this.rank('totem');
+    if (totem) {
+      const s = TOOL_STATS.totem(totem);
+      this.totemClock -= dt;
+      if (this.totemClock <= 0 && this.totems.length < s.totems) {
+        this.totemClock = 6;
+        this.totems.push({ x: p.x, y: p.y, life: s.life, clock: 0 });
+        this.emit('tool.totem.place', p.x, p.y);
+      }
+      for (let i = this.totems.length - 1; i >= 0; i--) {
+        const t = this.totems[i];
+        t.life -= dt;
+        if (t.life <= 0) {
+          this.totems.splice(i, 1);
+          continue;
+        }
+        if ((t.clock -= dt) > 0) continue;
+        const n = this.hash.query(t.x, t.y, 420, near);
+        let target: Enemy | null = null;
+        for (let k = 0; k < n; k++) {
+          const e = near[k];
+          if (e.active && (!target || distance(e, t) < distance(target, t))) target = e;
+        }
+        if (target && distance(target, t) < 420) {
+          t.clock = s.every;
+          shard(
+            this,
+            t.x,
+            t.y - 30,
+            Math.atan2(target.y - t.y + 30, target.x - t.x),
+            s.damage,
+            'totem',
+            -1,
+            0.6,
+          );
+        }
+      }
+    } else this.totems.length = 0;
+    const ward = this.rank('frostward');
+    if (ward && (this.wardClock -= dt) <= 0) {
+      const s = TOOL_STATS.frostward(ward);
+      this.wardClock = s.every;
+      const n = this.hash.query(p.x, p.y, s.radius, near);
+      for (let k = 0; k < n; k++) {
+        const e = near[k];
+        if (!e.active || distance(e, p) > s.radius) continue;
+        e.slow = Math.max(e.slow, 2);
+        damageEnemy(this, e, s.damage, undefined, 'frostward');
+      }
+      this.emit('tool.ward', p.x, p.y, s.radius);
+    }
+    const horn = this.rank('horn');
+    if (horn && (this.hornClock -= dt) <= 0) {
+      const s = TOOL_STATS.horn(horn);
+      this.hornClock = s.every;
+      const n = this.hash.query(p.x, p.y, s.radius, near);
+      for (let k = 0; k < n; k++) {
+        const e = near[k];
+        if (!e.active || e.boss >= 0) continue;
+        const dx = e.x - p.x,
+          dy = e.y - p.y,
+          d = len(dx, dy) || 1;
+        if (d > s.radius) continue;
+        const push = 40 + 140 * (1 - d / s.radius);
+        e.x += (dx / d) * push;
+        e.y += (dy / d) * push;
+      }
+      this.emit('tool.horn', p.x, p.y, s.radius);
     }
   }
   /** Perf gate scene: tops the field up to `enemies` crowd members and `arrows` live arrows. */

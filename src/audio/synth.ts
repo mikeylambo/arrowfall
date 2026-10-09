@@ -193,6 +193,15 @@ export class Synth implements AudioSystem {
       // Full Moon attack sting: a cold, rising fifth over a low swell.
       this.tone(220, 0.9, 'triangle', 0.07, 'sfx', 1.5);
       setTimeout(() => this.tone(329.63, 0.8, 'sine', 0.06, 'sfx', 1.4), 120);
+    } else if (id === 'tool.ward') {
+      // Frost Ward: a cold glassy shimmer.
+      this.tone(1318.5, 0.35, 'sine', 0.05, 'sfx', 0.8);
+      this.noise(0.25, 0.04);
+    } else if (id === 'tool.horn') {
+      // Hunting Horn (the tool): one short low blast, lighter than the swarm's horn.
+      this.tone(130.81, 0.45, 'sawtooth', 0.06, 'sfx', 1.03);
+    } else if (id === 'tool.totem.place') {
+      this.tone(196, 0.15, 'triangle', 0.06, 'sfx', 0.9);
     } else if (id === 'pace.lull') {
       this.tone(196, 2.2, 'sine', 0.08, 'sfx', 0.98);
     } else if (id === 'pace.swarm') {
