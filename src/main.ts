@@ -381,9 +381,13 @@ function trail() {
           const best = profile.runs
             .filter((r) => r.nightly === today())
             .sort((a, b) => b.time - a.time || b.kills - a.kills)[0];
+          // The seed follows the UTC date so everyone shares it; say when it turns over locally.
+          const next = new Date();
+          next.setUTCHours(24, 0, 0, 0);
+          const resets = `new forest at ${next.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
           return best
-            ? `Tonight's best: ${fmt(best.time)} · ${best.kills} hunted`
-            : 'A daily seeded forest and card sequence, the same for everyone';
+            ? `Tonight's best: ${fmt(best.time)} · ${best.kills} hunted · ${resets}`
+            : `A daily seeded forest and card sequence, the same for everyone · ${resets}`;
         })(),
       },
       { id: 'begin', label: 'Begin the Hunt' },
