@@ -5,10 +5,10 @@ import { BOWS, type Bow } from '../data/bows';
 import { T, clamp, distance, xpNeeded, len } from '../data/tuning';
 import { UPGRADES } from '../data/upgrades';
 import { EVOLUTIONS } from '../data/evolutions';
-import { TOOLS } from '../data/tools';
+import { TOOLS, TOOL_STATS } from '../data/tools';
 import { BOSSES } from '../data/bosses';
 import { ENEMIES, ELITES } from '../data/enemies';
-import { EVENTS, FORMATIONS } from '../data/events';
+import { EVENTS } from '../data/events';
 import { makeWorld, blockedMove } from './world';
 import { drawProfile, classifyDraw } from './bow';
 import { updateEnemies, updateThreats, updateBoss } from './enemies';
@@ -516,7 +516,7 @@ export class Hunt {
       }
       this.spawn(id === 4 ? 3 : id === 5 ? 1 : 0, this.player.x + x, this.player.y + y);
     }
-    this.announce(FORMATIONS[id]);
+    // The arrival is heard (and captioned); the formation's name is design vocabulary.
     this.emit('formation.arrival');
   }
   startEvent(id = Math.floor(this.rng.next() * 4)) {
@@ -721,7 +721,6 @@ export class Hunt {
         this.deadeye = T.deadeyeTime;
         this.focusMarks = 0;
         this.emit('deadeye.enter');
-        this.announce('Deadeye');
       }
     }
     if (this.deadeye > 0) {
@@ -872,10 +871,8 @@ export class Hunt {
       const c = (this.time - 120) % T.paceCycle;
       this.pace = c > T.paceCycle - T.swarm ? 2 : c > T.paceCycle - T.swarm - T.lull ? 1 : 0;
     }
-    if (this.pace !== before && this.pace === 1) {
-      this.announce('The forest holds its breath');
-      this.emit('pace.lull');
-    }
+    // The lull is felt (fewer spawns, a hush in the audio, a caption when captions are on).
+    if (this.pace !== before && this.pace === 1) this.emit('pace.lull');
     if (this.pace !== before && this.pace === 2) {
       this.announce('They come');
       this.emit('pace.swarm');
@@ -1043,7 +1040,7 @@ export class Hunt {
   }
   updatePickups(dt: number) {
     const p = this.player,
-      r = 90 * (1 + 0.2 * (this.profile.boons.Magnet || 0));
+      r = 90 * (1 + 0.2 * (this.profile.boons.Magnet || 0) + 0.3 * this.rank('moonpull'));
     for (const q of this.pickups.items)
       if (q.active) {
         const dx = q.x - p.x,
@@ -1071,15 +1068,16 @@ export class Hunt {
     this.snareClock -= dt;
     const raven = this.rank('moonraven');
     if (raven && this.toolClock <= 0) {
-      this.toolClock = 2.5 - 0.3 * (raven - 1);
+      const stats = TOOL_STATS.moonraven(raven);
+      this.toolClock = stats.every;
       let nearest: Enemy | null = null;
       for (const e of this.enemies.items)
         if (e.active && (!nearest || distance(e, p) < distance(nearest, p))) nearest = e;
       if (nearest) {
         this.toolTarget.x = nearest.x;
         this.toolTarget.y = nearest.y;
-        damageEnemy(this, nearest, 30 * (1 + 0.15 * (raven - 1)), undefined, 'moonraven');
-        this.emit('tool.moonraven', nearest.x, nearest.y, 30 * (1 + 0.15 * (raven - 1)));
+        damageEnemy(this, nearest, stats.damage, undefined, 'moonraven');
+        this.emit('tool.moonraven', nearest.x, nearest.y, stats.damage);
         this.burst(nearest.x, nearest.y, 15);
         if (raven === 5)
           for (const q of this.pickups.items)
@@ -1090,8 +1088,8 @@ export class Hunt {
       }
     }
     const snare = this.rank('thornsnare');
-    if (snare && this.snareClock <= 0 && this.snareHeld < snare) {
-      this.snareClock = 5 - 0.5 * (snare - 1);
+    if (snare && this.snareClock <= 0 && this.snareHeld < TOOL_STATS.thornsnare(snare).traps) {
+      this.snareClock = TOOL_STATS.thornsnare(snare).every;
       const t = this.threats.acquire();
       if (t) {
         t.kind = 5;
@@ -1112,13 +1110,13 @@ export class Hunt {
     }
     const lantern = this.rank('lantern');
     if (lantern) {
-      const r = 140 + 20 * (lantern - 1);
+      const { radius: r, dps } = TOOL_STATS.lantern(lantern);
       const n = this.hash.query(p.x, p.y, r, near);
       for (let i = 0; i < n; i++) {
         const e = near[i];
         if (e.active && distance(e, p) < r) {
           e.fade = 0;
-          damageEnemy(this, e, (6 + 3 * (lantern - 1)) * dt, undefined, 'lantern');
+          damageEnemy(this, e, dps * dt, undefined, 'lantern');
         }
       }
     }

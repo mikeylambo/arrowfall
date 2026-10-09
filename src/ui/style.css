@@ -2167,7 +2167,7 @@ html.touch .station.near::after {
 /* Deed toasts. */
 #toasts {
   position: fixed;
-  top: 70px;
+  top: 180px;
   right: 24px;
   z-index: 24;
   display: grid;
@@ -2419,8 +2419,8 @@ html.touch .station.near::after {
   display: grid;
   place-items: center;
   position: fixed;
-  top: calc(env(safe-area-inset-top) + 132px);
-  right: calc(env(safe-area-inset-right) + 12px);
+  top: calc(env(safe-area-inset-top) + 150px);
+  left: calc(env(safe-area-inset-left) + 16px);
   z-index: 23;
   width: 44px;
   height: 44px;
@@ -2459,4 +2459,46 @@ html.touch .station.near::after {
   color: var(--silver);
   font: inherit;
   font-size: 16px;
+}
+
+/* Corner map (ui/minimap.ts): top right, the tools list sits under it. */
+.minimap {
+  position: absolute;
+  right: 34px;
+  top: 34px;
+  width: 180px;
+  height: 128px;
+  border-radius: 10px;
+  border: 1px solid #52688466;
+  background: #05080fb3;
+}
+#hud:has(.minimap:not([style*='none'])) .inventory {
+  top: 176px;
+}
+@media (max-width: 900px), (max-height: 520px) {
+  .minimap {
+    right: 18px;
+    top: 18px;
+    width: 120px;
+    height: 85px;
+  }
+  #hud:has(.minimap:not([style*='none'])) .inventory {
+    top: 112px !important;
+  }
+}
+/* Short landscape phones: the thumb buttons own the right edge, so the map sits under health. */
+@media (max-height: 520px) {
+  .minimap {
+    right: auto;
+    left: calc(18px + env(safe-area-inset-left));
+    top: 100px;
+    width: 110px;
+    height: 78px;
+  }
+  #hud:has(.minimap:not([style*='none'])) .inventory {
+    top: 22px !important;
+  }
+  .playtesting #playtest-note {
+    top: calc(env(safe-area-inset-top) + 190px);
+  }
 }

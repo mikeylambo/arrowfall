@@ -1366,8 +1366,22 @@ export class View {
       .moveTo(x + r + 3, y)
       .lineTo(x + r + 8, y)
       .stroke({ color: 0xdaefff, width: 1, alpha: 0.7 });
-    if (g.deadeye > 0)
-      o.circle(x, y, 60 * this.zoom).stroke({ color: C.focus, width: 1, alpha: 0.5 });
+    if (g.deadeye > 0) {
+      const ring = 60 * this.zoom;
+      o.circle(x, y, ring).stroke({ color: C.focus, width: 1, alpha: 0.5 });
+      // One dot per mark the bow allows, spread over the ring's top arc; painted marks fill in,
+      // so the cap reads before it is hit.
+      const cap = g.bow.marks,
+        spread = Math.min(Math.PI * 1.4, cap * 0.22);
+      for (let i = 0; i < cap; i++) {
+        const t = cap === 1 ? 0.5 : i / (cap - 1),
+          a = -Math.PI / 2 - spread / 2 + spread * t,
+          px = x + Math.cos(a) * (ring + 11),
+          py = y + Math.sin(a) * (ring + 11);
+        if (i < g.focusMarks) o.circle(px, py, 4.5).fill({ color: C.focusLight, alpha: 0.95 });
+        else o.circle(px, py, 4).stroke({ color: C.focus, width: 1.5, alpha: 0.75 });
+      }
+    }
     if (g.deadeye > 0)
       o.rect(0, 0, this.width, this.height).fill({ color: C.focus, alpha: JUICE.deadeyeTint });
     // Chime flash on a perfect release.

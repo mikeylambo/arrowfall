@@ -209,24 +209,56 @@ ICON_SHEETS = {
     'U6': ['boon:Growth', 'boon:Magnet', 'boon:Reroll', 'boon:Banish', 'boon:Skip', 'boon:Fourth Card', 'boon:Second Wind', None, None],
     'E1': ['barrage', 'worldpiercer', 'deadshot', 'hellfire', 'frostbite', 'thunderstorm', 'phantom-hunt', 'red-harvest', 'apex-hunter'],
 }
+NAVY = np.array([7, 11, 22], np.float32)
+
+def icon_cells(img, ids, size=128, pad=0.1):
+    """
+    Each icon's painted shape, wherever it sits: GPT rarely centres icons in their grid cells and
+    some cross the cell lines. Bright shapes are found over the whole sheet, each is given to the
+    cell its centre falls in, and every icon is re-framed centred on navy with even padding.
+    """
+    rgba = np.asarray(img.convert('RGBA'), np.float32)
+    a = rgba[..., 3:] / 255
+    rgb = rgba[..., :3] * a + NAVY * (1 - a)  # transparent sheets (U6) sit on the same navy
+    h, w, _ = rgb.shape
+    lum = (rgb - NAVY).max(-1)
+    solid = ndimage.binary_opening(lum > 40, iterations=2)
+    labels, n = ndimage.label(ndimage.binary_dilation(solid, iterations=3))
+    if not n:
+        return []
+    centres = ndimage.center_of_mass(solid, labels, range(1, n + 1))
+    sizes = ndimage.sum(solid, labels, range(1, n + 1))
+    owner = np.zeros(n + 1, int) - 1
+    for k, ((cy, cx), sz) in enumerate(zip(centres, sizes), start=1):
+        if sz > 40:
+            owner[k] = min(2, int(cy / h * 3)) * 3 + min(2, int(cx / w * 3))
+    out = []
+    for cell, id_ in enumerate(ids):
+        if not id_:
+            continue
+        mine = np.isin(labels, np.nonzero(owner == cell)[0])
+        if not mine.any():
+            continue
+        # Keep the soft glow around the shape, and nothing from the neighbours.
+        keep = ndimage.binary_dilation(mine, iterations=14)
+        ys, xs = np.nonzero(keep)
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        soft = np.asarray(Image.fromarray((keep * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), np.float32)[..., None] / 255
+        crop = (rgb * soft + NAVY * (1 - soft))[y0:y1, x0:x1]
+        tile = Image.fromarray(crop.clip(0, 255).astype(np.uint8))
+        inner = int(size * (1 - 2 * pad))
+        tile.thumbnail((inner, inner), Image.LANCZOS)
+        frame = Image.new('RGBA', (size, size), tuple(int(v) for v in NAVY) + (255,))
+        frame.paste(tile, ((size - tile.width) // 2, (size - tile.height) // 2))
+        out.append((id_, frame))
+    return out
+
 icons = []
 for sheet, ids in ICON_SHEETS.items():
     path = f'{SRC}/icons/{sheet}'
     if not any(os.path.exists(path + e) for e in ('.png', '.webp')):
         continue
-    img = src(path).convert('RGBA')
-    for id_, cell in zip(ids, cells(img)):
-        if not id_:
-            continue
-        side = min(cell.size)
-        inset = int(side * 0.05)
-        cell = cell.crop((inset, inset, cell.width - inset, cell.height - inset)).resize((128, 128), Image.LANCZOS)
-        if cell.getchannel('A').getextrema()[0] < 250:
-            # Real transparency (U6): sit it on the same navy as the others.
-            bg = Image.new('RGBA', cell.size, (7, 11, 22, 255))
-            bg.alpha_composite(cell)
-            cell = bg
-        icons.append((id_, cell))
+    icons += icon_cells(src(path), ids)
 pack(icons, 'icons', 1024)
 
 # ---------- backgrounds ----------

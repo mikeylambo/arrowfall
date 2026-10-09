@@ -22,7 +22,7 @@ Open the game with `?playtest=1` (or `?playtest=Pixel%207` to name the device). 
 
 - **Recorded per hunt:** result, cause of death, time, level, kills, perfect %, hits taken, dodges, bow, phase, curses, seed, evolutions, top build, boss kill times, seconds per input device (keyboard, pad, touch), frame-time percentiles, the 10 worst hitches (with enemy, arrow and particle counts) and fps per 30 s.
 - **Device:** screen, window, pixel ratio, cores, memory, GPU and connected gamepads.
-- **Notes:** **N** (keyboard) or the round button at the top right (touch or mouse) opens a note box and pauses the hunt; Enter saves, Esc cancels. **Back / View** on a gamepad drops a marker. Each note stamps the hunt clock, fps, enemies, HP, level, boss and device.
+- **Notes:** **N** (keyboard) or the round button on the left, under the health bar (touch or mouse) opens a note box and pauses the hunt; Enter saves, Esc cancels. **Back / View** on a gamepad drops a marker. Each note stamps the hunt clock, fps, enemies, HP, level, boss and device.
 - **Export:** **Options → Playtest Report** (from pause or camp) or **Playtest Report** on the results screen: copy (Markdown summary plus JSON), download or share the file, or start a new session.
 
 Everything is kept in local storage, including a hunt cut short by closing the tab. A session restarts automatically when the build changes.

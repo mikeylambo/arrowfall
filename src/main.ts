@@ -32,6 +32,7 @@ import { TOOLS } from './data/tools';
 import { CURSES, CURSE_BONUS, CURSES_UNLOCK_RUNS } from './data/curses';
 import type { Profile, RunRecord } from './sim/types';
 import { Playtest, openNoteBox, playtestEnabled } from './playtest';
+import { Minimap } from './ui/minimap';
 const $ = (id: string) => document.getElementById(id)!;
 const profileStore = new SaveManager<Profile>(new BrowserStorage('arrowfall'), 'hunter-profile', 2);
 const recovered = await profileStore.loadWithRecovery();
@@ -65,6 +66,7 @@ const playtest = playtestLabel
   : null;
 if (playtest) document.documentElement.classList.add('playtesting');
 $('playtest-note').onclick = () => playtestNote(true);
+const minimap = new Minimap($('hud'));
 let noteOpen = false,
   padNotePrevious = false;
 /** How close the hunter must stand to use a camp station (its label sits just below it). */
@@ -98,6 +100,8 @@ let options = {
   sfx: 0.7,
   shake: 1,
   reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+  /** Corner map of the Hollowmoor during a hunt. */
+  minimap: true,
 };
 try {
   const saved = JSON.parse(localStorage.getItem('arrowfall.options') || '{}');
@@ -510,6 +514,7 @@ function settings() {
       { id: 'option:assist', label: `Aim Assist · ${Math.round(options.assist * 100)}%` },
       { id: 'option:uiScale', label: `UI Scale · ${Math.round(options.uiScale * 100)}%` },
       { id: 'option:bands', label: `Range Bands · ${options.bands ? 'On' : 'Off'}` },
+      { id: 'option:minimap', label: `Map · ${options.minimap ? 'On' : 'Off'}` },
       { id: 'option:shake', label: `Screen Shake · ${Math.round(options.shake * 100)}%` },
       {
         id: 'option:reducedMotion',
@@ -907,6 +912,7 @@ app.flow.onActivate = (screen, id) => {
         'captions',
         'haptics',
         'lowPower',
+        'minimap',
       ].includes(key)
     ) {
       const k = key as 'autoLoose';
@@ -1478,6 +1484,19 @@ function tick(now: number) {
     else $('hint').textContent = '';
   }
   if (game && scene !== 'camp') hud(g);
+  minimap.visible = !!game && scene === 'hunt' && options.minimap;
+  if (game && scene === 'hunt' && options.minimap)
+    minimap.update(
+      game,
+      dt,
+      {
+        x: view.camera.x,
+        y: view.camera.y,
+        w: view.width / view.zoom,
+        h: view.height / view.zoom,
+      },
+      game.realTime,
+    );
   if (game && scene === 'hunt' && uiScreen === 'gameplay-placeholder') checkDeeds(g, dt);
   controls.touch.setActive(
     controls.touching && !!game && uiScreen === 'gameplay-placeholder',

@@ -6,7 +6,7 @@
 import type { Hunt } from '../sim/game';
 import { UPGRADES } from '../data/upgrades';
 import { EVOLUTIONS } from '../data/evolutions';
-import { TOOLS } from '../data/tools';
+import { TOOLS, toolEffect, toolEffectText } from '../data/tools';
 
 type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 export interface Card {
@@ -17,6 +17,8 @@ export interface Card {
   rank: number;
   cap: number;
   effect: string;
+  /** Effect with its changing numbers marked [was, now] (tools). */
+  parts?: (string | [string, string])[];
   icon: keyof typeof ICONS;
 }
 
@@ -70,7 +72,8 @@ export function cardFor(g: Hunt, id: string): Card {
       kind: 'Tool',
       rank: g.rank(id) + 1,
       cap: 5,
-      effect: t.effect,
+      effect: toolEffectText(t.id, g.rank(id) + 1),
+      parts: toolEffect(t.id, g.rank(id) + 1),
       icon: 'Tool',
     };
   return id === 'heal'
@@ -101,6 +104,14 @@ const escape = (s: string) =>
  * have now and the total this card takes you to ("+8% → +16% draw speed").
  */
 function progression(card: Card) {
+  if (card.parts)
+    return card.parts
+      .map((p) =>
+        typeof p === 'string'
+          ? escape(p)
+          : `<span class="was">${escape(p[0])}</span> → <b>${escape(p[1])}</b>`,
+      )
+      .join('');
   const text = escape(card.effect);
   if (card.rank <= 1 || !/^(\+|Sweet-spot)/.test(card.effect)) return text;
   const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));

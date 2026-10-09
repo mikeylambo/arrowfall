@@ -1,7 +1,7 @@
 import { BOWS } from '../data/bows';
 import { UPGRADES } from '../data/upgrades';
 import { EVOLUTIONS } from '../data/evolutions';
-import { TOOLS } from '../data/tools';
+import { TOOLS, toolEffectText } from '../data/tools';
 import { ENEMIES } from '../data/enemies';
 import type { Hunt } from '../sim/game';
 import type { Profile, RunRecord } from '../sim/types';
@@ -32,7 +32,7 @@ export function offerChoices(g: Hunt) {
         : u
           ? `${u.rarity.toUpperCase()} · ${u.family} · ${g.rank(id) + 1}/${u.cap}\n${u.effect}`
           : t
-            ? `TOOL · ${g.rank(id) + 1}/5 · ${t.effect}`
+            ? `TOOL · ${g.rank(id) + 1}/5 · ${toolEffectText(t.id, g.rank(id) + 1)}`
             : id === 'heal'
               ? 'Heal 30 HP'
               : '+15 Moonsilver',

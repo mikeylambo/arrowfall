@@ -361,4 +361,13 @@ export const UPGRADES: Upgrade[] = [
     effect: 'Every 15 kills heal 2 HP',
     locked: false,
   },
+  {
+    id: 'moonpull',
+    name: 'Moonpull',
+    family: 'Hunting',
+    rarity: 'Common',
+    cap: 4,
+    effect: '+30% Moonlight pickup radius',
+    locked: false,
+  },
 ];
